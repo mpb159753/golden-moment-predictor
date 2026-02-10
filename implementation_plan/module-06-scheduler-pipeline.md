@@ -90,7 +90,7 @@
 ## 8. 新会话启动提示词
 
 ```text
-请按 gmp_implementation_plan/module-06-scheduler-pipeline.md 实现 M06：
+请按 implementation_plan/module-06-scheduler-pipeline.md 实现 M06：
 完成 GMPScheduler 主流程（插件收集、需求聚合、懒加载、L1/L2、逐日评分）。
 要求：禁止硬编码某个插件，必须通过 Plugin 循环执行；补齐调度相关单测/集成测试。
 ```

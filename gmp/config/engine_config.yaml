@@ -1,0 +1,80 @@
+# 数据库
+db_path: "gmp_cache.db"
+
+# 缓存 TTL
+memory_cache_ttl_seconds: 300
+db_cache_ttl_seconds: 3600
+
+# 坐标精度
+coord_precision: 2
+
+# ==========================
+# 基础安全阈值
+# ==========================
+precip_threshold: 50.0
+visibility_threshold: 1000
+local_cloud_threshold: 30
+target_cloud_threshold: 30
+light_path_threshold: 50
+wind_threshold: 20
+frost_temp_threshold: 2.0
+
+# ==========================
+# 1. 日照金山 (Golden Mountain)
+# ==========================
+golden_trigger_cloud: 80.0
+golden_score_weights:
+  light_path: 35
+  target_visible: 40
+  local_clear: 25
+golden_light_path_tiers: [10, 20, 30, 50]
+golden_target_tiers: [10, 20, 30]
+
+# ==========================
+# 2. 观星 (Stargazing)
+# ==========================
+stargazing_trigger_cloud: 70.0
+stargazing_cloud_penalty_ratio: 0.8
+stargazing_wind_thresholds: [20.0, 40.0]
+stargazing_wind_penalties: [10, 30]
+
+# ==========================
+# 3. 云海 (Cloud Sea)
+# ==========================
+cloud_sea_gap_tiers: [200, 500, 800]
+cloud_sea_density_tiers: [30, 50, 80]
+cloud_sea_mid_cloud_thresholds: [30, 60]
+cloud_sea_mid_cloud_factors: [1.0, 0.7, 0.3]
+
+# ==========================
+# 4. 雾凇 (Frost)
+# ==========================
+frost_optimal_temp_range: [-5.0, -1.0]
+frost_visibility_tiers: [5, 10, 20]
+frost_wind_thresholds: [3.0, 5.0, 10.0]
+
+# ==========================
+# 5. 树挂/冰挂 (SnowTree/IceIcicle)
+# ==========================
+snow_trigger_fresh_depth: 0.2
+snow_trigger_retention_depth: 1.5
+ice_trigger_fresh_water: 0.4
+ice_trigger_retention_water: 2.0
+
+retention_max_temp: 2.5
+retention_max_sun_hours: 5
+retention_sun_deduction_hours: [2, 5, 8]
+retention_max_wind: 30.0
+
+# ==========================
+# 光路计算
+# ==========================
+light_path_count: 10
+light_path_interval_km: 10
+
+# ==========================
+# 其他
+# ==========================
+summary_mode: "rule"
+default_page_size: 20
+max_page_size: 100

@@ -96,7 +96,7 @@
 ## 8. 新会话启动提示词
 
 ```text
-请按 gmp_implementation_plan/module-02-data-cache-fetcher.md 实现 M02：
+请按 implementation_plan/module-02-data-cache-fetcher.md 实现 M02：
 完成 SQLite 表结构、CacheRepository、MemoryCache、WeatherCache、MeteoFetcher。
 要求：坐标 ROUND(2) 去重、支持 stale 降级读取、补齐对应单测与集成测试。
 完成后给出缓存链路验证结果（memory/db/api 各场景）。

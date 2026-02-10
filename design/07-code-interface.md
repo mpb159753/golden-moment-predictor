@@ -223,6 +223,11 @@ class EngineConfig:
     wind_threshold: float = 20
     frost_temp_threshold: float = 2.0
     
+    # 树挂/冰挂 (SnowTree/IceIcicle)
+    retention_max_temp: float = 2.5     # 留存期最高允许气温
+    retention_max_sun_hours: int = 5    # 留存期最大允许日照时数
+    retention_max_wind: float = 30.0    # 留存期最大允许风速
+    
     # 光路计算
     light_path_count: int = 10
     light_path_interval_km: float = 10
@@ -248,7 +253,7 @@ class EngineConfig:
 
 ```
 gmp/
-├── main.py                        # FastAPI 应用入口
+├── main.py                        # FastAPI 应用入口 + CLI
 ├── config/
 │   ├── engine_config.yaml         # 引擎配置 (阈值、权重、TTL)
 │   └── viewpoints/
@@ -259,6 +264,7 @@ gmp/
 │   ├── scheduler.py               # GMP Scheduler 主调度器 (Plugin 驱动)
 │   ├── pipeline.py                # AnalyzerPipeline
 │   ├── models.py                  # 核心 dataclass (Viewpoint, DataContext, ...)
+│   ├── exceptions.py              # 异常定义 (GMPError, ...)
 │   └── config_loader.py           # ViewpointConfig 加载器
 ├── fetcher/
 │   ├── base.py                    # BaseFetcher (Protocol)
@@ -277,8 +283,9 @@ gmp/
 │   ├── golden_mountain.py         # GoldenMountainPlugin
 │   ├── stargazing.py              # StargazingPlugin
 │   ├── cloud_sea.py               # CloudSeaPlugin
-│   └── frost.py                   # FrostPlugin
-│   # 未来扩展: autumn_foliage.py, snow_play.py, ...
+│   ├── frost.py                   # FrostPlugin
+│   ├── snow_tree.py               # SnowTreePlugin
+│   └── ice_icicle.py              # IceIciclePlugin
 ├── reporter/
 │   ├── base.py                    # BaseReporter
 │   ├── forecast_reporter.py       # ForecastReporter (JSON)
@@ -297,11 +304,15 @@ gmp/
 │   ├── init_db.py                 # 数据库初始化脚本
 │   └── gmp_cache.db          # SQLite 数据库文件
 ├── tests/
+│   ├── core/
+│   │   └── test_exceptions.py     # 异常类测试
 │   ├── unit/
 │   │   ├── test_plugin_golden.py
 │   │   ├── test_plugin_stargazing.py
 │   │   ├── test_plugin_cloud_sea.py
 │   │   ├── test_plugin_frost.py
+│   │   ├── test_plugin_snow_tree.py
+│   │   ├── test_plugin_ice_icicle.py
 │   │   ├── test_local_analyzer.py
 │   │   ├── test_remote_analyzer.py
 │   │   ├── test_astro_utils.py

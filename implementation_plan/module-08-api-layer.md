@@ -90,7 +90,7 @@
 ## 8. 新会话启动提示词
 
 ```text
-请按 gmp_implementation_plan/module-08-api-layer.md 完成 M08：
+请按 implementation_plan/module-08-api-layer.md 完成 M08：
 使用 FastAPI 实现 3 个接口、Pydantic schema 与异常中间件，严格对齐 05-api.md 字段和错误码。
 要求：补齐 API 集成测试，覆盖 200/404/422/503 与 events 过滤。
 ```

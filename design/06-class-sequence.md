@@ -209,6 +209,20 @@ classDiagram
         +score(context) ScoreResult
     }
 
+    class SnowTreePlugin {
+        +event_type = "snow_tree"
+        +data_requirement: L1 only
+        +check_trigger(l1_data) bool
+        +score(context) ScoreResult
+    }
+
+    class IceIciclePlugin {
+        +event_type = "ice_icicle"
+        +data_requirement: L1 only
+        +check_trigger(l1_data) bool
+        +score(context) ScoreResult
+    }
+
     class BaseAnalyzer {
         <<abstract>>
         +analyze(data: DataFrame, context)* AnalysisResult
@@ -219,6 +233,8 @@ classDiagram
         -_check_safety(row) bool
         -_check_cloud_sea(row, altitude) CloudSeaStatus
         -_check_frost(row, altitude) FrostStatus
+        -_check_snow_tree(row) SnowTreeStatus
+        -_check_ice_icicle(row) IceIcicleStatus
     }
 
     class RemoteAnalyzer {
@@ -247,6 +263,8 @@ classDiagram
     ScorerPlugin <|.. StargazingPlugin
     ScorerPlugin <|.. CloudSeaPlugin
     ScorerPlugin <|.. FrostPlugin
+    ScorerPlugin <|.. SnowTreePlugin
+    ScorerPlugin <|.. IceIciclePlugin
     BaseAnalyzer <|-- LocalAnalyzer
     BaseAnalyzer <|-- RemoteAnalyzer
     LocalAnalyzer --> AnalysisResult
@@ -306,8 +324,6 @@ classDiagram
 
 ## 6.5 主流程时序图 — 7天预报生成 (Plugin 驱动)
 
-> [!TIP]
-> **关键改动**: Scheduler 不再硬编码每种景观的评分调用，而是通过 Plugin 循环统一处理。
 
 ```mermaid
 sequenceDiagram
@@ -440,7 +456,7 @@ sequenceDiagram
 
     S->>P: check_trigger(l1_details) → true
     S->>P: score(DataContext)
-    Note over P: 评分: gap(50) + density(30) + wind(20)
+    Note over P: 评分: gap(50) + density(30) + mid_struct(中云修正) + wind(20)
     P-->>S: ScoreResult(score=95, Perfect)
 ```
 
@@ -468,4 +484,36 @@ sequenceDiagram
     S->>P: score(DataContext)
     Note over P: 评分: temp(40) + moisture(30) + wind(20) + cloud(10)
     P-->>S: ScoreResult(score=67, Possible)
+```
+
+---
+
+## 6.9 树挂积雪评分流程 (留存场景)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as Scheduler
+    participant P as SnowTreePlugin
+    participant LA as LocalAnalyzer
+
+    S->>LA: analyze(weather_data, context)
+    LA->>LA: _check_snow_tree(snowfall, past_history)
+    alt 降雪(12h) > 0.2cm OR (积雪 > 1.5cm + 持续低温)
+        LA-->>S: Result(snow_tree=true, snow_cm=2.5, since=18h)
+    else 无近期降雪
+        LA-->>S: Result(snow_tree=false)
+    end
+
+    S->>P: check_trigger(l1_details) → true
+    S->>P: score(DataContext)
+    
+    Note right of P: 复杂评分逻辑
+    P->>P: calc_snow_signal(snow=2.5cm) -> 60
+    P->>P: calc_clear(sun=True) -> 20
+    P->>P: check_history(max_wind=15km/h) -> 0 deduc
+    P->>P: check_sun_destruction(accum_sun=8h) -> -30 deduc
+    
+    Note over P: 评分: 60 + 20 + 20 - 12(Age) - 12(Temp) - 30(Sun)
+    P-->>S: ScoreResult(score=46, Not Recommended)
 ```

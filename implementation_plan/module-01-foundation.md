@@ -101,7 +101,7 @@
 ## 8. 新会话可直接使用的启动提示词
 
 ```text
-请按 gmp_implementation_plan/module-01-foundation.md 完成模块 M01：
+请按 implementation_plan/module-01-foundation.md 完成模块 M01：
 1) 创建 gmp 项目骨架；
 2) 落地 core/models.py、core/exceptions.py、core/config_loader.py；
 3) 提供 engine_config.yaml；
