@@ -19,6 +19,7 @@ from __future__ import annotations
 import pandas as pd
 
 from gmp.analyzer.base import BaseAnalyzer
+from gmp.astro.geo_utils import GeoUtils
 from gmp.core.config_loader import EngineConfig
 from gmp.core.models import AnalysisResult
 
@@ -31,6 +32,7 @@ class LocalAnalyzer(BaseAnalyzer):
 
     def __init__(self, config: EngineConfig):
         self._config = config
+        self._geo = GeoUtils()
 
     def analyze(self, data: pd.DataFrame, context: dict) -> AnalysisResult:
         """分析本地天气数据
@@ -94,6 +96,9 @@ class LocalAnalyzer(BaseAnalyzer):
         # 6. 冰挂派生指标
         ice_icicle_indicators = self._compute_ice_icicle_indicators(data)
 
+        # 7. 方位角匹配目标 (D1)
+        matched_targets = self._compute_matched_targets(context)
+
         # 汇总 details
         details = {
             "safety": safety_details,
@@ -108,6 +113,8 @@ class LocalAnalyzer(BaseAnalyzer):
             # 云海/雾凇标记
             "cloud_sea": cloud_sea_info,
             "frost": frost_info,
+            # 方位角匹配目标
+            "matched_targets": matched_targets,
         }
 
         # 合并树挂和冰挂指标
@@ -256,7 +263,7 @@ class LocalAnalyzer(BaseAnalyzer):
 
         # 零下持续小时数
         subzero_hours = 0
-        max_temp = float("-inf")
+        max_temp: float | None = None
         max_wind = 0.0
         sunshine = 0.0
 
@@ -267,15 +274,8 @@ class LocalAnalyzer(BaseAnalyzer):
             if "wind_speed_10m" in since_last_snow.columns:
                 max_wind = float(since_last_snow["wind_speed_10m"].max())
             if "cloud_cover_total" in since_last_snow.columns:
-                for _, row in since_last_snow.iterrows():
-                    cc = row["cloud_cover_total"]
-                    if cc < 10:
-                        sunshine += 2
-                    elif cc < 30:
-                        sunshine += 1
-        else:
-            # 最后一行就是降雪，没有 since_last_snow
-            max_temp = 0.0
+                cc = since_last_snow["cloud_cover_total"]
+                sunshine = float(((cc < 10) * 2).sum() + (((cc >= 10) & (cc < 30)) * 1).sum())
 
         return {
             "recent_snowfall_12h_cm": recent_snowfall_12h_cm,
@@ -283,7 +283,7 @@ class LocalAnalyzer(BaseAnalyzer):
             "hours_since_last_snow": float(hours_since),
             "snowfall_duration_h_24h": snow_hours_24h,
             "subzero_hours_since_last_snow": subzero_hours,
-            "max_temp_since_last_snow": max_temp if max_temp != float("-inf") else 0.0,
+            "max_temp_since_last_snow": max_temp if max_temp is not None else 0.0,
             "max_wind_since_last_snow": max_wind,
             "sunshine_hours_since_snow": sunshine,
         }
@@ -348,35 +348,83 @@ class LocalAnalyzer(BaseAnalyzer):
             "max_temp_since_last_water": max_temp,
         }
 
-    @staticmethod
-    def _compute_score(details: dict) -> int:
+    def _compute_score(self, details: dict) -> int:
         """根据各项指标计算 L1 综合评分 (0-100)
 
         评分依据:
-        - 基础分 50 (安全通过即有)
-        - 云海检测 +15
-        - 雾凇检测 +10
-        - 低云量奖励 +15 (总云量 < 30%)
-        - 低风速奖励 +10 (风速 < 20 km/h)
+        - 基础分 (安全通过即有)
+        - 云海检测加分
+        - 雾凇检测加分
+        - 低云量奖励 (总云量 < low_cloud_threshold)
+        - 低风速奖励 (风速 < low_wind_threshold)
         """
-        score = 50
+        cfg = self._config
+        score = cfg.l1_base_score
 
         if details.get("cloud_sea", {}).get("detected", False):
-            score += 15
+            score += cfg.l1_cloud_sea_bonus
 
         if details.get("frost", {}).get("detected", False):
-            score += 10
+            score += cfg.l1_frost_bonus
 
         cloud_total = details.get("cloud_cover_total", 100)
-        if cloud_total < 30:
-            score += 15
-        elif cloud_total < 60:
-            score += 8
+        if cloud_total < cfg.l1_low_cloud_threshold:
+            score += cfg.l1_low_cloud_bonus
+        elif cloud_total < cfg.l1_mid_cloud_threshold:
+            score += cfg.l1_low_cloud_mid_bonus
 
         wind = details.get("wind_speed_10m", 100)
-        if wind < 20:
-            score += 10
-        elif wind < 30:
-            score += 5
+        if wind < cfg.l1_low_wind_threshold:
+            score += cfg.l1_low_wind_bonus
+        elif wind < cfg.l1_mid_wind_threshold:
+            score += cfg.l1_low_wind_mid_bonus
 
         return min(score, 100)
+
+    def _compute_matched_targets(self, context: dict) -> list[dict]:
+        """根据方位角匹配 context 中观景台的目标
+
+        需要 context 提供:
+        - viewpoint: Viewpoint (含 targets 列表)
+        - sun_events: SunEvents (含日出/日落方位角)
+
+        Returns:
+            匹配结果列表, 每项含 target, bearing, matched_events
+        """
+        viewpoint = context.get("viewpoint")
+        sun_events = context.get("sun_events")
+
+        if viewpoint is None or not hasattr(viewpoint, "targets") or not viewpoint.targets:
+            return []
+
+        results: list[dict] = []
+        for target in viewpoint.targets:
+            bearing = self._geo.calculate_bearing(
+                viewpoint.location.lat,
+                viewpoint.location.lon,
+                target.lat,
+                target.lon,
+            )
+
+            if target.applicable_events is not None:
+                matched_events = target.applicable_events
+            else:
+                matched_events = []
+                if sun_events is not None:
+                    if self._geo.is_opposite_direction(
+                        bearing, sun_events.sunrise_azimuth
+                    ):
+                        matched_events.append("sunrise_golden_mountain")
+                    if self._geo.is_opposite_direction(
+                        bearing, sun_events.sunset_azimuth
+                    ):
+                        matched_events.append("sunset_golden_mountain")
+
+            if matched_events:
+                results.append({
+                    "target": target,
+                    "bearing": bearing,
+                    "matched_events": matched_events,
+                })
+
+        return results

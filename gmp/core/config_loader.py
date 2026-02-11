@@ -56,6 +56,27 @@ class EngineConfig:
         "local_clear": 25,
     })
 
+    # L1 Analyzer 评分配置
+    l1_base_score: int = 50
+    l1_cloud_sea_bonus: int = 15
+    l1_frost_bonus: int = 10
+    l1_low_cloud_bonus: int = 15
+    l1_low_cloud_mid_bonus: int = 8
+    l1_low_cloud_threshold: int = 30
+    l1_mid_cloud_threshold: int = 60
+    l1_low_wind_bonus: int = 10
+    l1_low_wind_mid_bonus: int = 5
+    l1_low_wind_threshold: float = 20.0
+    l1_mid_wind_threshold: float = 30.0
+
+    # L2 Analyzer 评分配置
+    l2_base_score: int = 20
+    l2_light_path_max: int = 40
+    l2_light_path_good_threshold: float = 25.0
+    l2_target_primary_bonus: int = 25
+    l2_target_primary_blocked_bonus: int = 5
+    l2_target_secondary_max: int = 15
+
     # 摘要生成
     summary_mode: str = "rule"
 
@@ -132,6 +153,39 @@ class EngineConfig:
             kwargs["golden_score_weights"] = {
                 k: v for k, v in gm.items() if k != "veto_threshold"
             }
+
+        # analyzer_scoring 节 — L1/L2 评分配置
+        analyzer_scoring = raw.get("analyzer_scoring", {})
+        l1_scoring = analyzer_scoring.get("l1", {})
+        l1_mapping = {
+            "base_score": "l1_base_score",
+            "cloud_sea_bonus": "l1_cloud_sea_bonus",
+            "frost_bonus": "l1_frost_bonus",
+            "low_cloud_bonus": "l1_low_cloud_bonus",
+            "low_cloud_mid_bonus": "l1_low_cloud_mid_bonus",
+            "low_cloud_threshold": "l1_low_cloud_threshold",
+            "mid_cloud_threshold": "l1_mid_cloud_threshold",
+            "low_wind_bonus": "l1_low_wind_bonus",
+            "low_wind_mid_bonus": "l1_low_wind_mid_bonus",
+            "low_wind_threshold": "l1_low_wind_threshold",
+            "mid_wind_threshold": "l1_mid_wind_threshold",
+        }
+        for yaml_key, attr_name in l1_mapping.items():
+            if yaml_key in l1_scoring:
+                kwargs[attr_name] = l1_scoring[yaml_key]
+
+        l2_scoring = analyzer_scoring.get("l2", {})
+        l2_mapping = {
+            "base_score": "l2_base_score",
+            "light_path_max": "l2_light_path_max",
+            "light_path_good_threshold": "l2_light_path_good_threshold",
+            "target_primary_bonus": "l2_target_primary_bonus",
+            "target_primary_blocked_bonus": "l2_target_primary_blocked_bonus",
+            "target_secondary_max": "l2_target_secondary_max",
+        }
+        for yaml_key, attr_name in l2_mapping.items():
+            if yaml_key in l2_scoring:
+                kwargs[attr_name] = l2_scoring[yaml_key]
 
         # summary 节
         summary = raw.get("summary", {})

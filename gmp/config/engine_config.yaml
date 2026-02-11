@@ -66,6 +66,28 @@ scoring:
     age_deduction_max: 20
     temp_deduction_max: 22
 
+# Analyzer 层评分配置 (L1/L2 综合评分)
+analyzer_scoring:
+  l1:
+    base_score: 50
+    cloud_sea_bonus: 15
+    frost_bonus: 10
+    low_cloud_bonus: 15
+    low_cloud_mid_bonus: 8
+    low_cloud_threshold: 30
+    mid_cloud_threshold: 60
+    low_wind_bonus: 10
+    low_wind_mid_bonus: 5
+    low_wind_threshold: 20.0
+    mid_wind_threshold: 30.0
+  l2:
+    base_score: 20
+    light_path_max: 40
+    light_path_good_threshold: 25.0
+    target_primary_bonus: 25
+    target_primary_blocked_bonus: 5
+    target_secondary_max: 15
+
 # 置信度映射
 confidence:
   high: [1, 2]

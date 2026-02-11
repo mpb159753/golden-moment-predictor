@@ -189,8 +189,8 @@ class RemoteAnalyzer(BaseAnalyzer):
             "status": status,
         }
 
-    @staticmethod
     def _compute_score(
+        self,
         targets: list[dict],
         light_path: dict,
         has_primary: bool,
@@ -198,42 +198,47 @@ class RemoteAnalyzer(BaseAnalyzer):
         """计算 L2 综合评分 (0-100)
 
         评分依据:
-        - 光路通畅 +40 (或按均值衰减)
-        - 目标可见 +40 (primary + secondary)
-        - 基础分 +20 (有数据即得)
+        - 光路通畅 (最高 l2_light_path_max)
+        - 目标可见 (primary + secondary)
+        - 基础分 l2_base_score (有数据即得)
         """
-        score = 20  # 有数据基础分
+        cfg = self._config
+        score = cfg.l2_base_score
 
-        # 光路评分 (最高 40)
+        # 光路评分 (最高 l2_light_path_max)
+        lp_max = cfg.l2_light_path_max
         avg_cloud = light_path.get("avg_combined_cloud", 100)
-        if avg_cloud < 25:
-            score += 40
-        elif avg_cloud < 50:
-            score += int(40 * (50 - avg_cloud) / 25)
-        # avg >= 50 → no bonus
+        if avg_cloud < cfg.l2_light_path_good_threshold:
+            score += lp_max
+        elif avg_cloud < self._config.light_path_threshold:
+            score += int(
+                lp_max * (self._config.light_path_threshold - avg_cloud)
+                / (self._config.light_path_threshold - cfg.l2_light_path_good_threshold)
+            )
+        # avg >= light_path_threshold → no bonus
 
-        # 目标评分 (最高 40)
+        # 目标评分
         if targets:
             visible_count = sum(1 for t in targets if t.get("visible", False))
             total_count = len(targets)
 
-            # primary 可见 +25, 其余按比例分配 +15
+            # primary 可见加分
             primary_visible = any(
                 t.get("visible") and t.get("weight") == "primary" for t in targets
             )
             if has_primary and primary_visible:
-                score += 25
+                score += cfg.l2_target_primary_bonus
             elif has_primary:
-                score += 5  # primary 不可见给少量分
+                score += cfg.l2_target_primary_blocked_bonus
             else:
                 # 无 primary，按全部可见比例
                 if total_count > 0:
-                    score += int(25 * visible_count / total_count)
+                    score += int(cfg.l2_target_primary_bonus * visible_count / total_count)
 
             # secondary 可见加分
             secondary_targets = [t for t in targets if t.get("weight") != "primary"]
             if secondary_targets:
                 sec_visible = sum(1 for t in secondary_targets if t.get("visible"))
-                score += int(15 * sec_visible / len(secondary_targets))
+                score += int(cfg.l2_target_secondary_max * sec_visible / len(secondary_targets))
 
         return min(score, 100)

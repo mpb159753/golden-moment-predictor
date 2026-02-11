@@ -445,3 +445,126 @@ class TestLocalScore:
 
         # 50 + 0 + 0 + 15 + 10 = 75
         assert result.score == 75
+
+
+# ============================================================
+# T3 云底估算分支覆盖测试
+# ============================================================
+
+
+class TestCloudBaseEstimation:
+    """测试 _estimate_cloud_base_altitude 的三个分支 (T3)"""
+
+    def test_cloud_sea_estimated_low_low_cloud(self, analyzer: LocalAnalyzer):
+        """低云量 10% (<20%) → 云底远高于站点 → 无云海
+
+        估算: site_altitude + 2000 = 3660 + 2000 = 5660m > 3660m
+        """
+        data = _make_hourly_df(cloud_cover_low=10)
+        data = data.drop(columns=["cloud_base_altitude"], errors="ignore")
+        context = {"site_altitude": 3660, "target_hour": 7}
+        result = analyzer.analyze(data, context)
+
+        assert result.details["cloud_sea"]["detected"] is False
+
+    def test_cloud_sea_estimated_mid_low_cloud(self, analyzer: LocalAnalyzer):
+        """低云量 35% (20-50%线性插值) → 云底在站点以上 → 无云海
+
+        估算: ratio = (50-35)/30 = 0.5 → 3660 + 0.5*2000 = 4660m > 3660m
+        """
+        data = _make_hourly_df(cloud_cover_low=35)
+        data = data.drop(columns=["cloud_base_altitude"], errors="ignore")
+        context = {"site_altitude": 3660, "target_hour": 7}
+        result = analyzer.analyze(data, context)
+
+        assert result.details["cloud_sea"]["detected"] is False
+        # 验证估算值: cloud_base ≈ 4660
+        assert result.details["cloud_base_altitude"] == pytest.approx(4660, abs=1)
+
+
+# ============================================================
+# T1 matched_targets 方位角匹配测试
+# ============================================================
+
+
+class TestMatchedTargets:
+    """测试 matched_targets 字段输出 (T1)"""
+
+    def test_matched_targets_with_sun_events(self, analyzer: LocalAnalyzer):
+        """提供 viewpoint + sun_events → 方位角匹配返回 matched_targets"""
+        from dataclasses import dataclass
+        from gmp.core.models import Location, Target, Viewpoint
+
+        @dataclass
+        class FakeSunEvents:
+            sunrise_azimuth: float = 108.5
+            sunset_azimuth: float = 251.5
+
+        viewpoint = Viewpoint(
+            id="test",
+            name="牛背山",
+            location=Location(lat=29.75, lon=102.35, altitude=3660),
+            capabilities=["sunrise"],
+            targets=[
+                Target(
+                    name="贡嘎主峰", lat=29.58, lon=101.88,
+                    altitude=7556, weight="primary",
+                    applicable_events=None,
+                ),
+            ],
+        )
+
+        data = _make_hourly_df()
+        context = {
+            "site_altitude": 3660,
+            "target_hour": 7,
+            "viewpoint": viewpoint,
+            "sun_events": FakeSunEvents(),
+        }
+        result = analyzer.analyze(data, context)
+
+        matched = result.details["matched_targets"]
+        assert len(matched) > 0
+        # 贡嘎在西南方(~245°), 日出对面是~288.5°, |245-288.5|=43.5° < 90° → 匹配 sunrise
+        assert any(
+            "sunrise_golden_mountain" in m["matched_events"]
+            for m in matched
+        )
+
+    def test_matched_targets_no_sun_events(self, analyzer: LocalAnalyzer):
+        """不提供 sun_events → matched_targets 为空列表"""
+        from gmp.core.models import Location, Target, Viewpoint
+
+        viewpoint = Viewpoint(
+            id="test", name="牛背山",
+            location=Location(lat=29.75, lon=102.35, altitude=3660),
+            capabilities=["sunrise"],
+            targets=[
+                Target(
+                    name="贡嘎主峰", lat=29.58, lon=101.88,
+                    altitude=7556, weight="primary",
+                    applicable_events=None,
+                ),
+            ],
+        )
+
+        data = _make_hourly_df()
+        context = {
+            "site_altitude": 3660,
+            "target_hour": 7,
+            "viewpoint": viewpoint,
+            # 没有 sun_events
+        }
+        result = analyzer.analyze(data, context)
+
+        # 无天文数据 → 自动计算的 matched_events 为空 → 不加入 results
+        assert result.details["matched_targets"] == []
+
+    def test_matched_targets_no_viewpoint(self, analyzer: LocalAnalyzer):
+        """不提供 viewpoint → matched_targets 为空列表"""
+        data = _make_hourly_df()
+        context = {"site_altitude": 3660, "target_hour": 7}
+        result = analyzer.analyze(data, context)
+
+        assert result.details["matched_targets"] == []
+
