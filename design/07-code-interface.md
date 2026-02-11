@@ -30,7 +30,7 @@ class Viewpoint:
     id: str
     name: str
     location: Location
-    capabilities: list[str]  # ["sunrise", "sunset", "stargazing", "cloud_sea", "frost"]
+    capabilities: list[str]  # ["sunrise", "sunset", "stargazing", "cloud_sea", "frost", "snow_tree", "ice_icicle"]
     targets: list[Target]
 
 @dataclass

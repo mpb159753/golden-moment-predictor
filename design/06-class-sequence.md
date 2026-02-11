@@ -344,7 +344,7 @@ sequenceDiagram
 
     Note over S,SE: 🔵 收集活跃 Plugin + 聚合需求
     S->>SE: all_plugins() → 按 capabilities/season/events 过滤
-    SE-->>S: active_plugins = [Golden, Star, CloudSea, Frost]
+    SE-->>S: active_plugins = [Golden, Star, CloudSea, Frost, SnowTree, IceIcicle]
     S->>SE: collect_requirements(active_plugins)
     SE-->>S: DataRequirement(l2_target=T, l2_light=T, astro=T)
 

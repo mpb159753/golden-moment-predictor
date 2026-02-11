@@ -128,7 +128,9 @@
 | `sunset_golden_mountain` | 日落金山 | L2 目标 + L2 光路 + 天文 | GoldenMountainPlugin |
 | `stargazing` | 观星/银河 | 天文 (月相+晨暮曦) | StargazingPlugin |
 | `cloud_sea` | 云海 | 仅 L1 (云底高度) | CloudSeaPlugin |
-| `frost` | 雾凇/树挂 | 仅 L1 (温度+湿度+风速) | FrostPlugin |
+| `frost` | 雾凇 | 仅 L1 (温度+湿度+风速) | FrostPlugin |
+| `snow_tree` | 树挂积雪 | 仅 L1 (降雪+温度+风速) | SnowTreePlugin |
+| `ice_icicle` | 冰挂 | 仅 L1 (降雨降雪+温度+风速) | IceIciclePlugin |
 | `sunrise` | 普通日出 | L2 光路 + 天文 | — |
 | `sunset` | 普通日落 | L2 光路 + 天文 | — |
 
@@ -142,6 +144,8 @@
 | `sunrise_golden` | 日照金山最佳时段 |
 | `cloud_sea` | 云海可见时段 |
 | `frost_window` | 雾凇观赏时段 |
+| `snow_tree_window` | 树挂积雪观赏时段 |
+| `ice_icicle_window` | 冰挂观赏时段 |
 | `sunset_window` | 日落窗口 |
 | `pre_dawn` | 天文晨曦前 |
 | `moonrise` | 月出时刻 |

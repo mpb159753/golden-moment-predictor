@@ -33,6 +33,10 @@
 | `test_frost_dry` | -3°C, 能见度35km, 2km/h, 低云75% | score=67 (干燥) |
 | `test_cloud_sea_thick` | Gap1060m, 低云75%, 风2.8km/h | score=95 |
 | `test_cloud_sea_none` | 云底>站点海拔 | check_trigger=false |
+| `test_snow_tree_fresh` | 近12h雪0.5cm, 距今6h, 晴 | score≥70, Possible |
+| `test_snow_tree_sun_destroyed` | 大雪3cm, 距今19h, 暴晒8h | score=46, Not Recommended |
+| `test_ice_icicle_possible` | 水源2.3mm, 冻结11h, -1.8°C | score=70, Possible |
+| `test_ice_icicle_no_water` | 无近期降水 | check_trigger=false |
 
 ### 工具类测试
 
@@ -178,6 +182,22 @@ scoring:
     base_good: 90
     base_partial: 70
     cloud_penalty_factor: 0.8
+  
+  snow_tree:
+    snow_signal: 60
+    clear_weather: 20
+    stability: 20
+    age_deduction_max: 20
+    temp_deduction_max: 22
+    sun_deduction_max: 30
+    wind_deduction_max: 50
+  
+  ice_icicle:
+    water_input: 50
+    freeze_strength: 30
+    view_quality: 20
+    age_deduction_max: 20
+    temp_deduction_max: 22
 
 # 置信度映射
 confidence:
@@ -221,6 +241,8 @@ capabilities:
   - stargazing
   - cloud_sea
   - frost
+  - snow_tree
+  - ice_icicle
 
 targets:
   - name: 贡嘎主峰

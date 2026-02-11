@@ -19,7 +19,7 @@ viewpoint = Viewpoint(
     id="niubei_gongga",
     name="牛背山",
     location=Location(lat=29.75, lon=102.35, altitude=3660),
-    capabilities=["sunrise", "sunset", "stargazing", "cloud_sea", "frost"],
+    capabilities=["sunrise", "sunset", "stargazing", "cloud_sea", "frost", "snow_tree", "ice_icicle"],
     targets=[
         Target(
             name="贡嘎主峰", lat=29.58, lon=101.88, altitude=7556,
@@ -46,6 +46,8 @@ active_plugins = [
     StargazingPlugin,      # stargazing
     CloudSeaPlugin,        # cloud_sea
     FrostPlugin,           # frost
+    SnowTreePlugin,        # snow_tree
+    IceIciclePlugin,       # ice_icicle
 ]
 
 # 聚合 DataRequirement
@@ -116,6 +118,10 @@ local_weather = pd.DataFrame({
     "precipitation_probability":[0, 0,     5,      ...],
     "visibility":      [30000,   35000,   28000,   ...],
     "wind_speed_10m":  [3.1,     2.8,     4.5,     ...],
+    "snowfall":        [0.0,     0.0,     0.0,     ...],  # cm/h
+    "rain":            [0.0,     0.0,     0.0,     ...],  # mm/h
+    "showers":         [0.0,     0.0,     0.0,     ...],  # mm/h
+    "weather_code":    [1,       0,       2,       ...],  # WMO code
 })
 
 # 3b. 目标山峰天气 (贡嘎 29.58, 101.88) — Phase 2 按需获取
@@ -173,6 +179,8 @@ l1_result = {
 # StargazingPlugin.check_trigger(l1)      → True (夜间云量低)
 # CloudSeaPlugin.check_trigger(l1)        → True (云底2600<站点3660)
 # FrostPlugin.check_trigger(l1)           → True (温度-3.8<2°C)
+# SnowTreePlugin.check_trigger(l1)        → False (近期无降雪)
+# IceIciclePlugin.check_trigger(l1)       → False (近期无有效水源)
 
 # L2 远程滤网结果 (仅因 GoldenMountainPlugin 触发)
 l2_result = {
@@ -250,6 +258,12 @@ frost_score = {
     "confidence": "High",
     "note": "温度理想但空气干燥，雾凇形成概率较低",
 }
+
+# ═══════════ 树挂积雪 (SnowTreePlugin) ═══════════
+# 本日未触发 (近期无降雪), check_trigger=False, 不进入评分
+
+# ═══════════ 冰挂 (IceIciclePlugin) ═══════════
+# 本日未触发 (近期无有效水源+冻结), check_trigger=False, 不进入评分
 ```
 
 ---
