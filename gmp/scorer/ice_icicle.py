@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from gmp.core.models import DataContext, DataRequirement, ScoreResult
-from gmp.scorer.plugin import score_to_status
+from gmp.scorer.plugin import extract_weather_value, score_to_status
 
 
 class IceIciclePlugin:
@@ -63,13 +63,13 @@ class IceIciclePlugin:
     def score(self, context: DataContext) -> ScoreResult:
         weather = context.local_weather
 
-        water_24h = self._extract(weather, "effective_water_input_24h_mm", 0.0)
-        subzero_h = self._extract(weather, "subzero_hours_since_last_water", 0.0)
-        temp_now = self._extract(weather, "temperature_2m", 99.0)
-        cloud = self._extract(weather, "cloud_cover_total", 100)
-        wind = self._extract(weather, "wind_speed_10m", 0)
-        hours_since = self._extract(weather, "hours_since_last_water_input", 999)
-        max_temp = self._extract(weather, "max_temp_since_last_water", 99)
+        water_24h = extract_weather_value(weather, "effective_water_input_24h_mm", 0.0)
+        subzero_h = extract_weather_value(weather, "subzero_hours_since_last_water", 0.0)
+        temp_now = extract_weather_value(weather, "temperature_2m", 99.0)
+        cloud = extract_weather_value(weather, "cloud_cover_total", 100)
+        wind = extract_weather_value(weather, "wind_speed_10m", 0)
+        hours_since = extract_weather_value(weather, "hours_since_last_water_input", 999)
+        max_temp = extract_weather_value(weather, "max_temp_since_last_water", 99)
 
         # 加分
         water_score = self._score_water(water_24h)
@@ -185,14 +185,4 @@ class IceIciclePlugin:
                 return d
         return 22
 
-    # ------------------------------------------------------------------
-    # 工具
-    # ------------------------------------------------------------------
 
-    @staticmethod
-    def _extract(weather, column: str, default: float) -> float:
-        if hasattr(weather, "__getitem__") and column in weather.columns:
-            vals = weather[column].dropna()
-            if len(vals) > 0:
-                return float(vals.iloc[0])
-        return default

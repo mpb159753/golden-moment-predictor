@@ -56,6 +56,14 @@ class EngineConfig:
         "local_clear": 25,
     })
 
+    # 观星评分配置 (来源: engine_config.yaml scoring.stargazing)
+    stargazing_config: dict = field(default_factory=lambda: {
+        "base_optimal": 100,
+        "base_good": 90,
+        "base_partial": 70,
+        "cloud_penalty_factor": 0.8,
+    })
+
     # L1 Analyzer 评分配置
     l1_base_score: int = 50
     l1_cloud_sea_bonus: int = 15
@@ -153,6 +161,11 @@ class EngineConfig:
             kwargs["golden_score_weights"] = {
                 k: v for k, v in gm.items() if k != "veto_threshold"
             }
+
+        # scoring 节 — stargazing
+        sg = scoring.get("stargazing", {})
+        if sg:
+            kwargs["stargazing_config"] = sg
 
         # analyzer_scoring 节 — L1/L2 评分配置
         analyzer_scoring = raw.get("analyzer_scoring", {})

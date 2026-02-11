@@ -47,6 +47,7 @@ class GoldenMountainPlugin:
 
     def check_trigger(self, l1_data: dict) -> bool:
         """触发条件: 总云量 < 80% 且有匹配 Target"""
+        # 使用 .get() 提供安全默认值，避免 KeyError（正向偏差于设计文档）
         return (
             l1_data.get("cloud_cover_total", 100) < 80
             and len(l1_data.get("matched_targets", [])) > 0
@@ -198,7 +199,7 @@ class GoldenMountainPlugin:
         """本地通透分数 (满分 25).
 
         从本地天气获取总云量，按阶梯映射:
-          ≤15%: 25 | 15-30%: 20 | 30-50%: 12 | >50%: 5 | >80%: 0
+          ≤15%: 25 | 15-30%: 20 | 30-50%: 12 | 50-80%: 5 | >80%: 0
         """
         lw = context.local_weather
         if lw is None or (hasattr(lw, "empty") and lw.empty):
@@ -213,16 +214,16 @@ class GoldenMountainPlugin:
         else:
             return 0, "本地天气数据格式异常"
 
+        # 阶梯映射 — 与 _score_light_path / _score_target_visible 保持一致
+        thresholds: list[tuple[float, int]] = [
+            (15, 25),
+            (30, 20),
+            (50, 12),
+            (80, 5),
+        ]
+        s = step_score(total_cloud, thresholds, ascending=False)
         if total_cloud > 80:
             s = 0
-        elif total_cloud > 50:
-            s = 5
-        elif total_cloud > 30:
-            s = 12
-        elif total_cloud > 15:
-            s = 20
-        else:
-            s = 25
 
         detail = f"本地总云{total_cloud:.0f}%"
         if s == 25:
@@ -230,7 +231,7 @@ class GoldenMountainPlugin:
         elif s == 0:
             detail += ", >80%否决"
         else:
-            detail += f", {int(total_cloud)}%区间"
+            detail += f", {self._range_label(total_cloud, thresholds)}区间"
 
         return s, detail
 

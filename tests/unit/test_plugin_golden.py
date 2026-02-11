@@ -316,6 +316,34 @@ class TestLightPathThresholds:
         assert result.breakdown["light_path"]["score"] == 0
 
 
+class TestTargetVisibleThresholds:
+    """目标可见阶梯映射验证 (T1 修复)."""
+
+    def test_le_10_percent(self, plugin: GoldenMountainPlugin, viewpoint: Viewpoint):
+        """高+中云 ≤10% → 40."""
+        ctx = _make_context(viewpoint, target_high_cloud=3.0, target_mid_cloud=5.0)  # 合计 8%
+        result = plugin.score(ctx)
+        assert result.breakdown["target_visible"]["score"] == 40
+
+    def test_10_to_20_percent(self, plugin: GoldenMountainPlugin, viewpoint: Viewpoint):
+        """高+中云 15% (10-20%) → 32."""
+        ctx = _make_context(viewpoint, target_high_cloud=7.0, target_mid_cloud=8.0)  # 合计 15%
+        result = plugin.score(ctx)
+        assert result.breakdown["target_visible"]["score"] == 32
+
+    def test_20_to_30_percent(self, plugin: GoldenMountainPlugin, viewpoint: Viewpoint):
+        """高+中云 25% (20-30%) → 22."""
+        ctx = _make_context(viewpoint, target_high_cloud=12.0, target_mid_cloud=13.0)  # 合计 25%
+        result = plugin.score(ctx)
+        assert result.breakdown["target_visible"]["score"] == 22
+
+    def test_over_30_percent(self, plugin: GoldenMountainPlugin, viewpoint: Viewpoint):
+        """高+中云 35% (>30%) → 0."""
+        ctx = _make_context(viewpoint, target_high_cloud=20.0, target_mid_cloud=15.0)  # 合计 35%
+        result = plugin.score(ctx)
+        assert result.breakdown["target_visible"]["score"] == 0
+
+
 class TestLocalClearThresholds:
     """本地通透阶梯映射验证."""
 

@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 from gmp.core.models import DataContext, DataRequirement, ScoreResult
-from gmp.scorer.plugin import score_to_status
+from gmp.scorer.plugin import extract_weather_value, score_to_status
 
 
 class SnowTreePlugin:
@@ -61,15 +61,15 @@ class SnowTreePlugin:
     def score(self, context: DataContext) -> ScoreResult:
         weather = context.local_weather
 
-        snow_24h = self._extract(weather, "recent_snowfall_24h_cm", 0.0)
-        duration_h = self._extract(weather, "snowfall_duration_h_24h", 0.0)
-        weather_code = int(self._extract(weather, "weather_code", 99))
-        cloud = self._extract(weather, "cloud_cover_total", 100)
-        wind = self._extract(weather, "wind_speed_10m", 0)
-        hours_since = self._extract(weather, "hours_since_last_snow", 999)
-        max_temp = self._extract(weather, "max_temp_since_last_snow", 99)
-        sunshine_h = self._extract(weather, "sunshine_hours_since_snow", 0)
-        max_wind_hist = self._extract(weather, "max_wind_since_last_snow", 0)
+        snow_24h = extract_weather_value(weather, "recent_snowfall_24h_cm", 0.0)
+        duration_h = extract_weather_value(weather, "snowfall_duration_h_24h", 0.0)
+        weather_code = int(extract_weather_value(weather, "weather_code", 99))
+        cloud = extract_weather_value(weather, "cloud_cover_total", 100)
+        wind = extract_weather_value(weather, "wind_speed_10m", 0)
+        hours_since = extract_weather_value(weather, "hours_since_last_snow", 999)
+        max_temp = extract_weather_value(weather, "max_temp_since_last_snow", 99)
+        sunshine_h = extract_weather_value(weather, "sunshine_hours_since_snow", 0)
+        max_wind_hist = extract_weather_value(weather, "max_wind_since_last_snow", 0)
 
         # 加分
         snow_score = self._score_snow(snow_24h, duration_h)
@@ -217,14 +217,4 @@ class SnowTreePlugin:
             return 20
         return 0
 
-    # ------------------------------------------------------------------
-    # 工具
-    # ------------------------------------------------------------------
 
-    @staticmethod
-    def _extract(weather, column: str, default: float) -> float:
-        if hasattr(weather, "__getitem__") and column in weather.columns:
-            vals = weather[column].dropna()
-            if len(vals) > 0:
-                return float(vals.iloc[0])
-        return default

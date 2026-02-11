@@ -47,7 +47,7 @@ def _run_predict(args: argparse.Namespace) -> None:
     score_engine = ScoreEngine()
     score_engine.register(GoldenMountainPlugin("sunrise_golden_mountain"))
     score_engine.register(GoldenMountainPlugin("sunset_golden_mountain"))
-    score_engine.register(StargazingPlugin())
+    score_engine.register(StargazingPlugin(config.stargazing_config))
     score_engine.register(CloudSeaPlugin())
     score_engine.register(FrostPlugin())
     score_engine.register(SnowTreePlugin())

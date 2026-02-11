@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from gmp.core.models import DataContext, DataRequirement, ScoreResult
-from gmp.scorer.plugin import score_to_status
+from gmp.scorer.plugin import extract_weather_value, score_to_status
 
 
 class CloudSeaPlugin:
@@ -40,10 +40,10 @@ class CloudSeaPlugin:
         site_alt = context.viewpoint.location.altitude
 
         # 提取代表性时刻数据 (取首行或均值)
-        cloud_base = self._extract(weather, "cloud_base_altitude", float("inf"))
-        low_cloud = self._extract(weather, "cloud_cover_low", 0)
-        mid_cloud = self._extract(weather, "cloud_cover_mid", 0)
-        wind = self._extract(weather, "wind_speed_10m", 0)
+        cloud_base = extract_weather_value(weather, "cloud_base_altitude", float("inf"))
+        low_cloud = extract_weather_value(weather, "cloud_cover_low", 0)
+        mid_cloud = extract_weather_value(weather, "cloud_cover_mid", 0)
+        wind = extract_weather_value(weather, "wind_speed_10m", 0)
 
         gap = site_alt - cloud_base
 
@@ -109,12 +109,17 @@ class CloudSeaPlugin:
 
     @staticmethod
     def _score_density(low_cloud: float) -> int:
-        """密度得分 (满分 30)."""
+        """密度得分 (满分 30).
+
+        设计文档阶梯: >80%: 30, >50%: 20, <30%: 5
+        30-50% 区间归入碎云档 (5 分) — 此区间低云覆盖不足以形成
+        连续可观赏的云海，视觉效果接近碎云。
+        """
         if low_cloud > 80:
             return 30
         if low_cloud > 50:
             return 20
-        return 5  # < 30% 碎云
+        return 5  # ≤50% 碎云
 
     @staticmethod
     def _mid_cloud_factor(mid_cloud: float) -> float:
@@ -133,16 +138,3 @@ class CloudSeaPlugin:
         # 每增 5km/h 扣 5 分
         deduction = int((wind - 10) / 5) * 5 + 5
         return max(0, 20 - deduction)
-
-    # ------------------------------------------------------------------
-    # 工具
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _extract(weather, column: str, default: float) -> float:
-        """从 DataFrame 中提取单一代表值 (首行)."""
-        if hasattr(weather, "__getitem__") and column in weather.columns:
-            vals = weather[column].dropna()
-            if len(vals) > 0:
-                return float(vals.iloc[0])
-        return default

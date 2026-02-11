@@ -22,24 +22,24 @@ class ScoreEngine:
     """
 
     def __init__(self) -> None:
-        self._plugins: dict[str, object] = {}
+        self._plugins: dict[str, IScorerPlugin] = {}
 
     # ------------------------------------------------------------------
     # 注册 & 查询
     # ------------------------------------------------------------------
 
-    def register(self, plugin: object) -> None:
+    def register(self, plugin: IScorerPlugin) -> None:
         """注册一个评分器 Plugin (duck-typing: 需有 event_type 属性)."""
         event_type = getattr(plugin, "event_type", None)
         if event_type is None:
             raise ValueError("Plugin 必须包含 event_type 属性")
         self._plugins[event_type] = plugin
 
-    def all_plugins(self) -> list:
+    def all_plugins(self) -> list[IScorerPlugin]:
         """返回所有已注册的 Plugin."""
         return list(self._plugins.values())
 
-    def get(self, event_type: str) -> object | None:
+    def get(self, event_type: str) -> IScorerPlugin | None:
         """按事件类型获取 Plugin."""
         return self._plugins.get(event_type)
 
@@ -47,7 +47,7 @@ class ScoreEngine:
     # 需求聚合
     # ------------------------------------------------------------------
 
-    def collect_requirements(self, plugins: list) -> DataRequirement:
+    def collect_requirements(self, plugins: list[IScorerPlugin]) -> DataRequirement:
         """聚合多个 Plugin 的数据需求。
 
         任一 Plugin 需要某项数据 → 整体就需要该数据。
@@ -66,3 +66,4 @@ class ScoreEngine:
                 for p in plugins
             ),
         )
+

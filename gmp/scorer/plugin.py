@@ -1,6 +1,6 @@
 """评分插件公共工具
 
-提供评分等级映射、阶梯查表等辅助函数，供所有 Plugin 复用。
+提供评分等级映射、DataFrame 数据提取、阶梯查表等辅助函数，供所有 Plugin 复用。
 重导出 DataRequirement / DataContext / ScoreResult 方便引用。
 """
 
@@ -23,6 +23,24 @@ def score_to_status(score: int) -> str:
     if score >= 50:
         return "Possible"
     return "Not Recommended"
+
+
+def extract_weather_value(weather, column: str, default: float) -> float:
+    """从 DataFrame 中提取单一代表值 (首个非空值)。
+
+    Args:
+        weather: pandas DataFrame, 逐时天气数据
+        column: 要提取的列名
+        default: 列不存在或全为空时的默认值
+
+    Returns:
+        首行非空值, 或 default
+    """
+    if hasattr(weather, "columns") and column in weather.columns:
+        vals = weather[column].dropna()
+        if len(vals) > 0:
+            return float(vals.iloc[0])
+    return default
 
 
 def step_score(value: float, thresholds: list[tuple[float, int]], *, ascending: bool = True) -> int:
@@ -49,5 +67,6 @@ __all__ = [
     "DataRequirement",
     "ScoreResult",
     "score_to_status",
+    "extract_weather_value",
     "step_score",
 ]

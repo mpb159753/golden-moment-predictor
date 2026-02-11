@@ -63,12 +63,13 @@ def _viewpoint_to_dict(vp) -> dict:
     }
 
 
-def _create_score_engine() -> ScoreEngine:
+def _create_score_engine(config: EngineConfig | None = None) -> ScoreEngine:
     """创建并注册所有评分 Plugin"""
     engine = ScoreEngine()
     engine.register(GoldenMountainPlugin("sunrise_golden_mountain"))
     engine.register(GoldenMountainPlugin("sunset_golden_mountain"))
-    engine.register(StargazingPlugin())
+    stargazing_cfg = config.stargazing_config if config else None
+    engine.register(StargazingPlugin(stargazing_cfg))
     engine.register(CloudSeaPlugin())
     engine.register(FrostPlugin())
     engine.register(SnowTreePlugin())
@@ -105,7 +106,7 @@ def create_app(
 
             fetcher = MeteoFetcher(cfg)
             astro = AstroUtils()
-            score_engine = _create_score_engine()
+            score_engine = _create_score_engine(cfg)
 
             app.state.scheduler = GMPScheduler(
                 config=cfg,

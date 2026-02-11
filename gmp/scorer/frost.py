@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from gmp.core.models import DataContext, DataRequirement, ScoreResult
-from gmp.scorer.plugin import score_to_status
+from gmp.scorer.plugin import extract_weather_value, score_to_status
 
 
 class FrostPlugin:
@@ -32,10 +32,10 @@ class FrostPlugin:
     def score(self, context: DataContext) -> ScoreResult:
         weather = context.local_weather
 
-        temp = self._extract(weather, "temperature_2m", 999)
-        visibility = self._extract(weather, "visibility", 99999)
-        wind = self._extract(weather, "wind_speed_10m", 0)
-        low_cloud = self._extract(weather, "cloud_cover_low", 0)
+        temp = extract_weather_value(weather, "temperature_2m", 999)
+        visibility = extract_weather_value(weather, "visibility", 99999)
+        wind = extract_weather_value(weather, "wind_speed_10m", 0)
+        low_cloud = extract_weather_value(weather, "cloud_cover_low", 0)
 
         temp_score = self._score_temp(temp)
         moisture_score = self._score_moisture(visibility)
@@ -103,7 +103,12 @@ class FrostPlugin:
 
     @staticmethod
     def _score_moisture(visibility: float) -> int:
-        """湿度条件得分 (满分 30). visibility 单位: m."""
+        """湿度条件得分 (满分 30).
+
+        visibility 单位处理:
+          - Open-Meteo 返回值单位为 m (通常 > 100)，需除以 1000 转换为 km
+          - 若值 ≤ 100，视为已预转换的 km 值，直接使用 (兼容测试 fixture)
+        """
         vis_km = visibility / 1000.0 if visibility > 100 else visibility
         if vis_km < 5:
             return 30
@@ -133,14 +138,4 @@ class FrostPlugin:
             return 5
         return 3  # > 60%
 
-    # ------------------------------------------------------------------
-    # 工具
-    # ------------------------------------------------------------------
 
-    @staticmethod
-    def _extract(weather, column: str, default: float) -> float:
-        if hasattr(weather, "__getitem__") and column in weather.columns:
-            vals = weather[column].dropna()
-            if len(vals) > 0:
-                return float(vals.iloc[0])
-        return default
