@@ -130,6 +130,74 @@ class CacheRepository:
         finally:
             conn.close()
 
+    def upsert_batch(
+        self,
+        lat: float,
+        lon: float,
+        target_date: date,
+        rows: list[dict],
+    ) -> None:
+        """批量插入或更新天气缓存 (executemany)。
+
+        使用单次连接 + 单次事务完成所有写入，性能远优于逐行 upsert。
+
+        Args:
+            lat: 纬度
+            lon: 经度
+            target_date: 目标日期
+            rows: 天气数据字典列表，每个字典需包含 forecast_hour 字段
+        """
+        if not rows:
+            return
+
+        lat_rounded = round(lat, 2)
+        lon_rounded = round(lon, 2)
+
+        sql = """
+            INSERT OR REPLACE INTO weather_cache (
+                lat_rounded, lon_rounded, forecast_date, forecast_hour,
+                fetched_at, api_source, raw_response_json,
+                temperature_2m, cloud_cover_total, cloud_cover_low,
+                cloud_cover_medium, cloud_cover_high, cloud_base_altitude,
+                precipitation_probability, visibility, wind_speed_10m,
+                snowfall, rain, showers, weather_code
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        now_iso = datetime.now().isoformat()
+        date_iso = target_date.isoformat()
+
+        param_list = []
+        for data in rows:
+            param_list.append((
+                lat_rounded,
+                lon_rounded,
+                date_iso,
+                int(data.get("forecast_hour", 0)),
+                now_iso,
+                data.get("api_source", "open-meteo"),
+                data.get("raw_response_json"),
+                data.get("temperature_2m"),
+                data.get("cloud_cover_total"),
+                data.get("cloud_cover_low"),
+                data.get("cloud_cover_medium"),
+                data.get("cloud_cover_high"),
+                data.get("cloud_base_altitude"),
+                data.get("precipitation_probability"),
+                data.get("visibility"),
+                data.get("wind_speed_10m"),
+                data.get("snowfall"),
+                data.get("rain"),
+                data.get("showers"),
+                data.get("weather_code"),
+            ))
+
+        conn = self._connect()
+        try:
+            conn.executemany(sql, param_list)
+            conn.commit()
+        finally:
+            conn.close()
+
     def save_prediction(self, prediction: dict) -> None:
         """保存预测历史记录。
 

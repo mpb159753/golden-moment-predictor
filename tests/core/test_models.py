@@ -144,3 +144,32 @@ class TestAnalysisResult:
         )
         assert ar.passed is True
         assert ar.details["cloud_cover"] == 15
+
+
+class TestDataContext:
+    def test_data_context_creation(self):
+        """DataContext 可正确实例化 (前向引用不报错)"""
+        loc = Location(lat=29.75, lon=102.35, altitude=3660)
+        vp = Viewpoint(
+            id="test", name="测试", location=loc, capabilities=["sunrise"]
+        )
+        ctx = DataContext(
+            date=date(2026, 1, 1), viewpoint=vp, local_weather=None
+        )
+        assert ctx.date == date(2026, 1, 1)
+        assert ctx.viewpoint.id == "test"
+        assert ctx.local_weather is None
+
+    def test_data_context_optional_defaults(self):
+        """DataContext 可选字段默认 None"""
+        loc = Location(lat=0, lon=0, altitude=0)
+        vp = Viewpoint(id="x", name="x", location=loc, capabilities=[])
+        ctx = DataContext(
+            date=date(2026, 1, 1), viewpoint=vp, local_weather=None
+        )
+        assert ctx.sun_events is None
+        assert ctx.moon_status is None
+        assert ctx.stargazing_window is None
+        assert ctx.target_weather is None
+        assert ctx.light_path_weather is None
+        assert ctx.l2_result is None

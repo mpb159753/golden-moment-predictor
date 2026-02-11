@@ -144,8 +144,8 @@ class TestWeatherCache:
         assert mem_result is not None
         assert len(mem_result) == 3
 
-        # 验证 SQLite upsert 被调用了 3 次 (每行一次)
-        assert repo.upsert.call_count == 3
+        # 验证 SQLite upsert_batch 被调用了 1 次 (批量写入)
+        assert repo.upsert_batch.call_count == 1
 
     def test_weather_cache_memory_hit_skips_sqlite(self):
         """内存缓存命中时不查 SQLite"""

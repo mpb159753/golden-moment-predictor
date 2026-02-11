@@ -11,6 +11,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import ephem
 
+from gmp.core.exceptions import InvalidCoordinateError
 from gmp.core.models import MoonStatus, StargazingWindow, SunEvents
 
 # UTC+8 北京时间
@@ -19,6 +20,20 @@ _CST = timezone(timedelta(hours=8))
 
 class AstroUtils:
     """天文计算工具"""
+
+    @staticmethod
+    def _validate_coords(lat: float, lon: float) -> None:
+        """校验经纬度范围
+
+        Args:
+            lat: 纬度 (°), 合法范围 [-90, 90]
+            lon: 经度 (°), 合法范围 [-180, 180]
+
+        Raises:
+            InvalidCoordinateError: 坐标超出范围
+        """
+        if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+            raise InvalidCoordinateError(lat, lon)
 
     @staticmethod
     def _make_observer(
@@ -76,6 +91,8 @@ class AstroUtils:
             SunEvents: 包含 sunrise, sunset, sunrise_azimuth, sunset_azimuth,
                        astronomical_dawn, astronomical_dusk
         """
+        self._validate_coords(lat, lon)
+
         # ---- 日出/日落 ----
         obs = self._make_observer(lat, lon, target_date)
         sun = ephem.Sun()
@@ -133,6 +150,8 @@ class AstroUtils:
         Returns:
             MoonStatus: 包含 phase(0-100), elevation, moonrise, moonset
         """
+        self._validate_coords(lat, lon)
+
         obs = self._make_observer(lat, lon, dt)
         moon = ephem.Moon()
         moon.compute(obs)

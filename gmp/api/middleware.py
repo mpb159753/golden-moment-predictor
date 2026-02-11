@@ -67,7 +67,7 @@ async def gmp_exception_handler(request: Request, exc: GMPError) -> JSONResponse
 
 
 async def service_unavailable_handler(request: Request, exc: Exception) -> JSONResponse:
-    """ServiceUnavailableError 处理 (定义在 fetcher 模块中)"""
+    """ServiceUnavailableError 处理 (定义在 core.exceptions 模块中)"""
     logger.warning(
         "service_degraded",
         extra={"detail": str(exc), "path": str(request.url)},

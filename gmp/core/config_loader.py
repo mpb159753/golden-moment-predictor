@@ -114,6 +114,17 @@ class EngineConfig:
         if "interval_km" in lp:
             kwargs["light_path_interval_km"] = lp["interval_km"]
 
+        # retention 节 (树挂/冰挂留存阈值)
+        retention = raw.get("retention", {})
+        retention_mapping = {
+            "max_temp": "retention_max_temp",
+            "max_sun_hours": "retention_max_sun_hours",
+            "max_wind": "retention_max_wind",
+        }
+        for yaml_key, attr_name in retention_mapping.items():
+            if yaml_key in retention:
+                kwargs[attr_name] = retention[yaml_key]
+
         # scoring 节 — golden_mountain
         scoring = raw.get("scoring", {})
         gm = scoring.get("golden_mountain", {})

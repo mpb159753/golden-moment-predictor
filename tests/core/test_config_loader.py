@@ -181,3 +181,18 @@ class TestEngineConfig:
         # 未指定字段保持默认
         assert config.precip_threshold == 50.0
         assert config.default_page_size == 20
+
+    def test_engine_config_retention_parsing(self, tmp_path):
+        """retention 节正确解析到 retention_* 字段"""
+        yaml_content = (
+            "retention:\n"
+            "  max_temp: 3.0\n"
+            "  max_sun_hours: 4\n"
+            "  max_wind: 25.0\n"
+        )
+        yaml_file = tmp_path / "retention.yaml"
+        yaml_file.write_text(yaml_content, encoding="utf-8")
+        config = EngineConfig.from_yaml(yaml_file)
+        assert config.retention_max_temp == 3.0
+        assert config.retention_max_sun_hours == 4
+        assert config.retention_max_wind == 25.0

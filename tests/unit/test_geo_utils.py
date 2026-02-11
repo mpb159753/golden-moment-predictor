@@ -134,3 +134,36 @@ class TestRoundCoords:
         lat, lon = GeoUtils.round_coords(29.755, 102.349, precision=1)
         assert lat == 29.8
         assert lon == 102.3
+
+
+class TestEdgeCases:
+    """边界情况测试"""
+
+    def test_distance_same_point(self):
+        """同一点的距离应为 0"""
+        distance = GeoUtils.calculate_distance(
+            NIUBEI_LAT, NIUBEI_LON, NIUBEI_LAT, NIUBEI_LON
+        )
+        assert distance == 0.0, f"同一点距离应为 0，实际 {distance}"
+
+    def test_bearing_same_point(self):
+        """同一点的方位角应为 0（atan2(0, 0) = 0）"""
+        bearing = GeoUtils.calculate_bearing(
+            NIUBEI_LAT, NIUBEI_LON, NIUBEI_LAT, NIUBEI_LON
+        )
+        assert bearing == 0.0, f"同一点方位角应为 0，实际 {bearing}"
+
+    def test_light_path_single_point(self):
+        """count=1 应只返回 1 个点"""
+        points = GeoUtils.calculate_light_path_points(
+            NIUBEI_LAT, NIUBEI_LON, FEB_SUNRISE_AZIMUTH, count=1, interval_km=10
+        )
+        assert len(points) == 1
+
+    def test_light_path_zero_points(self):
+        """count=0 应返回空列表"""
+        points = GeoUtils.calculate_light_path_points(
+            NIUBEI_LAT, NIUBEI_LON, FEB_SUNRISE_AZIMUTH, count=0, interval_km=10
+        )
+        assert len(points) == 0
+

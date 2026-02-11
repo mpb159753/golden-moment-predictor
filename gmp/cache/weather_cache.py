@@ -112,11 +112,9 @@ class WeatherCache:
         # 写入内存缓存
         self._memory.set(cache_key, data)
 
-        # 写入 SQLite — 逐行 upsert
-        for _, row in data.iterrows():
-            hour = int(row.get("forecast_hour", 0))
-            row_dict = row.to_dict()
-            self._repo.upsert(lat, lon, target_date, hour, row_dict)
+        # 写入 SQLite — 批量 upsert
+        rows = [row.to_dict() for _, row in data.iterrows()]
+        self._repo.upsert_batch(lat, lon, target_date, rows)
 
         logger.debug("双写完成: %s (%d 条)", cache_key, len(data))
 

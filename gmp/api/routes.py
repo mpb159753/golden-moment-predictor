@@ -142,14 +142,11 @@ def create_app(
     # 注册异常处理
     app.add_exception_handler(GMPError, gmp_exception_handler)
 
-    # ServiceUnavailableError (定义在 fetcher 模块中)
-    try:
-        from gmp.fetcher.meteo_fetcher import ServiceUnavailableError
-        app.add_exception_handler(
-            ServiceUnavailableError, service_unavailable_handler
-        )
-    except ImportError:
-        pass
+    # ServiceUnavailableError (统一定义在 exceptions 模块)
+    from gmp.core.exceptions import ServiceUnavailableError
+    app.add_exception_handler(
+        ServiceUnavailableError, service_unavailable_handler
+    )
 
     # ----------------------------------------------------------------
     # 路由

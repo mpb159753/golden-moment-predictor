@@ -8,14 +8,19 @@
 from __future__ import annotations
 
 import logging
+import time
 import warnings
-from datetime import date
+from datetime import date, timedelta
 
 import httpx
 import pandas as pd
 
 from gmp.cache.weather_cache import WeatherCache
-from gmp.core.exceptions import APITimeoutError, DataDegradedWarning
+from gmp.core.exceptions import (
+    APITimeoutError,
+    DataDegradedWarning,
+    ServiceUnavailableError,
+)
 from gmp.fetcher.base import BaseFetcher
 
 logger = logging.getLogger(__name__)
@@ -29,15 +34,6 @@ DEFAULT_TIMEOUT_CONFIG = {
 }
 
 
-class ServiceUnavailableError(Exception):
-    """外部服务不可用且无降级数据"""
-
-    def __init__(self, service: str, reason: str = ""):
-        self.service = service
-        self.reason = reason
-        super().__init__(f"{service} 服务不可用: {reason}")
-
-
 class MeteoFetcher(BaseFetcher):
     """Open-Meteo API 实现
 
@@ -45,6 +41,7 @@ class MeteoFetcher(BaseFetcher):
     - 逐小时预报 (fetch_hourly)
     - 批量多坐标获取 (fetch_multi_points)
     - 坐标去重
+    - 多日数据按日分组缓存
     - 降级策略 (API 失败 → SQLite 过期数据)
     - 超时重试
     """
@@ -79,6 +76,8 @@ class MeteoFetcher(BaseFetcher):
     ) -> pd.DataFrame:
         """获取小时级天气预报（先查缓存再调 API）。
 
+        对多日数据按日分组进行缓存查询和写入，确保每天的数据都被正确缓存。
+
         Args:
             lat: 纬度
             lon: 经度
@@ -91,19 +90,34 @@ class MeteoFetcher(BaseFetcher):
             APITimeoutError: API 超时且无降级数据
             ServiceUnavailableError: API 不可用且无缓存
         """
-        # 尝试从缓存获取
         today = date.today()
+
+        # 尝试从缓存获取所有天的数据
         if self._cache:
-            cached = self._cache.get(lat, lon, today)
-            if cached is not None:
-                return cached
+            cached_frames = []
+            all_cached = True
+            for d in range(days):
+                target_date = today + timedelta(days=d)
+                cached = self._cache.get(lat, lon, target_date)
+                if cached is not None:
+                    cached_frames.append(cached)
+                else:
+                    all_cached = False
+                    break
+
+            if all_cached and cached_frames:
+                return pd.concat(cached_frames, ignore_index=True)
 
         # 调用 API
         try:
             data = self._call_api(lat, lon, days)
-            # 写入缓存
-            if self._cache:
-                self._cache.set(lat, lon, today, data)
+            # 按日分组写入缓存
+            if self._cache and "forecast_date" in data.columns:
+                for date_str, group in data.groupby("forecast_date"):
+                    target_date = date.fromisoformat(str(date_str))
+                    self._cache.set(
+                        lat, lon, target_date, group.reset_index(drop=True)
+                    )
             return data
         except (httpx.TimeoutException, httpx.HTTPError) as e:
             logger.warning("API 调用失败: %s", e)
@@ -167,7 +181,6 @@ class MeteoFetcher(BaseFetcher):
             except (httpx.TimeoutException, httpx.HTTPError) as e:
                 last_error = e
                 if attempt < retries:
-                    import time
                     delay = self._timeout_config.get("retry_delay", 1)
                     logger.info("重试第 %d 次 (delay=%ds)", attempt + 1, delay)
                     time.sleep(delay)

@@ -33,6 +33,14 @@ class ViewpointNotFoundError(GMPError):
         super().__init__(f"未找到观景台: {viewpoint_id}")
 
 
+class ServiceUnavailableError(GMPError):
+    """外部服务不可用且无降级数据"""
+    def __init__(self, service: str, reason: str = ""):
+        self.service = service
+        self.reason = reason
+        super().__init__(f"{service} 服务不可用: {reason}")
+
+
 class DataDegradedWarning(UserWarning):
     """数据降级警告"""
     pass
