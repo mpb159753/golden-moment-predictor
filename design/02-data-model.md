@@ -59,6 +59,8 @@ erDiagram
         string event_type "事件类型"
         int predicted_score "0到100"
         string confidence "High Medium Low"
+        bool is_backtest "是否为回测记录"
+        string data_source "forecast或archive"
     }
 ```
 
@@ -134,6 +136,10 @@ CREATE TABLE prediction_history (
     user_feedback TEXT,
     feedback_at DATETIME,
     
+    -- 回测标识
+    is_backtest BOOLEAN DEFAULT 0,    -- 0=真实预测, 1=历史回测
+    data_source TEXT DEFAULT 'forecast',  -- 'forecast'=预报数据, 'archive'=历史数据
+    
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -183,11 +189,13 @@ CREATE INDEX idx_viewpoint ON prediction_history(viewpoint_id);
 | `event_type` | TEXT | NOT NULL | 事件类型 (`sunrise_golden_mountain` / `sunset_golden_mountain` / `stargazing` / `cloud_sea` / `frost` / `snow_tree` / `ice_icicle`) |
 | `predicted_score` | INTEGER | | 预测评分 (0-100) |
 | `predicted_status` | TEXT | | 状态 (`Perfect` / `Recommended` / `Possible` / `Not Recommended`) |
-| `confidence` | TEXT | | 置信度 (`High` T+1~2 / `Medium` T+3~4 / `Low` T+5~7) |
+| `confidence` | TEXT | | 置信度 (`High` T+1~2 / `Medium` T+3~4 / `Low` T+5~16) |
 | `conditions_json` | TEXT | | JSON 格式的详细条件 |
 | `actual_result` | TEXT | NULL | 实际结果 (用户反馈: `success` / `partial` / `failed`) |
 | `user_feedback` | TEXT | NULL | 文字反馈 |
 | `feedback_at` | DATETIME | NULL | 反馈时间 |
+| `is_backtest` | BOOLEAN | DEFAULT 0 | 0=真实预测, 1=历史回测 |
+| `data_source` | TEXT | DEFAULT 'forecast' | 数据来源 (`forecast` 预报 / `archive` 历史) |
 | `created_at` | DATETIME | DEFAULT NOW | 记录创建时间 |
 
 ---
