@@ -1,5 +1,9 @@
 # 9. 测试策略与配置数据
 
+> [!CAUTION]
+> **本文档中出现的所有评分数值、阈值、权重均为默认参考值（示例）。**
+> 实际运行时，所有数值均通过 `engine_config.yaml` 配置文件加载，代码中不应存在魔法数字。
+
 ## 9.1 测试金字塔
 
 ```
@@ -22,7 +26,7 @@
 
 | 测试 | 输入 | 预期输出 |
 |------|------|---------|
-| `test_golden_recommended` | 光路8%, 目标13%, 本地22% | score=87, Recommended |
+| `test_golden_recommended` | 光路8%, 目标13%, 本地22% | score=90, Recommended |
 | `test_golden_perfect` | 光路0%, 目标5%, 本地10% | score=100, Perfect |
 | `test_golden_veto_light` | 光路60%, 目标5%, 本地10% | score=0 (光路一票否决) |
 | `test_golden_veto_target` | 光路5%, 目标50%, 本地10% | score=0 (目标一票否决) |
@@ -165,9 +169,12 @@ light_path:
   count: 10
   interval_km: 10
 
-# 评分配置 (每个 Plugin 的权重 + 阈值阶梯，统一由 ConfigManager 提供)
+# 评分配置 (每个 Plugin 的权重 + 阈值阶梯 + 触发条件，统一由 ConfigManager 提供)
+# 注意: 以下所有数值均为默认参考值，代码中不应硬编码任何数值
 scoring:
   golden_mountain:
+    trigger:
+      max_cloud_cover: 80          # 总云量 ≥ 此值时返回 None (未触发)
     weights:
       light_path: 35
       target_visible: 40
@@ -179,6 +186,8 @@ scoring:
     veto_threshold: 0
   
   cloud_sea:
+    trigger:
+      # 云底高度 ≥ 站点海拔时返回 None (物理逻辑，无需配置)
     weights:
       gap: 50
       density: 30
@@ -190,44 +199,125 @@ scoring:
       mid_cloud_penalty: [30, 60]          # >60%=0.3, >30%=0.7, ≤30%=1.0
   
   frost:
+    trigger:
+      max_temperature: 2.0         # 温度 ≥ 此值时返回 None (未触发)
     weights:
       temperature: 40
       moisture: 30
       wind: 20
       cloud: 10
     thresholds:
-      temp_ranges:                         # [-5,0)→ 40, [-10,-5)→0, [0,2]→25, <-10→15
-        optimal: [-5, 0]
-        good: [-10, -5]
-        acceptable: [0, 2]
+      temp_ranges:                         # 温度评分阶梯
+        optimal: {range: [-5, 0], score: 40}     # -5°C ≤ T < 0°C
+        good: {range: [-10, -5], score: 30}      # -10°C ≤ T < -5°C
+        acceptable: {range: [0, 2], score: 25}   # 0°C ≤ T ≤ 2°C
+        bad: {range: [-999, -10], score: 15}     # T < -10°C (过冷)
       visibility_km: [5, 10, 20]           # <5=30, <10=20, <20=10, ≥20=5
+      wind_speed: [3, 5, 10]               # <3=20, <5=15, <10=10, ≥10=0
+      cloud_pct:                            # 低云量评分
+        optimal: {range: [30, 60], score: 10}    # 适度低云保温
+        clear: {range: [0, 30], score: 5}        # 晴空辐射冷却
+        heavy: {range: [60, 100], score: 3}      # 云量过重
   
   stargazing:
+    trigger:
+      max_night_cloud_cover: 70    # 夜间总云量 ≥ 此值时返回 None (未触发)
     base_optimal: 100
     base_good: 90
     base_partial: 70
-    cloud_penalty_factor: 0.8
+    cloud_penalty_factor: 0.8      # 云量扣分系数: Deduction = TotalCloud% × factor
+    wind_thresholds:               # 风速扣分阈值
+      severe: {speed: 40, penalty: 30}    # >40km/h: -30
+      moderate: {speed: 20, penalty: 10}  # >20km/h: -10
   
   snow_tree:
+    trigger:
+      recent_path:                 # 常规路径: 近12h有雪 + 当前晴朗
+        min_snowfall_12h_cm: 0.2
+      retention_path:              # 留存路径: 24h大雪 + 持续低温
+        min_snowfall_24h_cm: 1.5
+        min_duration_h: 3
+        min_subzero_hours: 8
+        max_temp: 1.5
     weights:
       snow_signal: 60
       clear_weather: 20
       stability: 20
+    thresholds:
+      snow_signal:                         # 积雪信号阶梯 (snowfall_24h_cm, duration_h) → score
+        - {snowfall: 2.5, duration: 4, score: 60}
+        - {snowfall: 1.5, duration: 3, score: 52}
+        - {snowfall: 0.8, duration: 2, score: 44}
+        - {snowfall: 0.2, duration: 0, score: 32}
+      clear_weather:                       # 晴朗程度阶梯
+        - {weather_code: [0], max_cloud: 20, score: 20}
+        - {weather_code: [1, 2], max_cloud: 45, score: 16}
+        - {score: 8}                       # 其他情况
+      stability_wind: [12, 20]             # <12=20, <20=14, ≥20=8
     deductions:
-      age_max: 20
-      temp_max: 22
-      sun_max: 30
-      wind_max: 50
+      age:                                 # 降雪距今扣分阶梯 (hours → deduction)
+        - {hours: 3, deduction: 0}
+        - {hours: 8, deduction: 2}
+        - {hours: 12, deduction: 5}
+        - {hours: 16, deduction: 8}
+        - {hours: 20, deduction: 12}
+        - {hours: 999, deduction: 20}      # >20h
+      temp:                                # 升温融化扣分 (max_temp_since_snow → deduction)
+        - {temp: -2, deduction: 0}
+        - {temp: -0.5, deduction: 2}
+        - {temp: 1, deduction: 6}
+        - {temp: 2.5, deduction: 12}
+        - {temp: 999, deduction: 22}       # >2.5°C
+      sun:                                 # 累积日照扣分 (accumulated_sun_score → deduction)
+        - {sun_score: 2, deduction: 0}
+        - {sun_score: 5, deduction: 15}
+        - {sun_score: 8, deduction: 30}    # 烈日杀手
+      wind_max: 50                         # 历史大风 >50km/h: -50; >30km/h: -20
+      wind_severe_threshold: 50
+      wind_moderate_threshold: 30
     past_hours: 24
   
   ice_icicle:
+    trigger:
+      recent_path:                 # 常规路径: 近12h有水源 + 已冻结
+        min_water_12h_mm: 0.4
+      retention_path:              # 留存路径: 24h强水源 + 持续低温
+        min_water_24h_mm: 1.0
+        min_subzero_hours: 6
+        max_temp: 1.5
     weights:
       water_input: 50
       freeze_strength: 30
       view_quality: 20
+    thresholds:
+      water_input:                         # 水源输入阶梯 (effective_water_24h_mm → score)
+        - {water: 3.0, score: 50}
+        - {water: 2.0, score: 42}
+        - {water: 1.0, score: 34}
+        - {water: 0.4, score: 24}
+      freeze_strength:                     # 冻结强度阶梯
+        - {subzero_hours: 14, temp_now: -3, score: 30}
+        - {subzero_hours: 10, temp_now: -1, score: 24}
+        - {subzero_hours: 6, temp_now: 0, score: 16}
+        - {score: 10}                      # 其他
+      view_quality:                        # 观赏条件阶梯
+        - {max_cloud: 20, max_wind: 12, score: 20}
+        - {max_cloud: 45, max_wind: 20, score: 14}
+        - {score: 8}                       # 其他
     deductions:
-      age_max: 20
-      temp_max: 22
+      age:                                 # 水源距今扣分 (同 SnowTree)
+        - {hours: 3, deduction: 0}
+        - {hours: 8, deduction: 2}
+        - {hours: 12, deduction: 5}
+        - {hours: 16, deduction: 8}
+        - {hours: 20, deduction: 12}
+        - {hours: 999, deduction: 20}
+      temp:                                # 升温融化扣分 (同 SnowTree)
+        - {temp: -2, deduction: 0}
+        - {temp: -0.5, deduction: 2}
+        - {temp: 1, deduction: 6}
+        - {temp: 2.5, deduction: 12}
+        - {temp: 999, deduction: 22}
     past_hours: 24
 
 # 置信度映射 (T+8 及以上统一为 Low)

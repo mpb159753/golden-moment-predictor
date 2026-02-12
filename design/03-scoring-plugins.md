@@ -1,5 +1,10 @@
 # 3. 可插拔评分器架构 (ScorerPlugin)
 
+> [!CAUTION]
+> **本文档中出现的所有评分阈值、权重、分界值均为默认参考值（示例）。**
+> 实际运行时，所有数值均通过 `engine_config.yaml` 配置文件加载，代码中不应存在魔法数字。
+> 配置结构详见 [09-testing-config.md §9.5](./09-testing-config.md)。
+
 ## 3.1 设计概述
 
 评分系统采用**可插拔 Plugin 架构**：每种景观类型由一个独立的 `ScorerPlugin` 实现，Plugin 通过 `DataRequirement` 声明自身所需的数据，Scheduler 据此聚合需求、统一获取后通过 `DataContext` 分发。
@@ -262,8 +267,8 @@ $$ Score = S_{light} + S_{target} + S_{local} $$
 | 维度 | 满分 | 评分阶梯 |
 |------|------|---------|
 | **光路通畅** ($S_{light}$) | 35 | 10点均值云量 ≤10%: 35 · 10-20%: 30 · 20-30%: 20 · 30-50%: 10 · >50%: 0 |
-| **目标可见** ($S_{target}$) | 40 | Primary目标高+中云 ≤10%: 40 · 10-20%: 32 · 20-30%: 22 · >30%: 0 |
-| **本地通透** ($S_{local}$) | 25 | 总云量 ≤15%: 25 · 15-30%: 20 · 30-50%: 12 · >50%: 5 · >80%: 0 |
+| **目标可见** ($S_{target}$) | 40 | Primary目标高+中云 ≤10%: 40 · ≤20%: 35 · ≤30%: 25 · ≤50%: 10 · >50%: 0 |
+| **本地通透** ($S_{local}$) | 25 | 总云量 ≤15%: 25 · ≤30%: 20 · ≤50%: 10 · >50%: 0 |
 
 > [!IMPORTANT]
 > **维度一票否决**: 任一维度得分过低时直接否决：
@@ -272,7 +277,7 @@ $$ Score = S_{light} + S_{target} + S_{local} $$
 > - $S_{local} = 0$（本地浓云密布）→ 总分置 0
 
 > [!NOTE]
-> **光路检查**: 沿日出/日落方位角方向每 10km 设置 1 个检查点，共 10 个点（10km~100km），取所有点 (low_cloud + mid_cloud) 的算术平均值作为光路云量。
+> **光路检查**: 沿日出/日落方位角方向设置检查点（默认每 `light_path.interval_km`=10km 一个，共 `light_path.count`=10 个，即 10km~100km），取所有点 (low_cloud + mid_cloud) 的算术平均值作为光路云量。检查点数量和间隔均通过 `engine_config.yaml` 配置。
 
 ### 评分示例
 
@@ -284,10 +289,10 @@ golden_score = {
     "time_window": "07:15 - 07:45",
     "score_breakdown": {
         "light_path":     {"score": 35, "max": 35, "detail": "10点均值云量8%, ≤10%满分"},
-        "target_visible": {"score": 32, "max": 40, "detail": "贡嘎高+中云13%, 10-20%区间"},
-        "local_clear":    {"score": 20, "max": 25, "detail": "本地总云22%, 15-30%区间"},
+        "target_visible": {"score": 35, "max": 40, "detail": "贡嘎高+中云13%, ≤20%区间"},
+        "local_clear":    {"score": 20, "max": 25, "detail": "本地总云22%, ≤30%区间"},
     },
-    "total_score": 87,   # 35+32+20 = 87
+    "total_score": 90,   # 35+35+20 = 90
     "status": "Recommended",
     "confidence": "High",
     "highlights": ["贡嘎金山"],
@@ -381,9 +386,9 @@ $$ Score = (Score_{gap} + Score_{density}) \times Factor_{mid\_cloud} + Score_{w
 | 维度 | 满分 | 评分阶梯 |
 |------|------|---------|
 | **高差** ($Score_{gap}$) | 50 | Gap > 800m: 50 · > 500m: 40 · > 200m: 20 · > 0m: 10 |
-| **密度** ($Score_{density}$) | 30 | LowCloud > 80%: 30 · > 50%: 20 · < 30%: 5 (碎云) |
-| **中云修正** ($Factor_{mid}$) | x | MidCloud ≤ 30%: 1.0 (云层分界清晰) · 30-60%: 0.7 (云层较厚) · > 60%: 0.3 (大概率在大雾中) |
-| **稳定** ($Score_{wind}$) | 20 | Wind < 10km/h: 20 · 每增 5km/h 扣 5 分 |
+| **密度** ($Score_{density}$) | 30 | LowCloud >80%: 30 · >50%: 20 · >30%: 10 · ≤30%: 5 (碎云) |
+| **中云修正** ($Factor_{mid}$) | x | MidCloud ≤30%: 1.0 (云层分界清晰) · 30-60%: 0.7 (云层较厚) · >60%: 0.3 (大概率在大雾中) |
+| **稳定** ($Score_{wind}$) | 20 | Wind <3km/h: 20 · <5km/h: 15 · <8km/h: 10 · ≥8km/h: 5 |
 
 ### 评分示例
 
