@@ -85,12 +85,28 @@ class EngineConfig:
     l2_target_primary_blocked_bonus: int = 5
     l2_target_secondary_max: int = 15
 
+    # 调度器
+    default_target_hour: int = 7
+
+    # 置信度映射 (days_ahead 范围)
+    confidence_high_days: list[int] = field(default_factory=lambda: [1, 2])
+    confidence_medium_days: list[int] = field(default_factory=lambda: [3, 4])
+
+    # Reporter 输出层阈值
+    reporter_l1_precip_threshold: int = 30
+    reporter_overcast_threshold: int = 60
+    reporter_rain_threshold: int = 50
+
     # 摘要生成
     summary_mode: str = "rule"
 
     # 分页
     default_page_size: int = 20
     max_page_size: int = 100
+
+    # 日志配置
+    log_level: str = "INFO"
+    log_format: str = "console"
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "EngineConfig":
@@ -200,6 +216,29 @@ class EngineConfig:
             if yaml_key in l2_scoring:
                 kwargs[attr_name] = l2_scoring[yaml_key]
 
+        # scheduler 节
+        scheduler = raw.get("scheduler", {})
+        if "default_target_hour" in scheduler:
+            kwargs["default_target_hour"] = int(scheduler["default_target_hour"])
+
+        # confidence 节
+        confidence = raw.get("confidence", {})
+        if "high" in confidence:
+            kwargs["confidence_high_days"] = confidence["high"]
+        if "medium" in confidence:
+            kwargs["confidence_medium_days"] = confidence["medium"]
+
+        # reporter 节
+        reporter = raw.get("reporter", {})
+        reporter_mapping = {
+            "l1_precip_threshold": "reporter_l1_precip_threshold",
+            "overcast_threshold": "reporter_overcast_threshold",
+            "rain_threshold": "reporter_rain_threshold",
+        }
+        for yaml_key, attr_name in reporter_mapping.items():
+            if yaml_key in reporter:
+                kwargs[attr_name] = int(reporter[yaml_key])
+
         # summary 节
         summary = raw.get("summary", {})
         if "mode" in summary:
@@ -211,6 +250,13 @@ class EngineConfig:
             kwargs["default_page_size"] = pagination["default_page_size"]
         if "max_page_size" in pagination:
             kwargs["max_page_size"] = pagination["max_page_size"]
+
+        # logging 节
+        logging_cfg = raw.get("logging", {})
+        if "level" in logging_cfg:
+            kwargs["log_level"] = logging_cfg["level"]
+        if "format" in logging_cfg:
+            kwargs["log_format"] = logging_cfg["format"]
 
         return cls(**kwargs)
 

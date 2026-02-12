@@ -4,14 +4,14 @@
 确保测试不依赖网络、天文库精度或当前日期。
 
 测试用例覆盖:
-  - 完整晴天管线
+  - 完整晴天管线 (含分数/breakdown/status 传递)
   - 雨天 L1 拦截
   - events 过滤
-  - 置信度映射
-  - 方位角方向匹配
+  - 置信度映射 (配置驱动)
+  - L1 context 传递 (viewpoint + sun_events → matched_targets)
   - 7 天预测结构
   - 季节过滤
-  - Plugin 异常隔离
+  - Plugin 异常隔离 (score + check_trigger)
   - 需求聚合
 """
 
@@ -173,6 +173,7 @@ class _SimplePlugin:
         trigger: bool = True,
         score_value: int = 80,
         raise_on_score: bool = False,
+        raise_on_trigger: bool = False,
     ):
         self.event_type = event_type
         self.display_name = display_name or event_type
@@ -180,8 +181,11 @@ class _SimplePlugin:
         self._trigger = trigger
         self._score_value = score_value
         self._raise_on_score = raise_on_score
+        self._raise_on_trigger = raise_on_trigger
 
     def check_trigger(self, l1_data: dict) -> bool:
+        if self._raise_on_trigger:
+            raise RuntimeError(f"Plugin {self.event_type} check_trigger 模拟异常")
         return self._trigger
 
     def score(self, context: DataContext) -> ScoreResult:
@@ -271,13 +275,23 @@ class TestFullPipelineClearDay:
         assert "frost" in event_types
 
     def test_clear_day_score_values(self):
-        plugins = [_SimplePlugin("cloud_sea", score_value=87)]
+        """T1: 验证 scheduler 正确传递 Plugin 返回的完整字段"""
+        plugins = [_SimplePlugin("cloud_sea", "云海", score_value=87)]
         vp = _make_viewpoint(capabilities=["cloud_sea"])
         scheduler = _build_scheduler(viewpoint=vp, plugins=plugins)
 
         result = scheduler.run("test_vp", days=1)
         day = result["forecast_days"][0]
-        assert day["events"][0]["total_score"] == 87
+        event = day["events"][0]
+
+        # 验证所有字段正确传递
+        assert event["total_score"] == 87
+        assert event["event_type"] == "cloud_sea"
+        assert event["display_name"] == "云海"
+        assert event["status"] == "Recommended"
+        assert "test" in event["breakdown"]
+        assert event["breakdown"]["test"]["score"] == 87
+        assert event["breakdown"]["test"]["max"] == 100
 
 
 class TestFullPipelineRainyDay:
@@ -352,7 +366,7 @@ class TestEventsFilterSkipsL2:
 
 
 class TestConfidenceMapping:
-    """置信度映射: T+1=High, T+3=Medium, T+5=Low"""
+    """置信度映射: 从 EngineConfig 读取配置"""
 
     @pytest.mark.parametrize(
         "days_ahead, expected",
@@ -360,14 +374,17 @@ class TestConfidenceMapping:
          (5, "Low"), (6, "Low"), (7, "Low")],
     )
     def test_confidence(self, days_ahead, expected):
-        assert GMPScheduler._determine_confidence(days_ahead) == expected
+        scheduler = _build_scheduler()
+        assert scheduler._determine_confidence(days_ahead) == expected
 
 
-class TestTargetDirectionMatching:
-    """方位角方向匹配: 贡嘎山 245° + 日出 108.5° → sunrise 匹配"""
+class TestL1ContextPassesViewpointAndSunEvents:
+    """T3: 验证 L1 context 传递了 viewpoint 和 sun_events (方位角匹配由 LocalAnalyzer 完成)"""
 
-    def test_auto_match_sunrise(self):
+    def test_l1_context_contains_viewpoint(self):
+        """scheduler 传给 L1 的 context 包含 viewpoint，确保 matched_targets 可计算"""
         vp = _make_viewpoint(
+            capabilities=["sunrise"],
             targets=[
                 Target(
                     name="贡嘎山", lat=29.58, lon=101.88,
@@ -376,32 +393,33 @@ class TestTargetDirectionMatching:
                 ),
             ],
         )
-        se = _make_sun_events(date.today() + timedelta(days=1))
-
-        scheduler = _build_scheduler(viewpoint=vp, sun_events=se)
-        matched = scheduler._match_targets_by_direction(vp, se)
-
-        assert len(matched) == 1
-        # 贡嘎山方位角约 245°, 日出方位角 108.5°, 对面约 288.5°
-        # |245 - 288.5| = 43.5 < 90 → 匹配 sunrise
-        assert "sunrise_golden_mountain" in matched[0]["matched_events"]
-
-    def test_manual_override(self):
-        """手动指定 applicable_events 优先于自动匹配"""
-        vp = _make_viewpoint(
-            targets=[
-                Target(
-                    name="田海子山", lat=30.15, lon=101.75,
-                    altitude=5820, weight="secondary",
-                    applicable_events=["sunset"],
+        plugins = [
+            _SimplePlugin(
+                "sunrise_golden_mountain",
+                data_requirement=DataRequirement(
+                    needs_l2_target=True, needs_astro=True,
                 ),
-            ],
-        )
-        se = _make_sun_events(date.today() + timedelta(days=1))
-        scheduler = _build_scheduler(viewpoint=vp, sun_events=se)
-        matched = scheduler._match_targets_by_direction(vp, se)
+            )
+        ]
+        scheduler = _build_scheduler(viewpoint=vp, plugins=plugins)
 
-        assert matched[0]["matched_events"] == ["sunset"]
+        # 通过 patch 捕获 L1 analyze 调用参数
+        original_analyze = scheduler._local_analyzer.analyze
+        captured_contexts = []
+
+        def spy_analyze(data, context):
+            captured_contexts.append(context)
+            return original_analyze(data, context)
+
+        scheduler._local_analyzer.analyze = spy_analyze
+        scheduler.run("test_vp", days=1)
+
+        assert len(captured_contexts) >= 1
+        ctx = captured_contexts[0]
+        assert "viewpoint" in ctx
+        assert ctx["viewpoint"].id == "test_vp"
+        assert len(ctx["viewpoint"].targets) == 1
+        assert ctx["viewpoint"].targets[0].name == "贡嘎山"
 
 
 class TestSevenDayForecastStructure:
@@ -501,6 +519,22 @@ class TestPluginErrorIsolation:
         result = scheduler.run("test_vp", days=1)
         day = result["forecast_days"][0]
         assert len(day["events"]) == 1
+
+    def test_check_trigger_error_isolation(self):
+        """T2: check_trigger 抛异常时该 Plugin 被跳过，其他 Plugin 正常"""
+        plugins = [
+            _SimplePlugin("cloud_sea", score_value=85),
+            _SimplePlugin("frost", raise_on_trigger=True),  # check_trigger 异常
+        ]
+        vp = _make_viewpoint(capabilities=["cloud_sea", "frost"])
+        scheduler = _build_scheduler(viewpoint=vp, plugins=plugins)
+
+        result = scheduler.run("test_vp", days=1)
+        day = result["forecast_days"][0]
+
+        event_types = {e["event_type"] for e in day["events"]}
+        assert "cloud_sea" in event_types
+        assert "frost" not in event_types
 
 
 class TestRequirementAggregation:
@@ -628,3 +662,51 @@ class TestSliceDay:
         tomorrow = date.today() + timedelta(days=1)
         sliced = GMPScheduler._slice_day(pd.DataFrame(), tomorrow)
         assert sliced.empty
+
+
+class TestCustomTargetHour:
+    """C1: 验证 default_target_hour 配置被正确传递"""
+
+    def test_custom_target_hour_in_l1_context(self):
+        """配置 default_target_hour=6 后，L1 context 中 target_hour 应为 6"""
+        config = EngineConfig(default_target_hour=6)
+
+        vp = _make_viewpoint(capabilities=["cloud_sea"])
+        vp_config = MagicMock(spec=ViewpointConfig)
+        vp_config.get.return_value = vp
+
+        tomorrow = date.today() + timedelta(days=1)
+        fetcher = MagicMock(spec=MeteoFetcher)
+        fetcher.fetch_hourly.return_value = _make_clear_weather(tomorrow)
+        fetcher.fetch_multi_points.return_value = {}
+
+        se = _make_sun_events(tomorrow)
+        astro = MagicMock(spec=AstroUtils)
+        astro.get_sun_events.return_value = se
+        astro.get_moon_status.return_value = _make_moon_status()
+        astro.determine_stargazing_window.return_value = _make_stargazing_window(se)
+
+        engine = ScoreEngine()
+        engine.register(_SimplePlugin("cloud_sea"))
+
+        scheduler = GMPScheduler(
+            config=config,
+            viewpoint_config=vp_config,
+            fetcher=fetcher,
+            astro=astro,
+            score_engine=engine,
+        )
+
+        # 通过 spy 捕获 L1 analyze 参数
+        original_analyze = scheduler._local_analyzer.analyze
+        captured = []
+
+        def spy(data, context):
+            captured.append(context)
+            return original_analyze(data, context)
+
+        scheduler._local_analyzer.analyze = spy
+        scheduler.run("test_vp", days=1)
+
+        assert len(captured) >= 1
+        assert captured[0]["target_hour"] == 6

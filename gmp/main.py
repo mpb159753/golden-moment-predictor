@@ -15,43 +15,36 @@ import json
 import sys
 from pathlib import Path
 
-# 项目根目录 (gmp 包的父目录)
-_PROJECT_ROOT = Path(__file__).resolve().parent
+# gmp 包目录
+_GMP_DIR = Path(__file__).resolve().parent
 
 
 def _run_predict(args: argparse.Namespace) -> None:
     """CLI 预测模式"""
     from gmp.astro.astro_utils import AstroUtils
     from gmp.core.config_loader import EngineConfig, ViewpointConfig
+    from gmp.core.log_config import setup_logging
     from gmp.core.scheduler import GMPScheduler
     from gmp.fetcher.meteo_fetcher import MeteoFetcher
     from gmp.reporter.cli_formatter import CLIFormatter
     from gmp.reporter.forecast_reporter import ForecastReporter
-    from gmp.scorer.cloud_sea import CloudSeaPlugin
-    from gmp.scorer.engine import ScoreEngine
-    from gmp.scorer.frost import FrostPlugin
-    from gmp.scorer.golden_mountain import GoldenMountainPlugin
-    from gmp.scorer.ice_icicle import IceIciclePlugin
-    from gmp.scorer.snow_tree import SnowTreePlugin
-    from gmp.scorer.stargazing import StargazingPlugin
+    from gmp.scorer.engine import create_default_engine
 
     # 加载配置
-    config = EngineConfig.from_yaml(_PROJECT_ROOT / "config" / "engine_config.yaml")
+    config = EngineConfig.from_yaml(_GMP_DIR / "config" / "engine_config.yaml")
+
+    # 初始化日志 (使用配置)
+    setup_logging(level=config.log_level, fmt=config.log_format)
+
     viewpoint_config = ViewpointConfig()
-    viewpoint_config.load(_PROJECT_ROOT / "config" / "viewpoints")
+    viewpoint_config.load(_GMP_DIR / "config" / "viewpoints")
 
     # 初始化依赖
     fetcher = MeteoFetcher(config)
     astro = AstroUtils()
 
-    score_engine = ScoreEngine()
-    score_engine.register(GoldenMountainPlugin("sunrise_golden_mountain"))
-    score_engine.register(GoldenMountainPlugin("sunset_golden_mountain"))
-    score_engine.register(StargazingPlugin(config.stargazing_config))
-    score_engine.register(CloudSeaPlugin())
-    score_engine.register(FrostPlugin())
-    score_engine.register(SnowTreePlugin())
-    score_engine.register(IceIciclePlugin())
+    # 使用工厂函数注册全部 Plugin (C5: 消除重复)
+    score_engine = create_default_engine(config)
 
     scheduler = GMPScheduler(
         config=config,
@@ -96,7 +89,8 @@ def _run_serve(args: argparse.Namespace) -> None:
     print("   按 Ctrl+C 停止")
 
     uvicorn.run(
-        "gmp.api.routes:app",
+        "gmp.api.routes:get_app",
+        factory=True,
         host=args.host,
         port=args.port,
         reload=False,

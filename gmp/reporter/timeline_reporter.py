@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
+from gmp.core.config_loader import EngineConfig
 from gmp.reporter.base import BaseReporter
-
-# 标签映射阈值
-_L1_PRECIP_THRESHOLD = 30    # 降水概率超过此值 → L1 不通过
-_OVERCAST_THRESHOLD = 60     # 云量超过此值 → 阴天
-_RAIN_THRESHOLD = 50         # 降水概率超过此值 → rain tag
 
 
 class TimelineReporter(BaseReporter):
     """生成 /api/v1/timeline/{id} 格式的 JSON 输出"""
+
+    def __init__(self, config: EngineConfig | None = None) -> None:
+        cfg = config or EngineConfig()
+        self._l1_precip_threshold = cfg.reporter_l1_precip_threshold
+        self._overcast_threshold = cfg.reporter_overcast_threshold
+        self._rain_threshold = cfg.reporter_rain_threshold
 
     def generate(self, scheduler_result: dict) -> dict:
         """将 Scheduler 原始结果转换为 Timeline JSON
@@ -54,8 +56,11 @@ class TimelineReporter(BaseReporter):
             hours_data = day.get("hourly_weather", [])
             confidence = day.get("confidence", "")
             events = day.get("events", [])
+            # 天文数据 (可选, 由 Scheduler 传入)
+            sun_events = day.get("sun_events")
 
             hours: list[dict] = []
+            prev_cloud_cover: int | None = None
             for h in range(24):
                 # 查找该小时的天气数据
                 hour_data = self._find_hour_data(hours_data, h)
@@ -67,8 +72,11 @@ class TimelineReporter(BaseReporter):
                 temperature = float(hour_data.get("temperature_2m",
                                     hour_data.get("temperature", 0.0)))
 
-                # L1 通过判定: 降水概率 < 30% 且不是极端天气
-                l1_passed = precip_prob < _L1_PRECIP_THRESHOLD
+                # L1 通过判定 (简化版):
+                # 仅使用降水概率阈值，实际 LocalAnalyzer.analyze() 还综合检查
+                # visibility, weather_code 等多维指标。此处用于 Timeline 展示。
+                # 边界语义: precip_prob >= threshold 时 L1 不通过
+                l1_passed = precip_prob < self._l1_precip_threshold
 
                 tags = self._assign_tags(h, hour_data, {
                     "events": events,
@@ -76,6 +84,8 @@ class TimelineReporter(BaseReporter):
                     "precip_prob": precip_prob,
                     "temperature": temperature,
                     "l1_passed": l1_passed,
+                    "prev_cloud_cover": prev_cloud_cover,
+                    "sun_events": sun_events,
                 })
 
                 hours.append({
@@ -86,6 +96,8 @@ class TimelineReporter(BaseReporter):
                     "temperature": temperature,
                     "tags": tags,
                 })
+
+                prev_cloud_cover = cloud_cover
 
             timeline_days.append({
                 "date": day.get("date", ""),
@@ -126,6 +138,8 @@ class TimelineReporter(BaseReporter):
         events = day_context.get("events", [])
         cloud_cover = day_context.get("cloud_cover", 0)
         precip_prob = day_context.get("precip_prob", 0)
+        prev_cloud = day_context.get("prev_cloud_cover")
+        sun_events = day_context.get("sun_events")
 
         # 分析事件时间窗口
         for ev in events:
@@ -149,13 +163,27 @@ class TimelineReporter(BaseReporter):
                     if "stargazing_secondary" not in tags:
                         tags.append("stargazing_secondary")
 
+        # pre_sunrise 标签: 日出前 1 小时
+        if sun_events is not None:
+            sunrise_hour = _extract_hour(sun_events, "sunrise")
+            if sunrise_hour is not None and hour == sunrise_hour - 1:
+                if "pre_sunrise" not in tags:
+                    tags.append("pre_sunrise")
+
         # 天气标签
-        if precip_prob > _RAIN_THRESHOLD:
+        if precip_prob > self._rain_threshold:
             if "rain" not in tags:
                 tags.append("rain")
-        elif cloud_cover > _OVERCAST_THRESHOLD:
+        elif cloud_cover > self._overcast_threshold:
             if "overcast" not in tags:
                 tags.append("overcast")
+
+        # clearing 标签: 前一小时云量超过阈值，本小时降至阈值以下
+        if (prev_cloud is not None
+                and prev_cloud > self._overcast_threshold
+                and cloud_cover <= self._overcast_threshold):
+            if "clearing" not in tags:
+                tags.append("clearing")
 
         return tags
 
@@ -212,3 +240,35 @@ class TimelineReporter(BaseReporter):
                 return hour >= start_h or hour <= end_h
         except (ValueError, IndexError):
             return False
+
+
+# ======================================================================
+# 模块级辅助函数
+# ======================================================================
+
+def _extract_hour(sun_events: dict | object, key: str) -> int | None:
+    """从 sun_events 中提取小时数 (兼容 dict 和对象)"""
+    if isinstance(sun_events, dict):
+        val = sun_events.get(key)
+    else:
+        val = getattr(sun_events, key, None)
+
+    if val is None:
+        return None
+
+    # datetime-like 对象
+    if hasattr(val, "hour"):
+        return val.hour
+
+    # 字符串 "07:28" 格式
+    if isinstance(val, str) and ":" in val:
+        try:
+            return int(val.split(":")[0])
+        except ValueError:
+            return None
+
+    # 整数
+    if isinstance(val, int):
+        return val
+
+    return None

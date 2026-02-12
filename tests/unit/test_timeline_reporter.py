@@ -221,3 +221,82 @@ class TestTimelineReporter:
         # frost "05:00 - 08:30" → hour 5,6,7,8
         for h in [5, 6, 7, 8]:
             assert "frost_window" in day["hours"][h]["tags"], f"hour {h} 应有 frost_window"
+
+    def test_clearing_tag(self) -> None:
+        """T2 — 天气转晴标签 (前一小时阴天 → 本小时晴)"""
+        # hour=14: cloud=40, hour=13: cloud=80 → 不满足 (13→14 降低但14仍>40)
+        # 需要构造 明确的 cloud 变化
+        data = {
+            "viewpoint": "牛背山",
+            "forecast_days": [{
+                "date": "2026-02-11",
+                "confidence": "High",
+                "hourly_weather": [
+                    {"hour": 0, "cloud_cover_total": 70, "precipitation_probability": 0, "temperature_2m": 0},
+                    {"hour": 1, "cloud_cover_total": 40, "precipitation_probability": 0, "temperature_2m": 0},
+                ],
+                "events": [],
+            }],
+        }
+        result = self.reporter.generate(data)
+        day = result["timeline_days"][0]
+
+        # hour=0: cloud=70 > 60, hour=1: cloud=40 ≤ 60 → clearing
+        assert "clearing" in day["hours"][1]["tags"]
+        # hour=0 没有前一小时数据, 不应有 clearing
+        assert "clearing" not in day["hours"][0]["tags"]
+
+    def test_pre_sunrise_tag(self) -> None:
+        """T2 — 日出前标签 (sun_events.sunrise 所在小时的前1小时)"""
+        from datetime import datetime
+        data = {
+            "viewpoint": "牛背山",
+            "forecast_days": [{
+                "date": "2026-02-11",
+                "confidence": "High",
+                "hourly_weather": [
+                    {"hour": h, "cloud_cover_total": 10, "precipitation_probability": 0, "temperature_2m": 0}
+                    for h in range(24)
+                ],
+                "events": [],
+                "sun_events": {"sunrise": datetime(2026, 2, 11, 7, 28)},
+            }],
+        }
+        result = self.reporter.generate(data)
+        day = result["timeline_days"][0]
+
+        # sunrise hour=7, pre_sunrise → hour=6
+        assert "pre_sunrise" in day["hours"][6]["tags"]
+        # hour=5 不应有 pre_sunrise
+        assert "pre_sunrise" not in day["hours"][5]["tags"]
+
+    def test_sunset_window_tag(self) -> None:
+        """T2 — 日落金山标签映射 (sunset_golden_mountain → sunset_window)"""
+        data = {
+            "viewpoint": "牛背山",
+            "forecast_days": [{
+                "date": "2026-02-11",
+                "confidence": "High",
+                "hourly_weather": [
+                    {"hour": h, "cloud_cover_total": 10, "precipitation_probability": 0, "temperature_2m": 0}
+                    for h in range(24)
+                ],
+                "events": [{
+                    "event_type": "sunset_golden_mountain",
+                    "display_name": "日落金山",
+                    "total_score": 80,
+                    "status": "Recommended",
+                    "time_window": "17:30 - 18:30",
+                    "breakdown": {},
+                }],
+            }],
+        }
+        result = self.reporter.generate(data)
+        day = result["timeline_days"][0]
+
+        # hour 17, 18 在 "17:30 - 18:30" 窗口内
+        assert "sunset_window" in day["hours"][17]["tags"]
+        assert "sunset_window" in day["hours"][18]["tags"]
+        # hour 16 不在窗口内
+        assert "sunset_window" not in day["hours"][16]["tags"]
+

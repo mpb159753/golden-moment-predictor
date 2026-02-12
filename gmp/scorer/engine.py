@@ -5,11 +5,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from gmp.core.models import DataRequirement
 
 if TYPE_CHECKING:
+    from gmp.core.config_loader import EngineConfig
     from gmp.core.models import IScorerPlugin  # Protocol
 
 
@@ -66,4 +67,37 @@ class ScoreEngine:
                 for p in plugins
             ),
         )
+
+
+def create_default_engine(config: Any = None) -> ScoreEngine:
+    """创建并注册所有默认评分 Plugin
+
+    集中管理 Plugin 注册逻辑，供 routes.py 和 main.py 复用。
+
+    Args:
+        config: EngineConfig 实例，用于传递给需要配置的 Plugin (如 Stargazing)
+
+    Returns:
+        ScoreEngine: 包含所有已注册 Plugin 的引擎实例
+    """
+    from gmp.scorer.cloud_sea import CloudSeaPlugin
+    from gmp.scorer.frost import FrostPlugin
+    from gmp.scorer.golden_mountain import GoldenMountainPlugin
+    from gmp.scorer.ice_icicle import IceIciclePlugin
+    from gmp.scorer.snow_tree import SnowTreePlugin
+    from gmp.scorer.stargazing import StargazingPlugin
+
+    engine = ScoreEngine()
+    engine.register(GoldenMountainPlugin("sunrise_golden_mountain"))
+    engine.register(GoldenMountainPlugin("sunset_golden_mountain"))
+
+    stargazing_cfg = getattr(config, "stargazing_config", None)
+    engine.register(StargazingPlugin(stargazing_cfg))
+
+    engine.register(CloudSeaPlugin())
+    engine.register(FrostPlugin())
+    engine.register(SnowTreePlugin())
+    engine.register(IceIciclePlugin())
+
+    return engine
 

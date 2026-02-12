@@ -24,9 +24,8 @@
 
 from __future__ import annotations
 
-import logging
+import structlog
 from datetime import date, datetime, timedelta, timezone
-from typing import Any
 
 import pandas as pd
 
@@ -42,11 +41,10 @@ from gmp.core.models import (
     ScoreResult,
     Viewpoint,
 )
-from gmp.core.pipeline import AnalyzerPipeline
 from gmp.fetcher.meteo_fetcher import MeteoFetcher
 from gmp.scorer.engine import ScoreEngine
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # UTC+8 北京时间
 _CST = timezone(timedelta(hours=8))
@@ -82,7 +80,6 @@ class GMPScheduler:
         self._local_analyzer = LocalAnalyzer(config)
         self._remote_analyzer = RemoteAnalyzer(config)
         self._score_engine = score_engine
-        self._pipeline = AnalyzerPipeline(self._local_analyzer, self._remote_analyzer)
 
         # 统计计数器
         self._api_calls = 0
@@ -141,11 +138,7 @@ class GMPScheduler:
             # 当天本地天气切片
             local_weather_day = self._slice_day(local_weather_all, target_date)
             if local_weather_day.empty:
-                forecast_days.append({
-                    "date": str(target_date),
-                    "confidence": confidence,
-                    "events": [],
-                })
+                forecast_days.append(self._empty_day(target_date, confidence))
                 continue
 
             # 收集活跃 Plugin + 聚合需求
@@ -153,11 +146,7 @@ class GMPScheduler:
                 viewpoint, events, target_date
             )
             if not active_plugins:
-                forecast_days.append({
-                    "date": str(target_date),
-                    "confidence": confidence,
-                    "events": [],
-                })
+                forecast_days.append(self._empty_day(target_date, confidence))
                 continue
 
             requirement = self._score_engine.collect_requirements(active_plugins)
@@ -165,59 +154,38 @@ class GMPScheduler:
             # L1 本地滤网
             l1_context = {
                 "site_altitude": viewpoint.location.altitude,
-                "target_hour": 7,  # 默认日出分析小时
+                "target_hour": self._config.default_target_hour,
                 "viewpoint": viewpoint,
             }
             l1_result = self._local_analyzer.analyze(local_weather_day, l1_context)
 
             if not l1_result.passed:
-                forecast_days.append({
-                    "date": str(target_date),
-                    "confidence": confidence,
-                    "events": [],
-                })
+                forecast_days.append(self._empty_day(target_date, confidence))
                 continue
 
-            # Plugin 触发检查
-            triggered: list[Any] = []
+            # Plugin 触发检查 (C3: 移除 Any 类型标注)
+            triggered: list = []
             for p in active_plugins:
                 try:
                     if p.check_trigger(l1_result.details):
                         triggered.append(p)
                 except Exception:
-                    logger.warning("Plugin %s check_trigger 异常，跳过",
-                                   getattr(p, "event_type", "unknown"), exc_info=True)
+                    logger.warning("plugin_check_trigger_error",
+                                   plugin=getattr(p, "event_type", "unknown"), exc_info=True)
 
             if not triggered:
-                forecast_days.append({
-                    "date": str(target_date),
-                    "confidence": confidence,
-                    "events": [],
-                })
+                forecast_days.append(self._empty_day(target_date, confidence))
                 continue
 
             # 构建 DataContext (按需填充天文+远程数据)
             triggered_requirement = self._score_engine.collect_requirements(triggered)
             ctx = self._build_data_context(
-                viewpoint, target_date, local_weather_day, triggered_requirement
+                viewpoint, target_date, local_weather_day,
+                triggered_requirement, triggered,
             )
 
             # Phase 2: 按需 L2 远程分析
-            need_l2 = (
-                triggered_requirement.needs_l2_target
-                or triggered_requirement.needs_l2_light_path
-            )
-            if need_l2 and ctx.target_weather:
-                l2_context = {
-                    "target_weather": ctx.target_weather or {},
-                    "light_path_weather": ctx.light_path_weather or [],
-                    "target_hour": 7,
-                    "target_weights": {
-                        t.name: t.weight for t in viewpoint.targets
-                    },
-                }
-                l2_result = self._remote_analyzer.analyze(pd.DataFrame(), l2_context)
-                ctx.l2_result = l2_result
+            self._run_l2_analysis(ctx, triggered_requirement, viewpoint)
 
             # Plugin 循环评分 (错误隔离)
             day_events: list[dict] = []
@@ -233,8 +201,8 @@ class GMPScheduler:
                     })
                 except Exception:
                     logger.error(
-                        "Plugin %s 评分异常，跳过",
-                        getattr(p, "event_type", "unknown"),
+                        "plugin_score_error",
+                        plugin=getattr(p, "event_type", "unknown"),
                         exc_info=True,
                     )
 
@@ -312,6 +280,7 @@ class GMPScheduler:
         target_date: date,
         local_weather_day: pd.DataFrame,
         requirement: DataRequirement,
+        triggered_plugins: list | None = None,
     ) -> DataContext:
         """构建共享数据上下文
 
@@ -350,7 +319,7 @@ class GMPScheduler:
                 )
                 ctx.stargazing_window = stargazing_window
             except Exception:
-                logger.warning("天文数据计算异常", exc_info=True)
+                logger.warning("astro_calc_error", exc_info=True)
 
         # 日照金山需要天文数据来确定光路方向，即使 needs_astro 为 False
         # 也需要 sun_events 来处理 target 方向匹配和光路计算
@@ -366,7 +335,7 @@ class GMPScheduler:
                 )
                 ctx.sun_events = sun_events_for_lp
             except Exception:
-                logger.warning("获取光路用日出方位角失败", exc_info=True)
+                logger.warning("light_path_azimuth_error", exc_info=True)
 
         # ---- L2 目标天气 ----
         if requirement.needs_l2_target and viewpoint.targets:
@@ -375,7 +344,7 @@ class GMPScheduler:
                     (t.lat, t.lon) for t in viewpoint.targets
                 ]
                 target_data = self._fetcher.fetch_multi_points(target_coords, days=1)
-                self._api_calls += len(target_data)
+                self._api_calls += len(target_coords)
 
                 target_weather: dict[str, pd.DataFrame] = {}
                 for t in viewpoint.targets:
@@ -384,13 +353,20 @@ class GMPScheduler:
                         target_weather[t.name] = target_data[key]
                 ctx.target_weather = target_weather
             except Exception:
-                logger.warning("目标天气获取失败", exc_info=True)
+                logger.warning("target_weather_fetch_error", exc_info=True)
 
         # ---- L2 光路天气 ----
         if requirement.needs_l2_light_path and sun_events_for_lp is not None:
             try:
-                # 使用日出方位角生成光路检查点
-                azimuth = sun_events_for_lp.sunrise_azimuth
+                # 根据 triggered plugins 的 event_type 选择光路方位角
+                has_sunset = any(
+                    getattr(p, "event_type", "") == "sunset_golden_mountain"
+                    for p in (triggered_plugins or [])
+                )
+                if has_sunset:
+                    azimuth = sun_events_for_lp.sunset_azimuth
+                else:
+                    azimuth = sun_events_for_lp.sunrise_azimuth
                 light_path_points = self._geo.calculate_light_path_points(
                     viewpoint.location.lat,
                     viewpoint.location.lon,
@@ -401,7 +377,7 @@ class GMPScheduler:
 
                 # 坐标去重后批量获取
                 lp_data = self._fetcher.fetch_multi_points(light_path_points, days=1)
-                self._api_calls += len(lp_data)
+                self._api_calls += len(light_path_points)
 
                 # 构建光路天气列表
                 light_path_weather: list[dict] = []
@@ -428,67 +404,65 @@ class GMPScheduler:
                         })
                 ctx.light_path_weather = light_path_weather
             except Exception:
-                logger.warning("光路天气获取失败", exc_info=True)
+                logger.warning("light_path_weather_fetch_error", exc_info=True)
 
         return ctx
+
+    # ------------------------------------------------------------------
+    # L2 远程分析
+    # ------------------------------------------------------------------
+
+    def _run_l2_analysis(
+        self,
+        ctx: DataContext,
+        requirement: DataRequirement,
+        viewpoint: Viewpoint,
+    ) -> None:
+        """按需执行 L2 远程滤网分析并填充到 DataContext
+
+        仅当 requirement 需要 L2 数据且 ctx 中已有 target_weather 时执行。
+        """
+        need_l2 = (
+            requirement.needs_l2_target
+            or requirement.needs_l2_light_path
+        )
+        if not need_l2 or not ctx.target_weather:
+            return
+
+        l2_context = {
+            "target_weather": ctx.target_weather or {},
+            "light_path_weather": ctx.light_path_weather or [],
+            "target_hour": self._config.default_target_hour,
+            "target_weights": {
+                t.name: t.weight for t in viewpoint.targets
+            },
+        }
+        l2_result = self._remote_analyzer.analyze(pd.DataFrame(), l2_context)
+        ctx.l2_result = l2_result
 
     # ------------------------------------------------------------------
     # 辅助方法
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _determine_confidence(days_ahead: int) -> str:
-        """置信度映射: T+1~2=High, T+3~4=Medium, T+5~7=Low"""
-        if days_ahead <= 2:
+    def _empty_day(target_date: date, confidence: str) -> dict:
+        """构造空事件的日预测结果"""
+        return {
+            "date": str(target_date),
+            "confidence": confidence,
+            "events": [],
+        }
+
+    def _determine_confidence(self, days_ahead: int) -> str:
+        """置信度映射 — 从 EngineConfig 读取配置
+
+        默认: T+1~2=High, T+3~4=Medium, T+5~7=Low
+        """
+        if days_ahead in self._config.confidence_high_days:
             return "High"
-        if days_ahead <= 4:
+        if days_ahead in self._config.confidence_medium_days:
             return "Medium"
         return "Low"
-
-    def _match_targets_by_direction(
-        self,
-        viewpoint: Viewpoint,
-        sun_events: Any,
-    ) -> list[dict]:
-        """根据方位角自动匹配 Target 适用事件
-
-        逻辑:
-        1. 计算 viewpoint → target 方位角
-        2. 日出: is_opposite_direction(bearing, sunrise_azimuth) → sunrise 匹配
-        3. 日落: is_opposite_direction(bearing, sunset_azimuth) → sunset 匹配
-        4. 如果 target.applicable_events 不为 None，使用手动指定
-        """
-        results: list[dict] = []
-
-        for target in viewpoint.targets:
-            bearing = self._geo.calculate_bearing(
-                viewpoint.location.lat,
-                viewpoint.location.lon,
-                target.lat,
-                target.lon,
-            )
-
-            if target.applicable_events is not None:
-                matched_events = target.applicable_events
-            else:
-                matched_events = []
-                if sun_events is not None:
-                    if self._geo.is_opposite_direction(
-                        bearing, sun_events.sunrise_azimuth
-                    ):
-                        matched_events.append("sunrise_golden_mountain")
-                    if self._geo.is_opposite_direction(
-                        bearing, sun_events.sunset_azimuth
-                    ):
-                        matched_events.append("sunset_golden_mountain")
-
-            results.append({
-                "target": target,
-                "bearing": bearing,
-                "matched_events": matched_events,
-            })
-
-        return results
 
     @staticmethod
     def _slice_day(

@@ -13,31 +13,26 @@
 
 from __future__ import annotations
 
-import logging
 import time
 from contextlib import asynccontextmanager
-from dataclasses import asdict
 from pathlib import Path
 
+import structlog
 from fastapi import FastAPI, HTTPException, Path as PathParam, Query
 
-from gmp.api.middleware import gmp_exception_handler, service_unavailable_handler
+from gmp.api.middleware import gmp_exception_handler
+from gmp.api.schemas import ViewpointListResponse
 from gmp.core.config_loader import EngineConfig, ViewpointConfig
-from gmp.core.exceptions import GMPError, ViewpointNotFoundError
+from gmp.core.exceptions import GMPError
+from gmp.core.log_config import setup_logging
 from gmp.reporter.forecast_reporter import ForecastReporter
 from gmp.reporter.timeline_reporter import TimelineReporter
-from gmp.scorer.cloud_sea import CloudSeaPlugin
-from gmp.scorer.engine import ScoreEngine
-from gmp.scorer.frost import FrostPlugin
-from gmp.scorer.golden_mountain import GoldenMountainPlugin
-from gmp.scorer.ice_icicle import IceIciclePlugin
-from gmp.scorer.snow_tree import SnowTreePlugin
-from gmp.scorer.stargazing import StargazingPlugin
+from gmp.scorer.engine import ScoreEngine, create_default_engine
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
-# 项目根目录
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# gmp 包目录 (gmp/)
+_GMP_DIR = Path(__file__).resolve().parent.parent
 
 
 def _viewpoint_to_dict(vp) -> dict:
@@ -63,20 +58,6 @@ def _viewpoint_to_dict(vp) -> dict:
     }
 
 
-def _create_score_engine(config: EngineConfig | None = None) -> ScoreEngine:
-    """创建并注册所有评分 Plugin"""
-    engine = ScoreEngine()
-    engine.register(GoldenMountainPlugin("sunrise_golden_mountain"))
-    engine.register(GoldenMountainPlugin("sunset_golden_mountain"))
-    stargazing_cfg = config.stargazing_config if config else None
-    engine.register(StargazingPlugin(stargazing_cfg))
-    engine.register(CloudSeaPlugin())
-    engine.register(FrostPlugin())
-    engine.register(SnowTreePlugin())
-    engine.register(IceIciclePlugin())
-    return engine
-
-
 def create_app(
     config: EngineConfig | None = None,
     viewpoint_config: ViewpointConfig | None = None,
@@ -95,18 +76,21 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         """应用生命周期管理"""
+        # 初始化日志 (使用配置)
+        cfg = app.state.config
+        setup_logging(level=cfg.log_level, fmt=cfg.log_format)
+
         # 如果未注入，则自动初始化
         if app.state.scheduler is None:
             from gmp.astro.astro_utils import AstroUtils
             from gmp.core.scheduler import GMPScheduler
             from gmp.fetcher.meteo_fetcher import MeteoFetcher
 
-            cfg = app.state.config
             vp_cfg = app.state.viewpoint_config
 
             fetcher = MeteoFetcher(cfg)
             astro = AstroUtils()
-            score_engine = _create_score_engine(cfg)
+            score_engine = create_default_engine(cfg)
 
             app.state.scheduler = GMPScheduler(
                 config=cfg,
@@ -116,7 +100,7 @@ def create_app(
                 score_engine=score_engine,
             )
 
-        logger.info("gmp_started", extra={"version": "1.0.0"})
+        logger.info("gmp_started", version="1.0.0")
         yield
         logger.info("gmp_shutdown")
 
@@ -128,11 +112,11 @@ def create_app(
 
     # 注入依赖到 app.state
     app.state.config = config or EngineConfig.from_yaml(
-        _PROJECT_ROOT / "config" / "engine_config.yaml"
+        _GMP_DIR / "config" / "engine_config.yaml"
     )
     if viewpoint_config is None:
         viewpoint_config = ViewpointConfig()
-        viewpoint_config.load(_PROJECT_ROOT / "config" / "viewpoints")
+        viewpoint_config.load(_GMP_DIR / "config" / "viewpoints")
     app.state.viewpoint_config = viewpoint_config
     app.state.scheduler = scheduler
 
@@ -140,20 +124,14 @@ def create_app(
     app.state.forecast_reporter = ForecastReporter()
     app.state.timeline_reporter = TimelineReporter()
 
-    # 注册异常处理
+    # 注册统一异常处理 (C3: 合并为单个 handler)
     app.add_exception_handler(GMPError, gmp_exception_handler)
-
-    # ServiceUnavailableError (统一定义在 exceptions 模块)
-    from gmp.core.exceptions import ServiceUnavailableError
-    app.add_exception_handler(
-        ServiceUnavailableError, service_unavailable_handler
-    )
 
     # ----------------------------------------------------------------
     # 路由
     # ----------------------------------------------------------------
 
-    @app.get("/api/v1/viewpoints")
+    @app.get("/api/v1/viewpoints", response_model=ViewpointListResponse)
     def list_viewpoints(
         page: int = Query(1, ge=1, description="页码"),
         page_size: int = Query(20, ge=1, le=100, description="每页数量"),
@@ -211,12 +189,10 @@ def create_app(
         duration_ms = int((time.monotonic() - start_time) * 1000)
         logger.info(
             "forecast_generated",
-            extra={
-                "viewpoint": viewpoint_id,
-                "days": days,
-                "events_filter": events,
-                "duration_ms": duration_ms,
-            },
+            viewpoint=viewpoint_id,
+            days=days,
+            events_filter=events,
+            duration_ms=duration_ms,
         )
 
         return report
@@ -242,11 +218,9 @@ def create_app(
         duration_ms = int((time.monotonic() - start_time) * 1000)
         logger.info(
             "timeline_generated",
-            extra={
-                "viewpoint": viewpoint_id,
-                "days": days,
-                "duration_ms": duration_ms,
-            },
+            viewpoint=viewpoint_id,
+            days=days,
+            duration_ms=duration_ms,
         )
 
         return report
@@ -254,5 +228,6 @@ def create_app(
     return app
 
 
-# 默认应用实例 (用于 uvicorn 启动)
-app = create_app()
+def get_app() -> FastAPI:
+    """懒加载应用实例 (用于 uvicorn 启动)"""
+    return create_app()

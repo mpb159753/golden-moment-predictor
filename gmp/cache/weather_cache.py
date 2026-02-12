@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-import logging
+import structlog
 from datetime import date, datetime, timedelta
 from typing import Callable
 
@@ -15,7 +15,7 @@ import pandas as pd
 from gmp.cache.memory_cache import MemoryCache
 from gmp.cache.repository import CacheRepository
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class WeatherCache:
@@ -68,7 +68,7 @@ class WeatherCache:
         # 第一级: 内存缓存
         mem_data = self._memory.get(cache_key)
         if mem_data is not None:
-            logger.debug("内存缓存命中: %s", cache_key)
+            logger.debug("memory_cache_hit", key=cache_key)
             return mem_data
 
         # 第二级: SQLite
@@ -80,13 +80,13 @@ class WeatherCache:
                 fetched_at = datetime.fromisoformat(fetched_at_str)
                 age = datetime.now() - fetched_at
                 if not ignore_ttl and age > self._ttl_db:
-                    logger.debug("SQLite 缓存过期: %s (age=%s)", cache_key, age)
+                    logger.debug("sqlite_cache_expired", key=cache_key, age=str(age))
                     return None
 
             df = pd.DataFrame(rows)
             # 回填内存缓存
             self._memory.set(cache_key, df)
-            logger.debug("SQLite 缓存命中: %s", cache_key)
+            logger.debug("sqlite_cache_hit", key=cache_key)
             return df
 
         return None
@@ -116,7 +116,7 @@ class WeatherCache:
         rows = [row.to_dict() for _, row in data.iterrows()]
         self._repo.upsert_batch(lat, lon, target_date, rows)
 
-        logger.debug("双写完成: %s (%d 条)", cache_key, len(data))
+        logger.debug("cache_double_write", key=cache_key, count=len(data))
 
     def get_or_fetch(
         self,
@@ -142,8 +142,8 @@ class WeatherCache:
             return cached
 
         # 缓存 miss，调用 fetcher
-        logger.info("缓存未命中，调用 fetcher: lat=%.2f, lon=%.2f, date=%s",
-                     lat, lon, target_date)
+        logger.info("cache_miss_fetch", lat=round(lat, 2), lon=round(lon, 2),
+                     target_date=str(target_date))
         data = fetcher_func()
 
         # 双写缓存

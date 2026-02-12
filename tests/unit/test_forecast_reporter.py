@@ -78,6 +78,30 @@ def _make_clear_day_result() -> dict:
                             "cloud": {"score": 7, "max": 10, "detail": "低云75%"},
                         },
                     },
+                    {
+                        "event_type": "snow_tree",
+                        "display_name": "树挂积雪",
+                        "total_score": 72,
+                        "status": "Possible",
+                        "time_window": "06:00 - 14:00",
+                        "breakdown": {
+                            "snow_signal": {"score": 40, "max": 60, "detail": "近期降雪15cm"},
+                            "clear_weather": {"score": 18, "max": 20, "detail": "晴天稳定"},
+                            "stability": {"score": 14, "max": 20, "detail": "风递4.2km/h"},
+                        },
+                    },
+                    {
+                        "event_type": "ice_icicle",
+                        "display_name": "冰挂",
+                        "total_score": 60,
+                        "status": "Possible",
+                        "time_window": "06:00 - 10:00",
+                        "breakdown": {
+                            "water_input": {"score": 28, "max": 50, "detail": "降水转化尚可"},
+                            "freeze_strength": {"score": 20, "max": 30, "detail": "-3.8°C 动力充足"},
+                            "view_quality": {"score": 12, "max": 20, "detail": "能见度良好"},
+                        },
+                    },
                 ],
             },
         ],
@@ -111,7 +135,7 @@ class TestForecastReporter:
         self.reporter = ForecastReporter()
 
     def test_clear_day_output(self) -> None:
-        """晴天输出包含 4 个事件"""
+        """晴天输出包含 6 个事件"""
         result = self.reporter.generate(_make_clear_day_result())
 
         assert "forecast_days" in result
@@ -120,7 +144,7 @@ class TestForecastReporter:
         day = result["forecast_days"][0]
         assert day["date"] == "2026-02-11"
         assert day["confidence"] == "High"
-        assert len(day["events"]) == 4
+        assert len(day["events"]) == 6
 
         # 验证事件类型
         event_types = [e["type"] for e in day["events"]]
@@ -128,6 +152,8 @@ class TestForecastReporter:
         assert "stargazing" in event_types
         assert "cloud_sea" in event_types
         assert "frost" in event_types
+        assert "snow_tree" in event_types
+        assert "ice_icicle" in event_types
 
     def test_rainy_day_output(self) -> None:
         """雨天 events=[]"""
@@ -203,3 +229,70 @@ class TestForecastReporter:
         assert len(result["forecast_days"]) == 2
         assert result["forecast_days"][1]["events"] == []
         assert "不推荐" in result["forecast_days"][1]["summary"]
+
+    def test_conditions_structured_golden_mountain(self) -> None:
+        """C1 修复 — 日照金山 conditions 含 local/targets/light_path"""
+        result = self.reporter.generate(_make_clear_day_result())
+        day = result["forecast_days"][0]
+        golden = [e for e in day["events"] if e["type"] == "sunrise_golden_mountain"][0]
+
+        conditions = golden["conditions"]
+        assert "local" in conditions
+        assert "targets" in conditions
+        assert "light_path" in conditions
+
+    def test_conditions_structured_stargazing(self) -> None:
+        """C1 修复 — 观星 conditions 含 sky/moon/wind"""
+        result = self.reporter.generate(_make_clear_day_result())
+        day = result["forecast_days"][0]
+        star = [e for e in day["events"] if e["type"] == "stargazing"][0]
+
+        conditions = star["conditions"]
+        assert "sky" in conditions
+        assert "moon" in conditions
+        assert "wind" in conditions
+
+    def test_conditions_structured_cloud_sea(self) -> None:
+        """C1 修复 — 云海 conditions 含 gap/low_cloud/wind"""
+        result = self.reporter.generate(_make_clear_day_result())
+        day = result["forecast_days"][0]
+        cs = [e for e in day["events"] if e["type"] == "cloud_sea"][0]
+
+        conditions = cs["conditions"]
+        assert "gap" in conditions
+        assert "low_cloud" in conditions
+        assert "wind" in conditions
+
+    def test_conditions_structured_frost(self) -> None:
+        """C1 修复 — 雾凇 conditions 含 temperature/visibility/wind/low_cloud"""
+        result = self.reporter.generate(_make_clear_day_result())
+        day = result["forecast_days"][0]
+        frost = [e for e in day["events"] if e["type"] == "frost"][0]
+
+        conditions = frost["conditions"]
+        assert "temperature" in conditions
+        assert "visibility" in conditions
+        assert "wind" in conditions
+        assert "low_cloud" in conditions
+
+    def test_conditions_structured_snow_tree(self) -> None:
+        """T1 修复 — 树挂积雪 conditions 含 snow/temperature/wind"""
+        result = self.reporter.generate(_make_clear_day_result())
+        day = result["forecast_days"][0]
+        st = [e for e in day["events"] if e["type"] == "snow_tree"][0]
+
+        conditions = st["conditions"]
+        assert "snow" in conditions
+        assert "temperature" in conditions
+        assert "wind" in conditions
+
+    def test_conditions_structured_ice_icicle(self) -> None:
+        """T1 修复 — 冰挂 conditions 含 water/freeze/view"""
+        result = self.reporter.generate(_make_clear_day_result())
+        day = result["forecast_days"][0]
+        ic = [e for e in day["events"] if e["type"] == "ice_icicle"][0]
+
+        conditions = ic["conditions"]
+        assert "water" in conditions
+        assert "freeze" in conditions
+        assert "view" in conditions

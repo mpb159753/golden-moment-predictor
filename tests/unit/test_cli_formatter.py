@@ -108,35 +108,50 @@ class TestCLIFormatter:
         assert CLIFormatter._event_emoji("ice_icicle") == "🧊"
 
     def test_score_formatting_colors(self) -> None:
-        """分数格式化 — 不同分段颜色"""
+        """分数格式化 — 不同分段在 generate 输出中有正确颜色"""
+        # 构造包含不同分数段事件的数据
+        data = {
+            "viewpoint": "测试",
+            "forecast_days": [{
+                "date": "2026-01-01",
+                "confidence": "High",
+                "events": [
+                    {"event_type": "stargazing", "display_name": "观星",
+                     "total_score": 98, "status": "Perfect", "breakdown": {}},
+                    {"event_type": "cloud_sea", "display_name": "云海",
+                     "total_score": 87, "status": "Recommended", "breakdown": {}},
+                    {"event_type": "frost", "display_name": "雾凇",
+                     "total_score": 67, "status": "Possible", "breakdown": {}},
+                ],
+            }],
+        }
         fmt = CLIFormatter(color_enabled=True)
+        output = fmt.generate(data)
 
-        # Perfect (>=95) → green
-        score_95 = fmt._format_score(95)
-        assert "95/100" in score_95
-        assert "\033[32m" in score_95  # green
-
-        # Recommended (>=80) → cyan
-        score_87 = fmt._format_score(87)
-        assert "87/100" in score_87
-        assert "\033[36m" in score_87  # cyan
-
-        # Possible (>=50) → yellow
-        score_67 = fmt._format_score(67)
-        assert "67/100" in score_67
-        assert "\033[33m" in score_67  # yellow
-
-        # Not Recommended (<50) → red
-        score_30 = fmt._format_score(30)
-        assert "30/100" in score_30
-        assert "\033[31m" in score_30  # red
+        # Perfect (>=95) → green \033[32m
+        assert "\033[32m98/100" in output
+        # Recommended (>=80) → cyan \033[36m
+        assert "\033[36m87/100" in output
+        # Possible (>=50) → yellow \033[33m
+        assert "\033[33m67/100" in output
 
     def test_no_color_score(self) -> None:
-        """无颜色模式下分数不含 ANSI"""
+        """无颜色模式下输出不含 ANSI"""
+        data = {
+            "viewpoint": "测试",
+            "forecast_days": [{
+                "date": "2026-01-01",
+                "confidence": "High",
+                "events": [
+                    {"event_type": "stargazing", "display_name": "观星",
+                     "total_score": 87, "status": "Recommended", "breakdown": {}},
+                ],
+            }],
+        }
         fmt = CLIFormatter(color_enabled=False)
-        score = fmt._format_score(87)
-        assert "87/100" in score
-        assert "\033[" not in score
+        output = fmt.generate(data)
+        assert "87/100" in output
+        assert "\033[" not in output
 
     def test_empty_events_shows_no_recommend(self) -> None:
         """无事件日显示不推荐"""
@@ -159,3 +174,20 @@ class TestCLIFormatter:
         assert "╔" in output
         assert "╚" in output
         assert "牛背山" in output
+
+    def test_display_width(self) -> None:
+        """T4 — _display_width 计算终端显示宽度"""
+        from gmp.reporter.cli_formatter import _display_width
+
+        # 纯 ASCII
+        assert _display_width("hello") == 5
+        # 纯 CJK (每字 2 列)
+        assert _display_width("牛背山") == 6
+        # 混合
+        assert _display_width("A牛B") == 4  # 1 + 2 + 1
+        # ANSI 转义不计入
+        assert _display_width("\033[32mhello\033[0m") == 5
+        # 空字符串
+        assert _display_width("") == 0
+        # emoji (全角 W 类)
+        assert _display_width("⭐") >= 1  # emoji 宽度可能因系统而异

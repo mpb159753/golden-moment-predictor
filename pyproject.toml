@@ -12,6 +12,7 @@ dependencies = [
     "pandas>=2.0",
     "httpx>=0.27",
     "numpy>=1.26",
+    "structlog>=23.0",
 ]
 
 [tool.pytest.ini_options]

@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-import logging
+import structlog
 import time
 import warnings
 from datetime import date, timedelta
@@ -23,7 +23,7 @@ from gmp.core.exceptions import (
 )
 from gmp.fetcher.base import BaseFetcher
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # 默认超时配置 (来自设计文档 §8.3)
 DEFAULT_TIMEOUT_CONFIG = {
@@ -120,7 +120,7 @@ class MeteoFetcher(BaseFetcher):
                     )
             return data
         except (httpx.TimeoutException, httpx.HTTPError) as e:
-            logger.warning("API 调用失败: %s", e)
+            logger.warning("api_call_failed", error=str(e))
             return self._handle_degradation(lat, lon, today, e)
 
     def fetch_multi_points(
@@ -182,7 +182,7 @@ class MeteoFetcher(BaseFetcher):
                 last_error = e
                 if attempt < retries:
                     delay = self._timeout_config.get("retry_delay", 1)
-                    logger.info("重试第 %d 次 (delay=%ds)", attempt + 1, delay)
+                    logger.info("api_retry", attempt=attempt + 1, delay=delay)
                     time.sleep(delay)
 
         raise last_error  # type: ignore[misc]
@@ -237,7 +237,7 @@ class MeteoFetcher(BaseFetcher):
                     DataDegradedWarning,
                     stacklevel=2,
                 )
-                logger.warning("返回降级数据: lat=%.2f, lon=%.2f", lat, lon)
+                logger.warning("degraded_data_returned", lat=round(lat, 2), lon=round(lon, 2))
                 return degraded_data
 
         raise ServiceUnavailableError(

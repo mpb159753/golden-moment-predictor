@@ -9,7 +9,10 @@
 
 from __future__ import annotations
 
+import unicodedata
+
 from gmp.reporter.base import BaseReporter
+from gmp.scorer.plugin import score_to_status  # 复用评分分段逻辑
 
 # ANSI 颜色码
 _COLORS = {
@@ -24,6 +27,7 @@ _COLORS = {
     "white":   "\033[37m",
     "dim":     "\033[2m",
 }
+
 
 
 class CLIFormatter(BaseReporter):
@@ -59,9 +63,15 @@ class CLIFormatter(BaseReporter):
 
         # 标题框
         title = f"🏔️  {viewpoint} · {days_count}日景观预测"
-        box_width = max(38, len(title) + 6)
+        box_width = max(38, _display_width(title) + 6)
         lines.append(self._colorize(f"╔{'═' * box_width}╗", "cyan"))
-        lines.append(self._colorize(f"║  {title:^{box_width - 4}}  ║", "cyan"))
+        # 使用显示宽度居中
+        pad = box_width - 4 - _display_width(title)
+        left_pad = pad // 2
+        right_pad = pad - left_pad
+        lines.append(self._colorize(
+            f"║  {' ' * left_pad}{title}{' ' * right_pad}  ║", "cyan"
+        ))
         lines.append(self._colorize(f"╚{'═' * box_width}╝", "cyan"))
         lines.append("")
 
@@ -99,8 +109,11 @@ class CLIFormatter(BaseReporter):
                 status_icon = self._status_emoji(status)
                 score_str = self._format_score(score)
 
+                # CJK 对齐: 目标显示宽度 8 列
+                name_width = _display_width(display_name)
+                pad = max(0, 8 - name_width)
                 lines.append(
-                    f"   {emoji} {display_name:<8} ⭐ {score_str}"
+                    f"   {emoji} {display_name}{' ' * pad} ⭐ {score_str}"
                     f"  {status_icon} {status}"
                 )
 
@@ -128,15 +141,20 @@ class CLIFormatter(BaseReporter):
     # ------------------------------------------------------------------
 
     def _format_score(self, score: int) -> str:
-        """分数格式化 + 颜色"""
+        """分数格式化 + 颜色
+
+        颜色分段与 score_to_status (plugin.py) 保持一致:
+        >=95 green, >=80 cyan, >=50 yellow, <50 red
+        """
         text = f"{score}/100"
-        if score >= 95:
-            return self._colorize(text, "green")
-        if score >= 80:
-            return self._colorize(text, "cyan")
-        if score >= 50:
-            return self._colorize(text, "yellow")
-        return self._colorize(text, "red")
+        status = score_to_status(score)
+        color_map = {
+            "Perfect": "green",
+            "Recommended": "cyan",
+            "Possible": "yellow",
+            "Not Recommended": "red",
+        }
+        return self._colorize(text, color_map.get(status, "white"))
 
     def _colorize(self, text: str, level: str) -> str:
         """ANSI 颜色包装
@@ -179,3 +197,28 @@ class CLIFormatter(BaseReporter):
             "snow_tree": "🌲",
             "ice_icicle": "🧊",
         }.get(event_type, "🔮")
+
+
+# ======================================================================
+# 模块级辅助函数
+# ======================================================================
+
+def _display_width(text: str) -> int:
+    """计算字符串在终端中的实际显示宽度
+
+    CJK 字符和全角符号占 2 列宽度，其余占 1 列。
+    ANSI 转义序列不计入宽度。
+    """
+    width = 0
+    in_escape = False
+    for ch in text:
+        if ch == "\033":
+            in_escape = True
+            continue
+        if in_escape:
+            if ch == "m":
+                in_escape = False
+            continue
+        eaw = unicodedata.east_asian_width(ch)
+        width += 2 if eaw in ("W", "F") else 1
+    return width

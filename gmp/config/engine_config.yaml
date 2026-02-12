@@ -88,6 +88,16 @@ analyzer_scoring:
     target_primary_blocked_bonus: 5
     target_secondary_max: 15
 
+# Reporter 输出层配置
+reporter:
+  l1_precip_threshold: 30    # 降水概率超过此值 → L1 不通过
+  overcast_threshold: 60     # 云量超过此值 → overcast 标签
+  rain_threshold: 50         # 降水概率超过此值 → rain 标签
+
+# 调度器配置
+scheduler:
+  default_target_hour: 7    # 默认分析小时 (日出分析)
+
 # 置信度映射
 confidence:
   high: [1, 2]
@@ -102,6 +112,11 @@ summary:
 pagination:
   default_page_size: 20
   max_page_size: 100
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "console"    # console / json
 
 # 并发限制
 concurrency:

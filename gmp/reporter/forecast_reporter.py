@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from gmp.reporter.base import BaseReporter
 from gmp.reporter.summary_generator import SummaryGenerator
@@ -69,12 +69,13 @@ class ForecastReporter(BaseReporter):
                 "events": events,
             })
 
+        now_cst = datetime.now(_CST)
         return {
-            "report_date": str(date.today()),
+            "report_date": str(now_cst.date()),
             "viewpoint": viewpoint_name,
             "forecast_days": forecast_days,
             "meta": {
-                "generated_at": datetime.now(_CST).isoformat(),
+                "generated_at": now_cst.isoformat(),
                 "cache_stats": {
                     "api_calls": meta.get("api_calls", 0),
                     "cache_hits": meta.get("cache_hits", 0),
@@ -115,13 +116,13 @@ class ForecastReporter(BaseReporter):
         return events
 
     # ------------------------------------------------------------------
-    # 条件详情格式化
+    # 条件详情格式化 (按事件类型结构化, 与 Stage 6a 对齐)
     # ------------------------------------------------------------------
 
     def _format_conditions(self, event_type: str, context: dict) -> dict:
-        """根据事件类型生成条件详情
+        """根据事件类型生成结构化条件详情
 
-        不同事件类型的 conditions 结构不同:
+        不同事件类型的 conditions 结构不同 (参见 Stage 6a):
         - sunrise_golden_mountain/sunset_golden_mountain: local + targets + light_path
         - stargazing: sky + moon + wind
         - cloud_sea: gap + low_cloud + wind
@@ -131,12 +132,20 @@ class ForecastReporter(BaseReporter):
         """
         breakdown = context.get("breakdown", {})
 
-        # 从 breakdown 中提取可用信息构建条件
+        formatter = _CONDITIONS_FORMATTERS.get(event_type)
+        if formatter is not None:
+            return formatter(breakdown)
+
+        # 回退: 从 breakdown 提取 detail 字段生成通用结构
+        return self._generic_conditions(breakdown)
+
+    @staticmethod
+    def _generic_conditions(breakdown: dict) -> dict:
+        """从 breakdown 的 detail 字段生成通用条件"""
         conditions: dict = {}
         for dim, detail in breakdown.items():
             if isinstance(detail, dict) and "detail" in detail:
                 conditions[dim] = detail["detail"]
-
         return conditions
 
     # ------------------------------------------------------------------
@@ -159,3 +168,85 @@ class ForecastReporter(BaseReporter):
             else:
                 formatted[key] = {"score": val, "max": 0}
         return formatted
+
+
+# ======================================================================
+# 按事件类型的 conditions 格式化函数 (模块级, 保持类体简洁)
+# ======================================================================
+
+def _golden_mountain_conditions(breakdown: dict) -> dict:
+    """日照金山 / 日落金山 — conditions: local + targets + light_path"""
+    local_detail = _extract_detail(breakdown, "local_clear")
+    lp_detail = _extract_detail(breakdown, "light_path")
+    target_detail = _extract_detail(breakdown, "target_visible")
+    return {
+        "local": local_detail,
+        "light_path": lp_detail,
+        "targets": target_detail,
+    }
+
+
+def _stargazing_conditions(breakdown: dict) -> dict:
+    """观星 — conditions: sky + moon + wind"""
+    return {
+        "sky": _extract_detail(breakdown, "base"),
+        "moon": _extract_detail(breakdown, "cloud"),
+        "wind": _extract_detail(breakdown, "wind"),
+    }
+
+
+def _cloud_sea_conditions(breakdown: dict) -> dict:
+    """云海 — conditions: gap + low_cloud + wind"""
+    return {
+        "gap": _extract_detail(breakdown, "gap"),
+        "low_cloud": _extract_detail(breakdown, "density"),
+        "wind": _extract_detail(breakdown, "wind"),
+    }
+
+
+def _frost_conditions(breakdown: dict) -> dict:
+    """雾凇 — conditions: temperature + visibility + wind + low_cloud"""
+    return {
+        "temperature": _extract_detail(breakdown, "temperature"),
+        "visibility": _extract_detail(breakdown, "moisture"),
+        "wind": _extract_detail(breakdown, "wind"),
+        "low_cloud": _extract_detail(breakdown, "cloud"),
+    }
+
+
+def _snow_tree_conditions(breakdown: dict) -> dict:
+    """树挂积雪 — conditions: snow + temperature + wind"""
+    return {
+        "snow": _extract_detail(breakdown, "snow_signal"),
+        "temperature": _extract_detail(breakdown, "clear_weather"),
+        "wind": _extract_detail(breakdown, "stability"),
+    }
+
+
+def _ice_icicle_conditions(breakdown: dict) -> dict:
+    """冰挂 — conditions: water + freeze + view"""
+    return {
+        "water": _extract_detail(breakdown, "water_input"),
+        "freeze": _extract_detail(breakdown, "freeze_strength"),
+        "view": _extract_detail(breakdown, "view_quality"),
+    }
+
+
+def _extract_detail(breakdown: dict, key: str) -> str:
+    """从 breakdown 维度中提取 detail 文本"""
+    dim = breakdown.get(key, {})
+    if isinstance(dim, dict):
+        return dim.get("detail", "")
+    return ""
+
+
+# 事件类型 → conditions 格式化函数映射
+_CONDITIONS_FORMATTERS: dict = {
+    "sunrise_golden_mountain": _golden_mountain_conditions,
+    "sunset_golden_mountain": _golden_mountain_conditions,
+    "stargazing": _stargazing_conditions,
+    "cloud_sea": _cloud_sea_conditions,
+    "frost": _frost_conditions,
+    "snow_tree": _snow_tree_conditions,
+    "ice_icicle": _ice_icicle_conditions,
+}

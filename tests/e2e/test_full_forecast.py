@@ -11,171 +11,20 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
-import pandas as pd
-import pytest
 from fastapi.testclient import TestClient
 
 from gmp.api.routes import create_app
 from gmp.core.config_loader import EngineConfig, ViewpointConfig
-from gmp.core.models import (
-    DataRequirement,
-    Location,
-    MoonStatus,
-    ScoreResult,
-    StargazingWindow,
-    SunEvents,
-    Target,
-    Viewpoint,
-)
-from gmp.core.scheduler import GMPScheduler
 from gmp.reporter.cli_formatter import CLIFormatter
 from gmp.reporter.forecast_reporter import ForecastReporter
 from gmp.reporter.timeline_reporter import TimelineReporter
-from gmp.scorer.engine import ScoreEngine
 
-_CST = timezone(timedelta(hours=8))
-
-
-# ======================================================================
-# Fixtures
-# ======================================================================
-
-
-def _make_viewpoint() -> Viewpoint:
-    return Viewpoint(
-        id="niubei_gongga",
-        name="牛背山",
-        location=Location(lat=29.75, lon=102.35, altitude=3660),
-        capabilities=["cloud_sea", "frost", "snow_tree", "ice_icicle"],
-        targets=[
-            Target(
-                name="贡嘎山", lat=29.58, lon=101.88,
-                altitude=7556, weight="primary",
-                applicable_events=None,
-            ),
-        ],
-    )
-
-
-class _SimplePlugin:
-    """E2E 用简化 Plugin"""
-
-    def __init__(self, event_type: str, display_name: str = "",
-                 score_value: int = 80):
-        self.event_type = event_type
-        self.display_name = display_name or event_type
-        self.data_requirement = DataRequirement()
-        self._score_value = score_value
-
-    def check_trigger(self, l1_data: dict) -> bool:
-        return True
-
-    def score(self, context) -> ScoreResult:
-        return ScoreResult(
-            total_score=self._score_value,
-            status="Recommended" if self._score_value >= 80 else "Possible",
-            breakdown={
-                "main": {"score": self._score_value, "max": 100,
-                         "detail": "测试维度"},
-            },
-        )
-
-
-def _make_clear_weather(target_date: date, hours: int = 24) -> pd.DataFrame:
-    rows = []
-    for h in range(hours):
-        rows.append({
-            "forecast_date": str(target_date),
-            "forecast_hour": h,
-            "temperature_2m": -2.0 + h * 0.5,
-            "cloud_cover_total": 8,
-            "cloud_cover_low": 60,
-            "cloud_cover_mid": 5,
-            "cloud_cover_medium": 5,
-            "cloud_cover_high": 3,
-            "precipitation_probability": 0,
-            "visibility": 35000,
-            "wind_speed_10m": 5.0,
-            "weather_code": 0,
-            "snowfall": 0,
-            "rain": 0,
-            "showers": 0,
-        })
-    return pd.DataFrame(rows)
-
-
-def _make_sun_events(target_date: date) -> SunEvents:
-    d = target_date
-    return SunEvents(
-        sunrise=datetime(d.year, d.month, d.day, 7, 15, tzinfo=_CST),
-        sunset=datetime(d.year, d.month, d.day, 18, 30, tzinfo=_CST),
-        sunrise_azimuth=108.5,
-        sunset_azimuth=251.5,
-        astronomical_dawn=datetime(d.year, d.month, d.day, 5, 40, tzinfo=_CST),
-        astronomical_dusk=datetime(d.year, d.month, d.day, 20, 5, tzinfo=_CST),
-    )
-
-
-def _build_scheduler(
-    viewpoint: Viewpoint | None = None,
-    plugins: list | None = None,
-) -> GMPScheduler:
-    """构建完整 mock Scheduler"""
-    from gmp.astro.astro_utils import AstroUtils
-    from gmp.fetcher.meteo_fetcher import MeteoFetcher
-
-    config = EngineConfig()
-    vp = viewpoint or _make_viewpoint()
-
-    vp_config = MagicMock(spec=ViewpointConfig)
-    vp_config.get.return_value = vp
-    vp_config.list_all.return_value = {
-        "viewpoints": [vp],
-        "pagination": {
-            "page": 1,
-            "page_size": 20,
-            "total": 1,
-            "total_pages": 1,
-        },
-    }
-
-    fetcher = MagicMock(spec=MeteoFetcher)
-    frames = []
-    for d in range(7):
-        target_d = date.today() + timedelta(days=d + 1)
-        frames.append(_make_clear_weather(target_d))
-    fetcher.fetch_hourly.return_value = pd.concat(frames, ignore_index=True)
-    fetcher.fetch_multi_points.return_value = {}
-
-    astro = MagicMock(spec=AstroUtils)
-    se = _make_sun_events(date.today() + timedelta(days=1))
-    astro.get_sun_events.return_value = se
-    astro.get_moon_status.return_value = MoonStatus(phase=15, elevation=-10.0)
-    astro.determine_stargazing_window.return_value = StargazingWindow(
-        good_start=se.astronomical_dusk,
-        good_end=se.astronomical_dawn,
-        quality="good",
-    )
-
-    engine = ScoreEngine()
-    if plugins is None:
-        plugins = [
-            _SimplePlugin("cloud_sea", "云海", 85),
-            _SimplePlugin("frost", "雾凇", 70),
-        ]
-    for p in plugins:
-        engine.register(p)
-
-    return GMPScheduler(
-        config=config,
-        viewpoint_config=vp_config,
-        fetcher=fetcher,
-        astro=astro,
-        score_engine=engine,
-    )
+from tests.conftest import (
+    build_mock_scheduler,
+    make_viewpoint,
+)
 
 
 # ======================================================================
@@ -188,7 +37,7 @@ class TestFullForecast:
 
     def test_full_7day_forecast(self):
         """Scheduler → ForecastReporter → JSON 输出完整性"""
-        scheduler = _build_scheduler()
+        scheduler = build_mock_scheduler()
         result = scheduler.run("niubei_gongga", days=7)
 
         # Scheduler 输出结构
@@ -217,7 +66,7 @@ class TestFullForecast:
 
     def test_full_forecast_events_content(self):
         """验证事件内容结构"""
-        scheduler = _build_scheduler()
+        scheduler = build_mock_scheduler()
         result = scheduler.run("niubei_gongga", days=1)
 
         reporter = ForecastReporter()
@@ -238,7 +87,7 @@ class TestCLIPredict:
 
     def test_cli_predict_output(self):
         """CLI 模式输出不为空"""
-        scheduler = _build_scheduler()
+        scheduler = build_mock_scheduler()
         result = scheduler.run("niubei_gongga", days=3)
 
         formatter = CLIFormatter(color_enabled=False)
@@ -249,7 +98,7 @@ class TestCLIPredict:
 
     def test_cli_no_color_output(self):
         """--no-color 模式无 ANSI 转义码"""
-        scheduler = _build_scheduler()
+        scheduler = build_mock_scheduler()
         result = scheduler.run("niubei_gongga", days=1)
 
         formatter = CLIFormatter(color_enabled=False)
@@ -260,7 +109,7 @@ class TestCLIPredict:
 
     def test_cli_color_output(self):
         """颜色模式应包含 ANSI 转义码"""
-        scheduler = _build_scheduler()
+        scheduler = build_mock_scheduler()
         result = scheduler.run("niubei_gongga", days=1)
 
         formatter = CLIFormatter(color_enabled=True)
@@ -275,7 +124,7 @@ class TestForecastTimelineConsistency:
 
     def test_forecast_timeline_consistency(self):
         """同一 Scheduler 产出 → 两个 Reporter 输出天数一致"""
-        scheduler = _build_scheduler()
+        scheduler = build_mock_scheduler()
         result = scheduler.run("niubei_gongga", days=7)
 
         forecast_reporter = ForecastReporter()
@@ -295,7 +144,7 @@ class TestForecastTimelineConsistency:
 
     def test_timeline_hours_structure(self):
         """Timeline 每天应有 24 小时"""
-        scheduler = _build_scheduler()
+        scheduler = build_mock_scheduler()
         result = scheduler.run("niubei_gongga", days=3)
 
         reporter = TimelineReporter()
@@ -312,8 +161,8 @@ class TestAPIE2E:
 
     def test_api_full_forecast_e2e(self):
         """API → Scheduler → Reporter 完整管线"""
-        scheduler = _build_scheduler()
-        vp = _make_viewpoint()
+        scheduler = build_mock_scheduler()
+        vp = make_viewpoint()
 
         vp_config = MagicMock(spec=ViewpointConfig)
         vp_config.get.return_value = vp
