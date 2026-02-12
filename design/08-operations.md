@@ -1,13 +1,13 @@
-# 8. 错误处理、日志与并发
+# 8. 错误处理、日志与运维
 
 ## 8.1 错误分级与处理
 
 | 级别 | 场景 | 处理策略 | 用户影响 |
 |------|------|---------|---------|
 | 🟢 L0 透明恢复 | 内存缓存过期 | 自动重新获取，用户无感知 | 无 |
-| 🟡 L1 降级响应 | API 超时但有旧缓存 | 使用 stale 缓存，标记 `Degraded` | 响应头 `X-Data-Freshness: stale` |
+| 🟡 L1 降级响应 | API 超时但有旧缓存 | 使用 stale 缓存，标记 `Degraded` | confidence 标记为 `Degraded` |
 | 🟠 L2 部分失败 | 目标天气获取失败 | 跳过该目标评分，其他正常 | 事件标记 `partial_data` |
-| 🔴 L3 服务不可用 | 所有 API 失败且无缓存 | 返回 503 错误 | 服务暂时不可用 |
+| 🔴 L3 服务不可用 | 所有 API 失败且无缓存 | 返回错误信息并退出 | CLI 输出错误提示 |
 
 ---
 
@@ -54,11 +54,20 @@ TIMEOUT_CONFIG = {
         "retries": 2,
         "retry_delay": 1,
     },
+    "open_meteo_archive_api": {
+        "connect_timeout": 5,
+        "read_timeout": 30,       # 历史数据查询可能更慢
+        "retries": 2,
+        "retry_delay": 2,
+    },
     "ephem_calculation": {
         "max_duration": 0.5,
     },
     "total_request": {
         "max_duration": 30,
+    },
+    "backtest_request": {
+        "max_duration": 60,       # 回测允许更长超时
     }
 }
 ```
@@ -121,59 +130,45 @@ logger.warning("degraded_response",
 
 ---
 
-## 8.7 并发策略
+## 8.7 定时任务配置
 
-```python
-import asyncio
-from asyncio import Semaphore
+GMP 采用预计算模式，通过 cron 定时运行批量生成命令：
 
-class ConcurrencyControl:
-    def __init__(self, config: EngineConfig):
-        self.api_semaphore = Semaphore(5)
-        self.batch_semaphore = Semaphore(3)
-    
-    async def fetch_with_limit(self, fetcher, lat, lon, days):
-        async with self.api_semaphore:
-            return await fetcher.fetch_hourly(lat, lon, days)
-    
-    async def run_batch(self, viewpoint_ids: list):
-        tasks = []
-        for vid in viewpoint_ids:
-            async with self.batch_semaphore:
-                task = asyncio.create_task(self.scheduler.run(vid))
-                tasks.append(task)
-        return await asyncio.gather(*tasks, return_exceptions=True)
+```cron
+# 每日 05:00 / 12:00 / 20:00 运行预测生成
+0 5,12,20 * * * cd /path/to/gmp && venv/bin/python -m gmp generate-all 2>&1 >> /var/log/gmp/generate.log
 ```
 
 ## 8.8 API 调用限流
 
 | API | 限制 | 策略 |
 |-----|------|------|
-| Open-Meteo (免费版) | 10,000 requests/day | 日级别 + 令牌桶限流 |
-| 单次请求并发 | 5 并发 | 信号量 |
-| 批量处理并发 | 3 观景台/批 | 信号量 |
+| Open-Meteo (免费版) | 10,000 requests/day | MeteoFetcher 内部日级计数控制 |
 | 光路10点请求 | 合并为 1 次多坐标请求 | `fetch_multi_points` |
+| 坐标去重 | ROUND(lat,2) + ROUND(lon,2) | 缓存层自然去重 |
 
-## 8.9 请求合并策略
+---
 
-```python
-class RequestCoalescer:
-    """同坐标请求合并"""
-    
-    def coalesce_light_path(self, coords: list[tuple], days: int) -> dict:
-        """
-        将10个光路点的坐标去重后批量请求
-        ROUND(lat, 2) + ROUND(lon, 2) 相同的坐标视为同一点
-        """
-        unique_coords = set()
-        for lat, lon in coords:
-            rounded = (round(lat, 2), round(lon, 2))
-            unique_coords.add(rounded)
-        
-        # 批量请求去重后的坐标 (通常 10→5~7 个)
-        results = {}
-        for lat, lon in unique_coords:
-            results[(lat, lon)] = self.fetcher.fetch_hourly(lat, lon, days)
-        
-        return results
-```
+## 8.9 批量任务错误恢复
+
+| 策略 | 说明 |
+|------|------|
+| **默认模式** | 单站失败时跳过，记录 warning，继续处理其余站点 |
+| `--fail-fast` | 任一站点失败则立即中止整个批量任务 |
+| `meta.json` | 批量完成后生成 `meta.json`，包含 `failed_viewpoints` 列表及失败原因 |
+| **已生成文件** | 已生成的 JSON 文件保持不变，不回滚 |
+
+---
+
+## 8.10 数据校验规则
+
+在 `MeteoFetcher._parse_response()` 之后，对 API 返回数据进行校验：
+
+| 字段 | 校验规则 | 异常处理 |
+|------|---------|---------|
+| `cloud_base_altitude` | 非 None 且 ≥ 0 | None → 10000（极高 = 无低云） |
+| `temperature_2m` | -60°C ~ 60°C | 超范围标记 `data_quality=degraded` |
+| `precipitation_probability` | 0 ~ 100 | clip 到范围内 |
+| `visibility` | ≥ 0 | None → 0（保守假设不可见） |
+| `cloud_cover` | 0 ~ 100 | clip 到范围内 |
+| `wind_speed_10m` | ≥ 0 | None → 0 |

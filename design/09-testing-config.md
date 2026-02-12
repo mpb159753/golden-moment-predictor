@@ -30,9 +30,13 @@
 | `test_stargazing_perfect` | optimal暗夜, 云量2%, 微风 | score≥95, Perfect |
 | `test_stargazing_poor` | 满月整夜, 云量50% | score≤30, Not Recommended |
 | `test_frost_excellent` | -3°C, 能见度3km, 1km/h, 低云45% | score≥90 |
-| `test_frost_dry` | -3°C, 能见度35km, 2km/h, 低云75% | score=67 (干燥) |
-| `test_cloud_sea_thick` | Gap1060m, 低云75%, 风2.8km/h | score=95 |
-| `test_cloud_sea_none` | 云底>站点海拔 | check_trigger=false |
+| `test_frost_dry` | -3°C, 能见度35km, 2km/h, 低云75% | score=72 (干燥) |
+| `test_cloud_sea_thick` | Gap1060m, 低云75%, 风2.8km/h | score=90 |
+| `test_cloud_sea_none` | 云底>站点海拔 | score() 触发判定=false |
+| `test_snow_tree_fresh` | 近12h雪0.5cm, 距今6h, 晴 | score≥70, Possible |
+| `test_snow_tree_sun_destroyed` | 大雪3cm, 距今19h, 暴晒8h | score=46, Not Recommended |
+| `test_ice_icicle_possible` | 水源2.3mm, 冻结11h, -1.8°C | score=70, Possible |
+| `test_ice_icicle_no_water` | 无近期降水 | score() 触发判定=false |
 
 ### 工具类测试
 
@@ -132,73 +136,114 @@ class MockMeteoFetcher(BaseFetcher):
 ```yaml
 # 缓存配置
 cache:
-  memory_ttl_seconds: 300
-  db_ttl_seconds: 3600
-  db_path: "db/gmp_cache.db"
+  db_path: "data/gmp.db"
+  freshness:                        # 数据新鲜度策略
+    forecast_valid_hours: 24        # forecast 数据当日获取则有效
+    archive_never_stale: true       # archive 数据永不过期
 
-# 坐标精度
-coord_precision: 2
+# 安全阈值 (Plugin 内部使用，用于各 Plugin 自主安全检查)
+safety:
+  precip_threshold: 50        # 降水概率 > 此值则该时段不安全
+  visibility_threshold: 1000  # 能见度 < 此值(m)则该时段不安全
 
-# 安全阈值
-thresholds:
-  precip_probability: 50
-  visibility_min: 1000
+# 分析阈值
+analysis:
   local_cloud_max: 30
   target_cloud_max: 30
   light_path_cloud_max: 50
   wind_speed_max: 20
   frost_temperature: 2.0
 
+# 留存判定 (雪树/冰挂)
+retention:
+  max_temp: 2.5               # 留存期最高允许气温(°C)
+  max_sun_hours: 5            # 最大日照时数
+  max_wind: 30.0              # 最大允许风速(km/h)
+
 # 光路计算
 light_path:
   count: 10
   interval_km: 10
 
-# 评分权重 (各 Plugin 独立配置)
+# 评分配置 (每个 Plugin 的权重 + 阈值阶梯，统一由 ConfigManager 提供)
 scoring:
   golden_mountain:
-    light_path: 35
-    target_visible: 40
-    local_clear: 25
-    veto_threshold: 0        # 任一维度 ≤ 此值则一票否决
+    weights:
+      light_path: 35
+      target_visible: 40
+      local_clear: 25
+    thresholds:
+      light_path_cloud: [10, 20, 30, 50]   # 分界值: ≤10%=35, ≤20%=30, ≤30%=20, ≤50%=10, >50%=0
+      target_cloud: [10, 20, 30, 50]       # ≤10%=40, ≤20%=35, ≤30%=25, ≤50%=10, >50%=0
+      local_cloud: [15, 30, 50]            # ≤15%=25, ≤30%=20, ≤50%=10, >50%=0
+    veto_threshold: 0
   
   cloud_sea:
-    gap: 50
-    density: 30
-    wind: 20
+    weights:
+      gap: 50
+      density: 30
+      wind: 20
+    thresholds:
+      gap_meters: [800, 500, 200]          # >800=50, >500=40, >200=20, ≤200=10
+      density_pct: [80, 50, 30]            # >80%=30, >50%=20, >30%=10, ≤30%=5
+      wind_speed: [3, 5, 8]                # <3=20, <5=15, <8=10, ≥8=5
+      mid_cloud_penalty: [30, 60]          # >60%=0.3, >30%=0.7, ≤30%=1.0
   
   frost:
-    temperature: 40
-    moisture: 30
-    wind: 20
-    cloud: 10
+    weights:
+      temperature: 40
+      moisture: 30
+      wind: 20
+      cloud: 10
+    thresholds:
+      temp_ranges:                         # [-5,0)→ 40, [-10,-5)→0, [0,2]→25, <-10→15
+        optimal: [-5, 0]
+        good: [-10, -5]
+        acceptable: [0, 2]
+      visibility_km: [5, 10, 20]           # <5=30, <10=20, <20=10, ≥20=5
   
   stargazing:
     base_optimal: 100
     base_good: 90
     base_partial: 70
     cloud_penalty_factor: 0.8
+  
+  snow_tree:
+    weights:
+      snow_signal: 60
+      clear_weather: 20
+      stability: 20
+    deductions:
+      age_max: 20
+      temp_max: 22
+      sun_max: 30
+      wind_max: 50
+    past_hours: 24
+  
+  ice_icicle:
+    weights:
+      water_input: 50
+      freeze_strength: 30
+      view_quality: 20
+    deductions:
+      age_max: 20
+      temp_max: 22
+    past_hours: 24
 
-# 置信度映射
+# 置信度映射 (T+8 及以上统一为 Low)
 confidence:
   high: [1, 2]
   medium: [3, 4]
-  low: [5, 6, 7]
+  low: [5, 16]
 
 # 摘要生成
 summary:
   mode: "rule"
 
-# 分页
-pagination:
-  default_page_size: 20
-  max_page_size: 100
-
-# 并发限制
-concurrency:
-  api_max_concurrent: 5
-  batch_max_concurrent: 3
-  api_daily_limit: 10000
+# 回测配置
+backtest:
+  max_history_days: 365       # 最远可回测天数
+  archive_api_base: "https://archive-api.open-meteo.com/v1/archive"
 ```
 
 ---
@@ -221,6 +266,8 @@ capabilities:
   - stargazing
   - cloud_sea
   - frost
+  - snow_tree
+  - ice_icicle
 
 targets:
   - name: 贡嘎主峰
@@ -241,22 +288,46 @@ targets:
 
 ---
 
+## 9.7 回测测试用例
+
+### 单元测试
+
+| 测试用例 | 输入 | 预期结果 |
+|---------|------|----------|
+| `test_backtest_valid_date` | date=2025-12-01 (过去) | 正常执行，返回 BacktestReport |
+| `test_backtest_future_date` | date=2027-01-01 (未来) | InvalidDateError |
+| `test_backtest_too_old` | date=2020-01-01 (>365天) | InvalidDateError("DateTooOld") |
+| `test_backtest_result_saved` | save=true | prediction_history 新增记录, is_backtest=1 |
+| `test_backtest_data_source` | 任意历史日期 | data_source="archive" |
+| `test_backtest_score_consistency` | 同一天气数据 | 回测分数与预测分数一致 |
+
+### 集成测试
+
+| 测试用例 | 场景 | 预期结果 |
+|---------|------|----------|
+| `test_backtest_full_pipeline` | 历史晴天数据 | 完整跑通 L1→Plugin→评分 |
+| `test_backtest_cli` | gmp backtest niubei_gongga --date 2025-12-01 | 正确 JSON 格式输出 |
+| `test_backtest_vs_forecast` | 使用相同天气数据 | 回测和预测产生相同分数 |
+
+---
+
 ## 附录
 
 ### A. 外部依赖
 
 | 依赖 | 用途 | 版本 |
 |------|------|------|
-| `FastAPI` | Web 框架 | ≥0.104 |
-| `uvicorn` | ASGI 服务器 | ≥0.24 |
+| `click` | CLI 框架 | ≥8.0 |
+| `structlog` | 结构化日志 | ≥23.0 |
 | `pandas` | 数据处理 | ≥2.0 |
 | `ephem` / `skyfield` | 天文计算 | 最新 |
-| `httpx` | 异步 HTTP 客户端 | ≥0.25 |
-| `structlog` | 结构化日志 | ≥23.0 |
-| `pydantic` | 数据校验 | ≥2.0 |
+| `httpx` | HTTP 客户端 | ≥0.25 |
+| `pyyaml` | YAML 配置解析 | ≥6.0 |
+| `openmeteo-requests` | Open-Meteo SDK (含历史 API) | 最新 |
 
 ### B. 参考链接
 
-- [Open-Meteo API 文档](https://open-meteo.com/en/docs)
+- [Open-Meteo Forecast API 文档](https://open-meteo.com/en/docs)
+- [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api)
 - [Ephem 天文计算库](https://rhodesmill.org/pyephem/)
 - [Skyfield 天文库](https://rhodesmill.org/skyfield/)

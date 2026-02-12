@@ -6,12 +6,14 @@
 classDiagram
     class GMPScheduler {
         -config: ViewpointConfig
+        -route_config: RouteConfig
         -fetcher: MeteoFetcher
         -astro: AstroUtils
-        -analyzer: AnalyzerPipeline
         -score_engine: ScoreEngine
         +run(viewpoint_id: str, days: int, events: list) ForecastReport
+        +run_route(route: Route, days: int, events: list) RouteForecastReport
         +run_batch(viewpoint_ids: list) list~ForecastReport~
+        +run_with_data(viewpoint: Viewpoint, date: date, weather: DataFrame, events: list) PipelineResult
         -_collect_active_plugins(viewpoint, events, date) list~ScorerPlugin~
         -_build_data_context(viewpoint, date, requirement) DataContext
     }
@@ -20,7 +22,27 @@ classDiagram
         -viewpoints: dict
         +load(path: str) void
         +get(id: str) Viewpoint
-        +list_all(page: int, page_size: int) PaginatedResult
+        +list_all() list~Viewpoint~
+    }
+
+    class RouteConfig {
+        -routes: dict
+        +load(path: str) void
+        +get(id: str) Route
+        +list_all() list~Route~
+    }
+
+    class Route {
+        +id: str
+        +name: str
+        +description: str
+        +stops: list~RouteStop~
+    }
+
+    class RouteStop {
+        +viewpoint_id: str
+        +order: int
+        +stay_note: str
     }
 
     class Viewpoint {
@@ -47,8 +69,12 @@ classDiagram
     }
 
     GMPScheduler --> ViewpointConfig
+    GMPScheduler --> RouteConfig
     GMPScheduler --> ScoreEngine
     ViewpointConfig --> Viewpoint
+    RouteConfig --> Route
+    Route --> RouteStop
+    RouteStop ..> Viewpoint : viewpoint_id
     Viewpoint --> Location
     Viewpoint --> Target
 ```
@@ -73,21 +99,11 @@ classDiagram
     }
 
     class WeatherCache {
-        -memory_cache: MemoryCache
         -db: CacheRepository
-        -ttl_memory: int
-        -ttl_db: int
         +get(lat, lon, date, hours) Optional~DataFrame~
         +set(lat, lon, date, data: DataFrame) void
         +get_or_fetch(lat, lon, date, fetcher) DataFrame
-    }
-
-    class MemoryCache {
-        -storage: dict
-        -ttl: int
-        +get(key: str) Optional~DataFrame~
-        +set(key: str, data: DataFrame) void
-        +invalidate(key: str) void
+        +is_fresh(fetched_at: datetime, data_source: str) bool
     }
 
     class CacheRepository {
@@ -132,7 +148,6 @@ classDiagram
 
     BaseFetcher <|-- MeteoFetcher
     MeteoFetcher --> WeatherCache
-    WeatherCache --> MemoryCache
     WeatherCache --> CacheRepository
     AstroUtils --> GeoUtils
     AstroUtils --> SunEvents
@@ -149,6 +164,7 @@ classDiagram
         +needs_l2_target: bool
         +needs_l2_light_path: bool
         +needs_astro: bool
+        +past_hours: int
         +season_months: Optional~list~int~~
     }
 
@@ -158,9 +174,10 @@ classDiagram
         +local_weather: DataFrame
         +sun_events: Optional~SunEvents~
         +moon_status: Optional~MoonStatus~
+        +stargazing_window: Optional~StargazingWindow~
         +target_weather: Optional~dict~
         +light_path_weather: Optional~list~
-        +l2_result: Optional~AnalysisResult~
+        +data_freshness: str
     }
 
     class ScorerPlugin {
@@ -168,8 +185,8 @@ classDiagram
         +event_type: str
         +display_name: str
         +data_requirement: DataRequirement
-        +check_trigger(l1_data: dict) bool
-        +score(context: DataContext) ScoreResult
+        +score(context: DataContext) ScoreResult | None
+
         +dimensions() list~str~
     }
 
@@ -184,54 +201,43 @@ classDiagram
     class GoldenMountainPlugin {
         +event_type = "sunrise_golden_mountain"
         +data_requirement: needs_l2 + needs_astro
-        +check_trigger(l1_data) bool
-        +score(context) ScoreResult
+        +score(context) ScoreResult | None
+
     }
 
     class StargazingPlugin {
         +event_type = "stargazing"
         +data_requirement: needs_astro
-        +check_trigger(l1_data) bool
-        +score(context) ScoreResult
+        +score(context) ScoreResult | None
+
     }
 
     class CloudSeaPlugin {
         +event_type = "cloud_sea"
         +data_requirement: L1 only
-        +check_trigger(l1_data) bool
-        +score(context) ScoreResult
+        +score(context) ScoreResult | None
+
     }
 
     class FrostPlugin {
         +event_type = "frost"
         +data_requirement: L1 only
-        +check_trigger(l1_data) bool
-        +score(context) ScoreResult
+        +score(context) ScoreResult | None
+
     }
 
-    class BaseAnalyzer {
-        <<abstract>>
-        +analyze(data: DataFrame, context)* AnalysisResult
+    class SnowTreePlugin {
+        +event_type = "snow_tree"
+        +data_requirement: L1 only
+        +score(context) ScoreResult | None
+
     }
 
-    class LocalAnalyzer {
-        +analyze(data, context) AnalysisResult
-        -_check_safety(row) bool
-        -_check_cloud_sea(row, altitude) CloudSeaStatus
-        -_check_frost(row, altitude) FrostStatus
-    }
+    class IceIciclePlugin {
+        +event_type = "ice_icicle"
+        +data_requirement: L1 only
+        +score(context) ScoreResult | None
 
-    class RemoteAnalyzer {
-        +analyze(data, context) AnalysisResult
-        -_check_target_visibility(target_data) bool
-        -_check_light_path(light_points_data) LightPathResult
-    }
-
-    class AnalysisResult {
-        +passed: bool
-        +reason: str
-        +score: int
-        +details: dict
     }
 
     class ScoreResult {
@@ -247,15 +253,13 @@ classDiagram
     ScorerPlugin <|.. StargazingPlugin
     ScorerPlugin <|.. CloudSeaPlugin
     ScorerPlugin <|.. FrostPlugin
-    BaseAnalyzer <|-- LocalAnalyzer
-    BaseAnalyzer <|-- RemoteAnalyzer
-    LocalAnalyzer --> AnalysisResult
-    RemoteAnalyzer --> AnalysisResult
+    ScorerPlugin <|.. SnowTreePlugin
+    ScorerPlugin <|.. IceIciclePlugin
     ScorerPlugin --> ScoreResult
 ```
 
 > [!NOTE]
-> **扩展新景观**: 只需实现 `ScorerPlugin` 接口并调用 `engine.register(NewPlugin())`，Scheduler 和 API 无需任何改动。
+> **扩展新景观**: 只需实现 `ScorerPlugin` 接口并调用 `engine.register(NewPlugin())`，Scheduler 无需任何改动。
 
 ---
 
@@ -286,7 +290,6 @@ classDiagram
         -mode: str
         +generate(events: list) str
         -_rule_based(events) str
-        -_llm_enhanced(events) str
     }
 
     class CLIFormatter {
@@ -296,18 +299,28 @@ classDiagram
         -_colorize(text, level) str
     }
 
+    class JSONFileWriter {
+        -output_dir: str
+        -archive_dir: str
+        +write_viewpoint(id: str, forecast, timeline) void
+        +write_route(id: str, forecast) void
+        +write_index(viewpoints, routes) void
+        +write_meta(metadata) void
+        +archive(timestamp: str) void
+    }
+
     BaseReporter <|-- ForecastReporter
     BaseReporter <|-- TimelineReporter
     BaseReporter <|-- CLIFormatter
     ForecastReporter --> SummaryGenerator
+    JSONFileWriter --> ForecastReporter
+    JSONFileWriter --> TimelineReporter
 ```
 
 ---
 
 ## 6.5 主流程时序图 — 7天预报生成 (Plugin 驱动)
 
-> [!TIP]
-> **关键改动**: Scheduler 不再硬编码每种景观的评分调用，而是通过 Plugin 循环统一处理。
 
 ```mermaid
 sequenceDiagram
@@ -318,8 +331,6 @@ sequenceDiagram
     participant SE as ScoreEngine
     participant MF as MeteoFetcher
     participant AU as AstroUtils
-    participant LA as LocalAnalyzer
-    participant RA as RemoteAnalyzer
     participant P as ScorerPlugin
 
     C->>S: run("niubei_gongga", days=7, events=None)
@@ -328,7 +339,7 @@ sequenceDiagram
 
     Note over S,SE: 🔵 收集活跃 Plugin + 聚合需求
     S->>SE: all_plugins() → 按 capabilities/season/events 过滤
-    SE-->>S: active_plugins = [Golden, Star, CloudSea, Frost]
+    SE-->>S: active_plugins = [Golden, Star, CloudSea, Frost, SnowTree, IceIcicle]
     S->>SE: collect_requirements(active_plugins)
     SE-->>S: DataRequirement(l2_target=T, l2_light=T, astro=T)
 
@@ -336,38 +347,23 @@ sequenceDiagram
     S->>MF: fetch_hourly(local_coords, days=7)
     MF-->>S: local_weather_7days
 
+    Note over S,MF: 🟢 Phase 2: 按需获取远程天气 (一次性7天)
+    opt 聚合需求含 L2 且本地天气非全天恶劣
+        S->>MF: fetch_multi_points(targets + light_path, days=7)
+        MF-->>S: target_weather_7days, light_path_weather_7days
+    end
+
     loop 对于每一天 (Day 1-7)
         Note over S,AU: 📐 天文计算 (因 needs_astro=True)
         S->>AU: get_sun_events + get_moon_status
         AU-->>S: SunEvents, MoonStatus
 
-        Note over S,LA: 🟡 L1 本地滤网
-        S->>LA: analyze(local_weather[day], context)
-        LA-->>S: L1Result(passed, details)
-
-        alt L1 通过 ✅
-            Note over S,P: 🔍 Plugin 触发检查
-            loop 对每个 active_plugin
-                S->>P: check_trigger(l1_details)
-                P-->>S: true/false
-            end
-
-            Note over S,MF: 🟢 Phase 2: 按需获取远程天气
-            opt 有触发的 Plugin 需要 L2
-                S->>MF: fetch_multi_points(targets + light_path)
-                MF-->>S: target_weather, light_path_weather
-                S->>RA: analyze(target_weather, light_path_weather)
-                RA-->>S: L2Result
-            end
-
-            Note over S,P: 🟠 构建 DataContext + Plugin 循环评分
-            S->>S: build DataContext(共享数据池)
-            loop 对每个触发的 Plugin
-                S->>P: score(DataContext)
-                P-->>S: ScoreResult
-            end
-        else L1 未通过 ❌
-            Note over S: 跳过，标记不推荐
+        Note over S,P: 🟠 构建 DataContext + Plugin 循环评分
+        S->>S: build DataContext(当天切片数据)
+        loop 对每个活跃 Plugin
+            S->>P: score(DataContext)
+            Note over P: Plugin 内部: 安全检查 + 触发判定 + 评分
+            P-->>S: ScoreResult | None
         end
     end
 
@@ -422,26 +418,15 @@ sequenceDiagram
     autonumber
     participant S as Scheduler
     participant P as CloudSeaPlugin
-    participant LA as LocalAnalyzer
 
-    S->>LA: analyze(weather_data, context)
-    LA->>LA: _check_safety(precip, visibility)
-    alt 安全检查失败
-        LA-->>S: Result(passed=false)
-    end
-
-    LA->>LA: _check_cloud_sea(cloud_base, site_altitude)
-    alt 云底高度 < 站点海拔
-        LA-->>S: Result(cloud_sea=true, gap=1060m)
-    else 云底高度 >= 站点海拔
-        LA-->>S: Result(cloud_sea=false)
-        Note over S: 跳过云海 Plugin
-    end
-
-    S->>P: check_trigger(l1_details) → true
     S->>P: score(DataContext)
-    Note over P: 评分: gap(50) + density(30) + wind(20)
-    P-->>S: ScoreResult(score=95, Perfect)
+    Note over P: 内部检查: 关注时段天气安全? 云底高度 < 站点海拔?
+    alt 触发
+        Note over P: 评分: gap(50) + density(20) + mid_struct(×1.0) + wind(20)
+        P-->>S: ScoreResult(score=90, Recommended)
+    else 未触发
+        P-->>S: None
+    end
 ```
 
 ---
@@ -453,19 +438,151 @@ sequenceDiagram
     autonumber
     participant S as Scheduler
     participant P as FrostPlugin
-    participant LA as LocalAnalyzer
 
-    S->>LA: analyze(weather_data, context)
-    LA->>LA: _check_frost(temperature, visibility, wind)
-    alt 温度 < 2°C
-        LA-->>S: Result(frost=true, quality="marginal")
-    else 温度 >= 2°C
-        LA-->>S: Result(frost=false)
-        Note over S: 跳过雾凇 Plugin
+    S->>P: score(DataContext)
+    Note over P: 内部检查: 关注时段天气安全? 温度 < 2°C?
+    alt 触发
+        Note over P: 评分: temp(40) + moisture(30) + wind(20) + cloud(10)
+        P-->>S: ScoreResult(score=67, Possible)
+    else 未触发
+        P-->>S: None
+    end
+```
+
+---
+
+## 6.9 树挂积雪评分流程 (留存场景)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as Scheduler
+    participant P as SnowTreePlugin
+
+    S->>P: score(DataContext)
+    Note over P: 内部检查: 关注时段天气安全? 近12h降雪≥0.2cm OR 留存路径?
+    alt 触发
+        Note right of P: 复杂评分逻辑
+        P->>P: calc_snow_signal(snow=2.5cm) -> 60
+        P->>P: calc_clear(sun=True) -> 20
+        P->>P: check_history(max_wind=15km/h) -> 0 deduc
+        P->>P: check_sun_destruction(accum_sun=8h) -> -30 deduc
+        Note over P: 评分: 60 + 20 + 20 - 12(Age) - 12(Temp) - 30(Sun)
+        P-->>S: ScoreResult(score=46, Not Recommended)
+    else 未触发
+        P-->>S: None
+    end
+```
+
+---
+
+## 6.10 线路预测时序图 — Route Forecast
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant S as GMPScheduler
+    participant RC as RouteConfig
+    participant VC as ViewpointConfig
+
+    C->>S: run_route(route_id="lixiao", days=3)
+    S->>RC: get("lixiao")
+    RC-->>S: Route(理小路, stops=[stop1, stop2, stop3])
+
+    loop 对每个停靠点 (order=1..3)
+        S->>VC: get(stop.viewpoint_id)
+        VC-->>S: Viewpoint
+        Note over S: 复用 self.run(viewpoint_id, days, events)
+        S->>S: run(stop.viewpoint_id, days=3)
+        Note over S: 内部缓存层按坐标去重，相近点位共享天气数据
     end
 
-    S->>P: check_trigger(l1_details) → true
-    S->>P: score(DataContext)
-    Note over P: 评分: temp(40) + moisture(30) + wind(20) + cloud(10)
-    P-->>S: ScoreResult(score=67, Possible)
+    Note over S: 汇总 meta: total_api_calls, total_cache_hits
+    S-->>C: RouteForecastReport(route, stops[], meta)
 ```
+
+> [!NOTE]
+> **缓存复用**: 线路上多个点位可能共享相同的天气数据缓存（坐标 ROUND(2) 后相同），
+> 无需额外优化，现有缓存机制自然处理。
+
+---
+
+## 6.11 Backtester 类图
+
+```mermaid
+classDiagram
+    class Backtester {
+        -scheduler: GMPScheduler
+        -fetcher: MeteoFetcher
+        -repo: CacheRepository
+        +run(viewpoint_id: str, date: date, events: list, save: bool) BacktestReport
+        -_validate_date(date: date) void
+        -_fetch_historical(coords: tuple, date: date) DataFrame
+    }
+
+    class BacktestRequest {
+        +viewpoint_id: str
+        +date: date
+        +events: Optional~list~str~~
+        +save: bool
+    }
+
+    class BacktestReport {
+        +backtest_date: date
+        +data_source: str
+        +viewpoint: str
+        +forecast_days: list~dict~
+        +meta: dict
+    }
+
+    Backtester --> GMPScheduler : 复用评分管线
+    Backtester --> MeteoFetcher : 获取历史数据
+    Backtester --> CacheRepository : 保存回测结果
+    Backtester --> BacktestRequest
+    Backtester --> BacktestReport
+```
+
+---
+
+## 6.12 回测时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant B as Backtester
+    participant Cache as WeatherCache/SQLite
+    participant MF as MeteoFetcher
+    participant API as Open-Meteo Archive API
+    participant S as GMPScheduler
+    participant R as CacheRepository
+
+    C->>B: run("niubei_gongga", date=2025-12-01)
+    B->>B: _validate_date(2025-12-01 < today ✅)
+    
+    Note over B,Cache: 📦 获取历史天气数据 (先查 DB)
+    B->>Cache: query(coords, date=2025-12-01)
+    alt DB 有数据
+        Cache-->>B: DataFrame (from cache)
+    else DB 无数据
+        B->>MF: fetch_historical(coords, date=2025-12-01)
+        MF->>API: GET /archive?lat=...&lon=...&start_date=2025-12-01
+        API-->>MF: historical_weather_data
+        MF->>Cache: upsert(data)
+        MF-->>B: DataFrame (historical)
+    end
+
+    Note over B,S: 🔄 复用完整评分管线
+    B->>S: run_with_data(viewpoint, date, weather_data)
+    Note over S: 执行标准流程: Plugin触发→评分
+    S-->>B: PipelineResult
+
+    Note over B,R: 💾 保存回测记录
+    opt save=true
+        B->>R: save_prediction(result, is_backtest=true, data_source="archive")
+    end
+
+    B-->>C: BacktestReport(data_source="archive", forecast_days=[...])
+```
+

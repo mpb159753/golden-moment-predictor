@@ -7,9 +7,22 @@ erDiagram
     Viewpoint ||--|| Location : "坐标"
     Viewpoint ||--|{ Target : "观测目标"
     Viewpoint ||--o{ PredictionHistory : "预测记录"
+    Route ||--|{ RouteStop : "停靠点"
+    RouteStop }o--|| Viewpoint : "引用"
     Target }o..o{ WeatherCache : "天气数据(按坐标关联)"
     Location }o..o{ WeatherCache : "天气数据(按坐标关联)"
 
+    Route {
+        string id PK "唯一标识 如 lixiao"
+        string name "显示名称 如 理小路"
+        string description "线路简介"
+    }
+    RouteStop {
+        string route_id FK "所属线路"
+        string viewpoint_id FK "引用观景台"
+        int order "停靠顺序 1-based"
+        string stay_note "停留建议"
+    }
     Viewpoint {
         string id PK "唯一标识 如 niubei_gongga"
         string name "显示名称"
@@ -46,11 +59,16 @@ erDiagram
         string event_type "事件类型"
         int predicted_score "0到100"
         string confidence "High Medium Low"
+        bool is_backtest "是否为回测记录"
+        string data_source "forecast或archive"
     }
 ```
 
 > [!NOTE]
 > **WeatherCache 与 Target/Location 的关系**: 通过 `ROUND(lat, 2)` 和 `ROUND(lon, 2)` 的坐标匹配间接关联，而非外键。这使得不同观景台对同一山峰的查询可以自然命中同一条缓存记录。
+
+> [!NOTE]
+> **Route 与 Viewpoint 的关系**: Route 通过 RouteStop 引用 Viewpoint，形成 N:M 关系 — 一条线路包含多个观景台，一个观景台可属于多条线路（如子梅垭口同时属于"贡嘎西线"和"贡嘎环线"）。Route 配置独立存放于 `config/routes/*.yaml`，不修改 Viewpoint 配置。
 
 ---
 
@@ -84,6 +102,10 @@ CREATE TABLE weather_cache (
     precipitation_probability INTEGER,
     visibility REAL,                  -- meters
     wind_speed_10m REAL,              -- km/h
+    snowfall REAL,                    -- cm/h (SnowTree 评分)
+    rain REAL,                        -- mm/h (IceIcicle 评分)
+    showers REAL,                     -- mm/h (IceIcicle 评分)
+    weather_code INTEGER,             -- WMO 天气代码
     
     -- 索引
     UNIQUE(lat_rounded, lon_rounded, forecast_date, forecast_hour)
@@ -101,11 +123,11 @@ CREATE TABLE prediction_history (
     viewpoint_id TEXT NOT NULL,
     prediction_date DATE NOT NULL,    -- 预测生成日期
     target_date DATE NOT NULL,        -- 预测目标日期
-    event_type TEXT NOT NULL,         -- 'sunrise', 'stargazing', 'frost' 等
+    event_type TEXT NOT NULL,         -- 'sunrise_golden_mountain', 'sunset_golden_mountain', 'stargazing', 'cloud_sea', 'frost', 'snow_tree', 'ice_icicle'
     
     -- 预测结果
     predicted_score INTEGER,          -- 0-100
-    predicted_status TEXT,            -- 'Recommended', 'Not Recommended'
+    predicted_status TEXT,            -- 'Perfect', 'Recommended', 'Possible', 'Not Recommended'
     confidence TEXT,                  -- 'High', 'Medium', 'Low'
     conditions_json TEXT,             -- JSON 存储详细条件
     
@@ -113,6 +135,10 @@ CREATE TABLE prediction_history (
     actual_result TEXT,               -- 'success', 'partial', 'failed', NULL
     user_feedback TEXT,
     feedback_at DATETIME,
+    
+    -- 回测标识
+    is_backtest BOOLEAN DEFAULT 0,    -- 0=真实预测, 1=历史回测
+    data_source TEXT DEFAULT 'forecast',  -- 'forecast'=预报数据, 'archive'=历史数据
     
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -147,6 +173,10 @@ CREATE INDEX idx_viewpoint ON prediction_history(viewpoint_id);
 | `precipitation_probability` | INTEGER | | 降水概率 (0-100%) |
 | `visibility` | REAL | | 能见度 (m) |
 | `wind_speed_10m` | REAL | | 10m 风速 (km/h) |
+| `snowfall` | REAL | | 每小时降雪量 (cm), SnowTree 评分使用 |
+| `rain` | REAL | | 每小时降雨量 (mm), IceIcicle 评分使用 |
+| `showers` | REAL | | 每小时阵雨量 (mm), IceIcicle 评分使用 |
+| `weather_code` | INTEGER | | WMO 天气代码 |
 
 ### `prediction_history` 字段说明
 
@@ -156,14 +186,16 @@ CREATE INDEX idx_viewpoint ON prediction_history(viewpoint_id);
 | `viewpoint_id` | TEXT | NOT NULL | 观景台 ID (如 `niubei_gongga`) |
 | `prediction_date` | DATE | NOT NULL | 预测生成日期 (何时做的预测) |
 | `target_date` | DATE | NOT NULL | 预测目标日期 (预测哪天) |
-| `event_type` | TEXT | NOT NULL | 事件类型 (`sunrise` / `sunset` / `stargazing` / `cloud_sea` / `frost`) |
+| `event_type` | TEXT | NOT NULL | 事件类型 (`sunrise_golden_mountain` / `sunset_golden_mountain` / `stargazing` / `cloud_sea` / `frost` / `snow_tree` / `ice_icicle`) |
 | `predicted_score` | INTEGER | | 预测评分 (0-100) |
 | `predicted_status` | TEXT | | 状态 (`Perfect` / `Recommended` / `Possible` / `Not Recommended`) |
-| `confidence` | TEXT | | 置信度 (`High` T+1~2 / `Medium` T+3~4 / `Low` T+5~7) |
+| `confidence` | TEXT | | 置信度 (`High` T+1~2 / `Medium` T+3~4 / `Low` T+5~16) |
 | `conditions_json` | TEXT | | JSON 格式的详细条件 |
 | `actual_result` | TEXT | NULL | 实际结果 (用户反馈: `success` / `partial` / `failed`) |
 | `user_feedback` | TEXT | NULL | 文字反馈 |
 | `feedback_at` | DATETIME | NULL | 反馈时间 |
+| `is_backtest` | BOOLEAN | DEFAULT 0 | 0=真实预测, 1=历史回测 |
+| `data_source` | TEXT | DEFAULT 'forecast' | 数据来源 (`forecast` 预报 / `archive` 历史) |
 | `created_at` | DATETIME | DEFAULT NOW | 记录创建时间 |
 
 ---
@@ -197,6 +229,8 @@ CREATE INDEX idx_viewpoint ON prediction_history(viewpoint_id);
 │  2 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ stargazing              │    98 │ Perfect       │ High   │ NULL         │ NULL            │
 │  3 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ cloud_sea               │    95 │ Perfect       │ High   │ NULL         │ NULL            │
 │  4 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ frost                   │    67 │ Possible      │ High   │ NULL         │ NULL            │
-│  5 │ niubei_gongga  │ 2026-02-10      │ 2026-02-14  │ sunrise_golden_mountain │    40 │ Not Recommend │ Low    │ NULL         │ NULL            │
+│  5 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ snow_tree               │    46 │ Not Recommend │ High   │ NULL         │ NULL            │
+│  6 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ ice_icicle              │    70 │ Possible      │ Medium │ NULL         │ NULL            │
+│  7 │ niubei_gongga  │ 2026-02-10      │ 2026-02-14  │ sunrise_golden_mountain │    40 │ Not Recommend │ Low    │ NULL         │ NULL            │
 └────┴────────────────┴─────────────────┴─────────────┴─────────────────────────┴───────┴───────────────┴────────┴──────────────┴─────────────────┘
 ```

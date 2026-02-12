@@ -19,7 +19,7 @@ viewpoint = Viewpoint(
     id="niubei_gongga",
     name="牛背山",
     location=Location(lat=29.75, lon=102.35, altitude=3660),
-    capabilities=["sunrise", "sunset", "stargazing", "cloud_sea", "frost"],
+    capabilities=["sunrise", "sunset", "stargazing", "cloud_sea", "frost", "snow_tree", "ice_icicle"],
     targets=[
         Target(
             name="贡嘎主峰", lat=29.58, lon=101.88, altitude=7556,
@@ -42,10 +42,13 @@ viewpoint = Viewpoint(
 ```python
 # 活跃 Plugin 列表 (capabilities 过滤后)
 active_plugins = [
-    GoldenMountainPlugin,  # sunrise_golden_mountain
+    GoldenMountainPlugin("sunrise_golden_mountain"),  # sunrise_golden_mountain
+    GoldenMountainPlugin("sunset_golden_mountain"),   # sunset_golden_mountain
     StargazingPlugin,      # stargazing
     CloudSeaPlugin,        # cloud_sea
     FrostPlugin,           # frost
+    SnowTreePlugin,        # snow_tree
+    IceIciclePlugin,       # ice_icicle
 ]
 
 # 聚合 DataRequirement
@@ -92,11 +95,13 @@ light_path_points = GeoUtils.calculate_light_path_points(
 )
 
 # 观星时间窗口
-stargazing_windows = {
-    "optimal": ("19:55", "03:15"),
-    "good":    ("03:15", "05:55"),
-    "quality": "optimal"
-}
+stargazing_window = StargazingWindow(
+    optimal_start=datetime(2026, 2, 11, 19, 55),
+    optimal_end=datetime(2026, 2, 12, 3, 15),
+    good_start=datetime(2026, 2, 12, 3, 15),
+    good_end=datetime(2026, 2, 12, 5, 55),
+    quality="optimal",
+)
 ```
 
 ---
@@ -116,6 +121,10 @@ local_weather = pd.DataFrame({
     "precipitation_probability":[0, 0,     5,      ...],
     "visibility":      [30000,   35000,   28000,   ...],
     "wind_speed_10m":  [3.1,     2.8,     4.5,     ...],
+    "snowfall":        [0.0,     0.0,     0.0,     ...],  # cm/h
+    "rain":            [0.0,     0.0,     0.0,     ...],  # mm/h
+    "showers":         [0.0,     0.0,     0.0,     ...],  # mm/h
+    "weather_code":    [1,       0,       2,       ...],  # WMO code
 })
 
 # 3b. 目标山峰天气 (贡嘎 29.58, 101.88) — Phase 2 按需获取
@@ -156,35 +165,19 @@ ctx = DataContext(
     local_weather=local_weather,
     sun_events=sun_events,
     moon_status=moon_status,
+    stargazing_window=stargazing_window,
     target_weather={"贡嘎主峰": target_weather_gongga},
     light_path_weather=light_path_weather,
+    data_freshness="fresh",
 )
 
-# L1 本地滤网结果
-l1_result = {
-    "safety": {"passed": True, "precip_prob": 0, "visibility": 35000},
-    "cloud_sea": {"detected": True, "cloud_base": 2600, "gap": 1060, "low_cloud": 75},
-    "frost": {"detected": True, "temperature": -3.8, "visibility": 35000, "wind": 2.8},
-    "local_cloud_total": 22,
-}
-
-# Plugin 触发结果
-# GoldenMountainPlugin.check_trigger(l1) → True (总云22%<80%, 有Target)
-# StargazingPlugin.check_trigger(l1)      → True (夜间云量低)
-# CloudSeaPlugin.check_trigger(l1)        → True (云底2600<站点3660)
-# FrostPlugin.check_trigger(l1)           → True (温度-3.8<2°C)
-
-# L2 远程滤网结果 (仅因 GoldenMountainPlugin 触发)
-l2_result = {
-    "targets": [
-        {"name": "贡嘎主峰", "visible": True, "combined": 13, "status": "清晰可见"},
-        {"name": "雅拉神山", "visible": False, "combined": 85, "status": "主峰戴帽"},
-    ],
-    "light_path": {
-        "clear": True, "avg_combined_cloud": 8.0,
-        "max_combined_cloud": 15, "status": "光路通畅 (10点均值8%)",
-    }
-}
+# Plugin 触发结果 (各 Plugin 内部自行判断安全条件和触发条件)
+# GoldenMountainPlugin.score(ctx)  # 内部判定 → True (总云22%<80%, 有Target, 关注时段降水低)
+# StargazingPlugin.score(ctx)      # 内部判定      → True (夜间云量低, 无降水)
+# CloudSeaPlugin.score(ctx)        # 内部判定        → True (云底2600<站点3660, 早晨无降水)
+# FrostPlugin.score(ctx)           # 内部判定           → True (温度-3.8<2°C, 早晨无降水)
+# SnowTreePlugin.score(ctx)        # 内部判定           → None (近期无降雪, 未触发)
+# IceIciclePlugin.score(ctx)       # 内部判定           → None (近期无有效水源, 未触发)
 ```
 
 ---
@@ -227,11 +220,12 @@ cloud_sea_score = {
     "time_window": "06:00 - 09:00",
     "score_breakdown": {
         "gap":     {"score": 50, "max": 50, "detail": "高差1060m > 800m"},
-        "density": {"score": 25, "max": 30, "detail": "低云75%, >50%但<80%"},
+        "density": {"score": 20, "max": 30, "detail": "低云75%, >50%档位"},
+        "mid_structure": {"factor": 1.0, "detail": "中云5%, 上层通透"},
         "wind":    {"score": 20, "max": 20, "detail": "风速2.8km/h < 10km/h"},
     },
-    "total_score": 95,
-    "status": "Perfect",
+    "total_score": 90,   # (50+20)×1.0+20 = 90
+    "status": "Recommended",
     "confidence": "High",
 }
 
@@ -240,21 +234,27 @@ frost_score = {
     "event_type": "frost",
     "time_window": "05:00 - 08:30",
     "score_breakdown": {
-        "temperature": {"score": 35, "max": 40, "detail": "-3.8°C"},
+        "temperature": {"score": 40, "max": 40, "detail": "-3.8°C, 在[-5,0)区间满分"},
         "moisture":    {"score":  5, "max": 30, "detail": "能见度35km, 空气干燥"},
         "wind":        {"score": 20, "max": 20, "detail": "2.8km/h, 理想"},
         "cloud":       {"score":  7, "max": 10, "detail": "低云75%, >60%略重"},
     },
-    "total_score": 67,
+    "total_score": 72,   # 40+5+20+7 = 72
     "status": "Possible",
     "confidence": "High",
     "note": "温度理想但空气干燥，雾凇形成概率较低",
 }
+
+# ═══════════ 树挂积雪 (SnowTreePlugin) ═══════════
+# 本日未触发 (近期无降雪), score() 触发判定=False, 不进入评分
+
+# ═══════════ 冰挂 (IceIciclePlugin) ═══════════
+# 本日未触发 (近期无有效水源+冻结), score() 触发判定=False, 不进入评分
 ```
 
 ---
 
-## Stage 6a: ForecastReporter 输出 (`GET /api/v1/forecast/{id}`)
+## Stage 6a: ForecastReporter 输出 (forecast.json)
 
 ```json
 {
@@ -314,8 +314,8 @@ frost_score = {
         {
           "type": "cloud_sea",
           "time_window": "06:00 - 09:00",
-          "score": 95,
-          "status": "Perfect",
+          "score": 90,
+          "status": "Recommended",
           "conditions": {
             "gap": "1060m (站点3660m - 云底2600m)",
             "low_cloud": "75%",
@@ -323,14 +323,14 @@ frost_score = {
           },
           "score_breakdown": {
             "gap":     {"score": 50, "max": 50},
-            "density": {"score": 25, "max": 30},
+            "density": {"score": 20, "max": 30},
             "wind":    {"score": 20, "max": 20}
           }
         },
         {
           "type": "frost",
           "time_window": "05:00 - 08:30",
-          "score": 67,
+          "score": 72,
           "status": "Possible",
           "conditions": {
             "temperature": "-3.8°C",
@@ -339,7 +339,7 @@ frost_score = {
             "low_cloud": "75%"
           },
           "score_breakdown": {
-            "temperature": {"score": 35, "max": 40},
+            "temperature": {"score": 40, "max": 40},
             "moisture":    {"score":  5, "max": 30},
             "wind":        {"score": 20, "max": 20},
             "cloud":       {"score":  7, "max": 10}
@@ -361,7 +361,7 @@ frost_score = {
 }
 ```
 
-## Stage 6b: TimelineReporter 输出 (`GET /api/v1/timeline/{id}`)
+## Stage 6b: TimelineReporter 输出 (timeline.json)
 
 ```json
 {
