@@ -95,11 +95,14 @@ class MockMeteoFetcher(BaseFetcher):
         return results
 
     def _make_base_dataframe(self, days: int) -> pd.DataFrame:
-        """创建基础 DataFrame 框架 (日期 + 小时列)。"""
-        today = date.today()
+        """创建基础 DataFrame 框架 (日期 + 小时列)。
+
+        从 T+1 开始生成数据，与 GMPScheduler 的日期切片逻辑一致。
+        """
+        tomorrow = date.today() + timedelta(days=1)
         rows = []
         for d in range(days):
-            current_date = today + timedelta(days=d)
+            current_date = tomorrow + timedelta(days=d)
             for h in range(24):
                 rows.append({
                     "forecast_date": current_date.isoformat(),

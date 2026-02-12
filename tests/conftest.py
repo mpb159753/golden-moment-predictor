@@ -1,7 +1,8 @@
 """共享测试 Fixture — Module 09 API/E2E 测试公共代码
 
-提取自 test_api_endpoints.py 和 test_full_forecast.py 中的重复辅助代码，
-供集成测试和 E2E 测试共同使用。
+使用真实组件替代 MagicMock，只在外部边界 (AstroUtils) 使用 mock。
+MeteoFetcher 使用 MockMeteoFetcher 提供预制天气数据，
+Scheduler、Analyzer、ScoreEngine 等全部使用真实实例。
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ import pandas as pd
 from fastapi.testclient import TestClient
 
 from gmp.api.routes import create_app
+from gmp.astro.astro_utils import AstroUtils
 from gmp.core.config_loader import EngineConfig, ViewpointConfig
 from gmp.core.models import (
     DataRequirement,
@@ -25,7 +27,8 @@ from gmp.core.models import (
     Viewpoint,
 )
 from gmp.core.scheduler import GMPScheduler
-from gmp.scorer.engine import ScoreEngine
+from gmp.fetcher.mock_fetcher import MockMeteoFetcher
+from gmp.scorer.engine import ScoreEngine, create_default_engine
 
 # UTC+8
 CST = timezone(timedelta(hours=8))
@@ -113,45 +116,17 @@ def make_sun_events(target_date: date) -> SunEvents:
     )
 
 
-def make_viewpoint_config(viewpoint: Viewpoint | None = None) -> MagicMock:
-    """创建标准测试用 ViewpointConfig mock (C4: 消除重复)"""
+def make_viewpoint_config(viewpoint: Viewpoint | None = None) -> ViewpointConfig:
+    """创建标准测试用 ViewpointConfig (使用真实实例 + 手动注入)"""
     vp = viewpoint or make_viewpoint()
-    vp_config = MagicMock(spec=ViewpointConfig)
-    vp_config.get.return_value = vp
-    vp_config.list_all.return_value = {
-        "viewpoints": [vp],
-        "pagination": {
-            "page": 1,
-            "page_size": 20,
-            "total": 1,
-            "total_pages": 1,
-        },
-    }
+    vp_config = ViewpointConfig()
+    # 手动注入观景台数据到内部存储
+    vp_config._viewpoints = {vp.id: vp}
     return vp_config
 
 
-def build_mock_scheduler(
-    viewpoint: Viewpoint | None = None,
-    plugins: list | None = None,
-) -> GMPScheduler:
-    """构建注入 mock 的 Scheduler"""
-    from gmp.astro.astro_utils import AstroUtils
-    from gmp.fetcher.meteo_fetcher import MeteoFetcher
-
-    config = EngineConfig()
-    vp = viewpoint or make_viewpoint()
-
-    vp_config = make_viewpoint_config(vp)
-
-    fetcher = MagicMock(spec=MeteoFetcher)
-    # 默认 7 天晴天
-    frames = []
-    for d in range(7):
-        target_d = date.today() + timedelta(days=d + 1)
-        frames.append(make_clear_weather(target_d))
-    fetcher.fetch_hourly.return_value = pd.concat(frames, ignore_index=True)
-    fetcher.fetch_multi_points.return_value = {}
-
+def make_mock_astro() -> MagicMock:
+    """创建 AstroUtils mock (唯一需要 mock 的外部依赖: 天文计算精度随日期变化)"""
     astro = MagicMock(spec=AstroUtils)
     se = make_sun_events(date.today() + timedelta(days=1))
     astro.get_sun_events.return_value = se
@@ -161,6 +136,23 @@ def build_mock_scheduler(
         good_end=se.astronomical_dawn,
         quality="good",
     )
+    return astro
+
+
+def build_mock_scheduler(
+    viewpoint: Viewpoint | None = None,
+    plugins: list | None = None,
+    scenario: str = "clear",
+) -> GMPScheduler:
+    """构建使用真实组件的 Scheduler (仅 AstroUtils mock)"""
+    config = EngineConfig()
+    vp = viewpoint or make_viewpoint()
+    vp_config = make_viewpoint_config(vp)
+
+    # 使用 MockMeteoFetcher 代替 MagicMock
+    fetcher = MockMeteoFetcher(scenario=scenario)
+
+    astro = make_mock_astro()
 
     engine = ScoreEngine()
     if plugins is None:
@@ -181,7 +173,7 @@ def build_mock_scheduler(
 
 
 def create_test_client(scheduler=None) -> TestClient:
-    """创建测试用 TestClient"""
+    """创建测试用 TestClient (使用真实组件)"""
     vp_config = make_viewpoint_config()
 
     if scheduler is None:
@@ -193,4 +185,3 @@ def create_test_client(scheduler=None) -> TestClient:
         scheduler=scheduler,
     )
     return TestClient(app)
-

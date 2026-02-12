@@ -39,8 +39,21 @@ def _run_predict(args: argparse.Namespace) -> None:
     viewpoint_config = ViewpointConfig()
     viewpoint_config.load(_GMP_DIR / "config" / "viewpoints")
 
+    # 初始化缓存层
+    from gmp.cache.memory_cache import MemoryCache
+    from gmp.cache.repository import CacheRepository
+    from gmp.cache.weather_cache import WeatherCache
+
+    memory_cache = MemoryCache(ttl_seconds=config.memory_cache_ttl_seconds)
+    repository = CacheRepository(db_path=config.db_path)
+    cache = WeatherCache(
+        memory_cache=memory_cache,
+        repository=repository,
+        ttl_db_seconds=config.db_cache_ttl_seconds,
+    )
+
     # 初始化依赖
-    fetcher = MeteoFetcher(config)
+    fetcher = MeteoFetcher(cache=cache)
     astro = AstroUtils()
 
     # 使用工厂函数注册全部 Plugin (C5: 消除重复)

@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/python-≥3.10-blue" alt="Python">
   <img src="https://img.shields.io/badge/FastAPI-0.128-green" alt="FastAPI">
   <img src="https://img.shields.io/badge/license-Apache%202.0-orange" alt="License">
-  <img src="https://img.shields.io/badge/tests-282%20passed-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-350%20passed-brightgreen" alt="Tests">
 </p>
 
 ---
@@ -278,7 +278,7 @@ targets:               # 可观测目标
 
 ## 🧪 测试
 
-项目包含 **282 个测试用例**，覆盖三个层级:
+项目包含 **350 个测试用例**，覆盖三个层级:
 
 ```bash
 # 运行全部测试

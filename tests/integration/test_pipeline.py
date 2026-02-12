@@ -1,7 +1,10 @@
 """Module 07 集成测试 — GMPScheduler + AnalyzerPipeline
 
-所有外部依赖 (MeteoFetcher, AstroUtils) 使用 mock 替代，
-确保测试不依赖网络、天文库精度或当前日期。
+使用真实组件进行集成测试:
+- MockMeteoFetcher 提供预制天气数据 (替代 MagicMock)
+- 真实 ViewpointConfig (手动注入数据)
+- 真实 LocalAnalyzer / RemoteAnalyzer / ScoreEngine
+- AstroUtils 使用 mock (天文计算精度随日期变化)
 
 测试用例覆盖:
   - 完整晴天管线 (含分数/breakdown/status 传递)
@@ -18,7 +21,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
@@ -27,7 +30,6 @@ from gmp.analyzer.local_analyzer import LocalAnalyzer
 from gmp.analyzer.remote_analyzer import RemoteAnalyzer
 from gmp.astro.astro_utils import AstroUtils
 from gmp.astro.geo_utils import GeoUtils
-from gmp.fetcher.meteo_fetcher import MeteoFetcher
 from gmp.core.config_loader import EngineConfig, ViewpointConfig
 from gmp.core.models import (
     AnalysisResult,
@@ -43,6 +45,7 @@ from gmp.core.models import (
 )
 from gmp.core.pipeline import AnalyzerPipeline
 from gmp.core.scheduler import GMPScheduler
+from gmp.fetcher.mock_fetcher import MockMeteoFetcher
 from gmp.scorer.engine import ScoreEngine
 
 # UTC+8
@@ -89,30 +92,6 @@ def _make_viewpoint(
     )
 
 
-def _make_clear_weather(target_date: date, hours: int = 24) -> pd.DataFrame:
-    """生成晴天天气 DataFrame (L1 安全检查通过)"""
-    rows = []
-    for h in range(hours):
-        rows.append({
-            "forecast_date": str(target_date),
-            "forecast_hour": h,
-            "temperature_2m": -2.0 + h * 0.5,
-            "cloud_cover_total": 8,
-            "cloud_cover_low": 60,   # 高低云 → 云海触发
-            "cloud_cover_mid": 5,
-            "cloud_cover_medium": 5,
-            "cloud_cover_high": 3,
-            "precipitation_probability": 0,
-            "visibility": 35000,
-            "wind_speed_10m": 5.0,
-            "weather_code": 0,
-            "snowfall": 0,
-            "rain": 0,
-            "showers": 0,
-        })
-    return pd.DataFrame(rows)
-
-
 def _make_rainy_weather(target_date: date, hours: int = 24) -> pd.DataFrame:
     """生成雨天天气 DataFrame (L1 安全检查不通过)"""
     rows = []
@@ -137,6 +116,30 @@ def _make_rainy_weather(target_date: date, hours: int = 24) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _make_clear_weather(target_date: date, hours: int = 24) -> pd.DataFrame:
+    """生成晴天天气 DataFrame (L1 安全检查通过)"""
+    rows = []
+    for h in range(hours):
+        rows.append({
+            "forecast_date": str(target_date),
+            "forecast_hour": h,
+            "temperature_2m": -2.0 + h * 0.5,
+            "cloud_cover_total": 8,
+            "cloud_cover_low": 60,   # 高低云 → 云海触发
+            "cloud_cover_mid": 5,
+            "cloud_cover_medium": 5,
+            "cloud_cover_high": 3,
+            "precipitation_probability": 0,
+            "visibility": 35000,
+            "wind_speed_10m": 5.0,
+            "weather_code": 0,
+            "snowfall": 0,
+            "rain": 0,
+            "showers": 0,
+        })
+    return pd.DataFrame(rows)
+
+
 def _make_sun_events(target_date: date) -> SunEvents:
     """创建标准日出/日落事件"""
     d = target_date
@@ -150,16 +153,18 @@ def _make_sun_events(target_date: date) -> SunEvents:
     )
 
 
-def _make_moon_status() -> MoonStatus:
-    return MoonStatus(phase=15, elevation=-10.0)
-
-
-def _make_stargazing_window(sun_events: SunEvents) -> StargazingWindow:
-    return StargazingWindow(
-        good_start=sun_events.astronomical_dusk,
-        good_end=sun_events.astronomical_dawn,
+def _make_mock_astro(sun_events: SunEvents | None = None) -> MagicMock:
+    """创建 AstroUtils mock"""
+    astro = MagicMock(spec=AstroUtils)
+    se = sun_events or _make_sun_events(date.today() + timedelta(days=1))
+    astro.get_sun_events.return_value = se
+    astro.get_moon_status.return_value = MoonStatus(phase=15, elevation=-10.0)
+    astro.determine_stargazing_window.return_value = StargazingWindow(
+        good_start=se.astronomical_dusk,
+        good_end=se.astronomical_dawn,
         quality="good",
     )
+    return astro
 
 
 class _SimplePlugin:
@@ -201,34 +206,24 @@ class _SimplePlugin:
 def _build_scheduler(
     viewpoint: Viewpoint | None = None,
     plugins: list | None = None,
-    weather_all: pd.DataFrame | None = None,
+    scenario: str = "clear",
     sun_events: SunEvents | None = None,
 ) -> GMPScheduler:
-    """构建一个完整的 GMPScheduler (所有外部依赖 mock)"""
+    """构建使用真实组件的 GMPScheduler
+
+    真实组件: EngineConfig, ViewpointConfig, LocalAnalyzer, RemoteAnalyzer, ScoreEngine
+    Mock: MockMeteoFetcher (预制天气), AstroUtils (天文计算)
+    """
     config = EngineConfig()
 
-    vp_config = MagicMock(spec=ViewpointConfig)
     vp = viewpoint or _make_viewpoint()
-    vp_config.get.return_value = vp
+    vp_config = ViewpointConfig()
+    vp_config._viewpoints = {vp.id: vp}
 
-    fetcher = MagicMock(spec=MeteoFetcher)
-    if weather_all is not None:
-        fetcher.fetch_hourly.return_value = weather_all
-    else:
-        # 默认返回晴天 7 天数据
-        frames = []
-        for d in range(7):
-            target_d = date.today() + timedelta(days=d + 1)
-            frames.append(_make_clear_weather(target_d))
-        fetcher.fetch_hourly.return_value = pd.concat(frames, ignore_index=True)
+    # 使用 MockMeteoFetcher 代替 MagicMock
+    fetcher = MockMeteoFetcher(scenario=scenario)
 
-    fetcher.fetch_multi_points.return_value = {}
-
-    astro = MagicMock(spec=AstroUtils)
-    se = sun_events or _make_sun_events(date.today() + timedelta(days=1))
-    astro.get_sun_events.return_value = se
-    astro.get_moon_status.return_value = _make_moon_status()
-    astro.determine_stargazing_window.return_value = _make_stargazing_window(se)
+    astro = _make_mock_astro(sun_events)
 
     engine = ScoreEngine()
     if plugins:
@@ -301,11 +296,8 @@ class TestFullPipelineRainyDay:
         plugins = [_SimplePlugin("cloud_sea")]
         vp = _make_viewpoint(capabilities=["cloud_sea"])
 
-        tomorrow = date.today() + timedelta(days=1)
-        rainy = _make_rainy_weather(tomorrow)
-
         scheduler = _build_scheduler(
-            viewpoint=vp, plugins=plugins, weather_all=rainy
+            viewpoint=vp, plugins=plugins, scenario="rain"
         )
 
         result = scheduler.run("test_vp", days=1)
@@ -322,17 +314,17 @@ class TestFullPipelineRainyDay:
             )
         ]
         vp = _make_viewpoint(capabilities=["sunrise"])
-        tomorrow = date.today() + timedelta(days=1)
-        rainy = _make_rainy_weather(tomorrow)
 
         scheduler = _build_scheduler(
-            viewpoint=vp, plugins=plugins, weather_all=rainy
+            viewpoint=vp, plugins=plugins, scenario="rain"
         )
 
         result = scheduler.run("test_vp", days=1)
 
-        # fetch_multi_points 不应被调用 (因为 L1 拦截)
-        scheduler._fetcher.fetch_multi_points.assert_not_called()
+        # MockMeteoFetcher 记录了调用日志，检查只有 1 次本地天气调用
+        fetcher = scheduler._fetcher
+        multi_calls = [c for c in fetcher.call_log if c["method"] != "fetch_hourly"]
+        assert len(multi_calls) == 0
 
 
 class TestEventsFilterSkipsL2:
@@ -357,8 +349,9 @@ class TestEventsFilterSkipsL2:
             "test_vp", days=1, events=["cloud_sea", "frost"]
         )
 
-        # 仅 L1 Plugin → 不需要远程数据
-        scheduler._fetcher.fetch_multi_points.assert_not_called()
+        # MockMeteoFetcher 只应被调用 1 次 (fetch_hourly)
+        fetcher = scheduler._fetcher
+        assert fetcher.remote_call_count == 1
 
         day = result["forecast_days"][0]
         event_types = {e["event_type"] for e in day["events"]}
@@ -403,7 +396,7 @@ class TestL1ContextPassesViewpointAndSunEvents:
         ]
         scheduler = _build_scheduler(viewpoint=vp, plugins=plugins)
 
-        # 通过 patch 捕获 L1 analyze 调用参数
+        # 通过 spy 捕获 L1 analyze 调用参数
         original_analyze = scheduler._local_analyzer.analyze
         captured_contexts = []
 
@@ -672,19 +665,13 @@ class TestCustomTargetHour:
         config = EngineConfig(default_target_hour=6)
 
         vp = _make_viewpoint(capabilities=["cloud_sea"])
-        vp_config = MagicMock(spec=ViewpointConfig)
-        vp_config.get.return_value = vp
+        vp_config = ViewpointConfig()
+        vp_config._viewpoints = {vp.id: vp}
 
-        tomorrow = date.today() + timedelta(days=1)
-        fetcher = MagicMock(spec=MeteoFetcher)
-        fetcher.fetch_hourly.return_value = _make_clear_weather(tomorrow)
-        fetcher.fetch_multi_points.return_value = {}
+        fetcher = MockMeteoFetcher(scenario="clear")
 
-        se = _make_sun_events(tomorrow)
-        astro = MagicMock(spec=AstroUtils)
-        astro.get_sun_events.return_value = se
-        astro.get_moon_status.return_value = _make_moon_status()
-        astro.determine_stargazing_window.return_value = _make_stargazing_window(se)
+        se = _make_sun_events(date.today() + timedelta(days=1))
+        astro = _make_mock_astro(se)
 
         engine = ScoreEngine()
         engine.register(_SimplePlugin("cloud_sea"))

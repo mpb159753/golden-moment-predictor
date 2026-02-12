@@ -1,7 +1,9 @@
 """Module 09 集成测试 — API 端点
 
-使用 FastAPI TestClient + MockMeteoFetcher 测试所有端点。
-所有外部依赖使用 mock 替代，确保测试不依赖网络。
+使用真实组件进行集成测试:
+- MockMeteoFetcher 提供预制天气数据
+- 真实 ViewpointConfig / Scheduler / ScoreEngine
+- AstroUtils 使用 mock (天文计算精度随日期变化)
 
 测试用例:
   - GET /api/v1/viewpoints: 列表 + 分页
@@ -31,6 +33,7 @@ from tests.conftest import (
     build_mock_scheduler,
     create_test_client,
     make_viewpoint,
+    make_viewpoint_config,
 )
 
 
@@ -55,18 +58,7 @@ class TestListViewpoints:
     def test_list_viewpoints_pagination(self):
         """自定义分页参数: page=1, page_size=1"""
         vp = make_viewpoint()
-
-        vp_config = MagicMock(spec=ViewpointConfig)
-        # 模拟 page=1, page_size=1 的调用
-        vp_config.list_all.return_value = {
-            "viewpoints": [vp],
-            "pagination": {
-                "page": 1,
-                "page_size": 1,
-                "total": 1,
-                "total_pages": 1,
-            },
-        }
+        vp_config = make_viewpoint_config(vp)
 
         app = create_app(
             config=EngineConfig(),
@@ -131,11 +123,7 @@ class TestForecast:
 
     def test_forecast_404(self):
         """无效 viewpoint_id → 404"""
-        # 自定义 scheduler 使其 run() 抛出 ViewpointNotFoundError
-        scheduler = MagicMock()
-        scheduler.run.side_effect = ViewpointNotFoundError("invalid_id")
-
-        client = create_test_client(scheduler=scheduler)
+        client = create_test_client()
         resp = client.get("/api/v1/forecast/invalid_id")
 
         assert resp.status_code == 404
@@ -152,21 +140,13 @@ class TestForecast:
         assert resp.status_code == 422
 
     def test_forecast_days_param(self):
-        """days=3 → 正确传递至 scheduler (T3: 简化断言)"""
-        scheduler = MagicMock()
-        scheduler.run.return_value = {
-            "viewpoint": "牛背山",
-            "forecast_days": [],
-            "meta": {"api_calls": 0, "cache_hits": 0},
-        }
-
-        client = create_test_client(scheduler=scheduler)
+        """days=3 → 返回 3 天数据"""
+        client = create_test_client()
         resp = client.get("/api/v1/forecast/niubei_gongga?days=3")
 
         assert resp.status_code == 200
-        scheduler.run.assert_called_once_with(
-            viewpoint_id="niubei_gongga", days=3, events=None
-        )
+        data = resp.json()
+        assert len(data["forecast_days"]) == 3
 
 
 class TestTimeline:
@@ -183,31 +163,7 @@ class TestTimeline:
 
     def test_timeline_24hours(self):
         """每天应含 24 小时数据"""
-        # 使用 mock scheduler，直接返回包含 hourly_weather 的结果
-        scheduler = MagicMock()
-        tomorrow = date.today() + timedelta(days=1)
-        scheduler.run.return_value = {
-            "viewpoint": "牛背山",
-            "forecast_days": [
-                {
-                    "date": str(tomorrow),
-                    "confidence": "High",
-                    "events": [],
-                    "hourly_weather": [
-                        {
-                            "hour": h,
-                            "cloud_cover_total": 10,
-                            "precipitation_probability": 0,
-                            "temperature_2m": 5.0,
-                        }
-                        for h in range(24)
-                    ],
-                }
-            ],
-            "meta": {"api_calls": 0, "cache_hits": 0},
-        }
-
-        client = create_test_client(scheduler=scheduler)
+        client = create_test_client()
         resp = client.get("/api/v1/timeline/niubei_gongga?days=1")
 
         assert resp.status_code == 200
@@ -217,10 +173,7 @@ class TestTimeline:
 
     def test_timeline_404(self):
         """无效 viewpoint_id → 404"""
-        scheduler = MagicMock()
-        scheduler.run.side_effect = ViewpointNotFoundError("invalid_id")
-
-        client = create_test_client(scheduler=scheduler)
+        client = create_test_client()
         resp = client.get("/api/v1/timeline/invalid_id")
 
         assert resp.status_code == 404
@@ -231,10 +184,7 @@ class TestErrorFormat:
 
     def test_error_response_structure(self):
         """404 错误应包含 error.type, error.message, error.code"""
-        scheduler = MagicMock()
-        scheduler.run.side_effect = ViewpointNotFoundError("bad_id")
-
-        client = create_test_client(scheduler=scheduler)
+        client = create_test_client()
         resp = client.get("/api/v1/forecast/bad_id")
 
         assert resp.status_code == 404

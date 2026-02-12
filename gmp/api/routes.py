@@ -88,7 +88,18 @@ def create_app(
 
             vp_cfg = app.state.viewpoint_config
 
-            fetcher = MeteoFetcher(cfg)
+            from gmp.cache.memory_cache import MemoryCache
+            from gmp.cache.repository import CacheRepository
+            from gmp.cache.weather_cache import WeatherCache
+
+            memory_cache = MemoryCache(ttl_seconds=cfg.memory_cache_ttl_seconds)
+            repository = CacheRepository(db_path=cfg.db_path)
+            cache = WeatherCache(
+                memory_cache=memory_cache,
+                repository=repository,
+                ttl_db_seconds=cfg.db_cache_ttl_seconds,
+            )
+            fetcher = MeteoFetcher(cache=cache)
             astro = AstroUtils()
             score_engine = create_default_engine(cfg)
 
