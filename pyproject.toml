@@ -1,0 +1,12 @@
+[project]
+name = "gmp"
+version = "4.0.0"
+description = "川西旅行景观预测引擎"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[project.scripts]
+gmp = "gmp.main:cli"
