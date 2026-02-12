@@ -162,7 +162,7 @@ class LocalAnalyzer(BaseAnalyzer):
 
         如果 DataFrame 提供了 cloud_base_altitude 列，直接使用。
         """
-        if "cloud_base_altitude" in row:
+        if "cloud_base_altitude" in row and row["cloud_base_altitude"] is not None:
             return float(row["cloud_base_altitude"])
 
         low_cloud = row.get("cloud_cover_low", 0)

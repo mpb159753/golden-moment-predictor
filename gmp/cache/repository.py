@@ -20,6 +20,9 @@ class CacheRepository:
 
     def __init__(self, db_path: str) -> None:
         self._db_path = db_path
+        # 自动初始化表结构 (IF NOT EXISTS, 幂等)
+        from gmp.db.init_db import init_database
+        init_database(db_path)
 
     def _connect(self) -> sqlite3.Connection:
         """创建数据库连接。"""

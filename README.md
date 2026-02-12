@@ -84,7 +84,6 @@ source venv/bin/activate       # macOS / Linux
 # venv\Scripts\activate        # Windows
 
 pip install -r requirements.txt
-pip install fastapi uvicorn     # API 服务额外依赖
 ```
 
 ### 3. 运行测试
