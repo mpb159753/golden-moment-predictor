@@ -7,9 +7,22 @@ erDiagram
     Viewpoint ||--|| Location : "坐标"
     Viewpoint ||--|{ Target : "观测目标"
     Viewpoint ||--o{ PredictionHistory : "预测记录"
+    Route ||--|{ RouteStop : "停靠点"
+    RouteStop }o--|| Viewpoint : "引用"
     Target }o..o{ WeatherCache : "天气数据(按坐标关联)"
     Location }o..o{ WeatherCache : "天气数据(按坐标关联)"
 
+    Route {
+        string id PK "唯一标识 如 lixiao"
+        string name "显示名称 如 理小路"
+        string description "线路简介"
+    }
+    RouteStop {
+        string route_id FK "所属线路"
+        string viewpoint_id FK "引用观景台"
+        int order "停靠顺序 1-based"
+        string stay_note "停留建议"
+    }
     Viewpoint {
         string id PK "唯一标识 如 niubei_gongga"
         string name "显示名称"
@@ -51,6 +64,9 @@ erDiagram
 
 > [!NOTE]
 > **WeatherCache 与 Target/Location 的关系**: 通过 `ROUND(lat, 2)` 和 `ROUND(lon, 2)` 的坐标匹配间接关联，而非外键。这使得不同观景台对同一山峰的查询可以自然命中同一条缓存记录。
+
+> [!NOTE]
+> **Route 与 Viewpoint 的关系**: Route 通过 RouteStop 引用 Viewpoint，形成 N:M 关系 — 一条线路包含多个观景台，一个观景台可属于多条线路（如子梅垭口同时属于"贡嘎西线"和"贡嘎环线"）。Route 配置独立存放于 `config/routes/*.yaml`，不修改 Viewpoint 配置。
 
 ---
 
@@ -109,7 +125,7 @@ CREATE TABLE prediction_history (
     
     -- 预测结果
     predicted_score INTEGER,          -- 0-100
-    predicted_status TEXT,            -- 'Recommended', 'Not Recommended'
+    predicted_status TEXT,            -- 'Perfect', 'Recommended', 'Possible', 'Not Recommended'
     confidence TEXT,                  -- 'High', 'Medium', 'Low'
     conditions_json TEXT,             -- JSON 存储详细条件
     

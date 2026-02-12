@@ -118,7 +118,68 @@
 
 ---
 
-## 5.5 枚举值定义
+## 5.5 `GET /api/v1/routes` — 获取线路列表
+
+| 参数 | 位置 | 类型 | 必填 | 默认 | 说明 |
+|------|------|------|------|------|------|
+| `page` | query | int | | 1 | 页码 |
+| `page_size` | query | int | | 20 | 每页数量 (max 100) |
+
+**响应 `200 OK`**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `routes` | array | 线路列表 |
+| `routes[].id` | string | 线路唯一 ID |
+| `routes[].name` | string | 线路名称 |
+| `routes[].description` | string | 线路简介 |
+| `routes[].stops` | array | 停靠点列表 |
+| `routes[].stops[].viewpoint_id` | string | 观景台 ID |
+| `routes[].stops[].viewpoint_name` | string | 观景台名称 |
+| `routes[].stops[].order` | int | 停靠顺序 |
+| `routes[].stops[].stay_note` | string | 停留建议 |
+| `pagination` | object | 分页信息 (同 §5.1) |
+
+---
+
+## 5.6 `GET /api/v1/route/{route_id}/forecast` — 获取线路级预测报告
+
+| 参数 | 位置 | 类型 | 必填 | 默认 | 说明 |
+|------|------|------|------|------|------|
+| `route_id` | path | string | ✅ | | 线路 ID |
+| `days` | query | int | | 7 | 预测天数 (1-7) |
+| `events` | query | string | | (全部) | 逗号分隔的事件类型过滤 |
+
+> [!NOTE]
+> **线路级预测逻辑**: 对线路上每个停靠点分别运行 Viewpoint 级预测 (`scheduler.run()`)，
+> 然后按停靠顺序聚合结果。缓存层按坐标去重，相近点位的天气数据只获取一次。
+
+**响应 `200 OK`**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `route` | object | 线路基本信息 |
+| `route.id` | string | 线路 ID |
+| `route.name` | string | 线路名称 |
+| `stops` | array | 每个停靠点的预测结果 |
+| `stops[].viewpoint_id` | string | 观景台 ID |
+| `stops[].viewpoint_name` | string | 观景台名称 |
+| `stops[].order` | int | 停靠顺序 |
+| `stops[].stay_note` | string | 停留建议 |
+| `stops[].forecast_days` | array | 每日预测列表 (结构同 §5.2) |
+| `meta` | object | 汇总元信息 |
+| `meta.total_api_calls` | int | 所有点位合计 API 调用数 |
+| `meta.total_cache_hits` | int | 所有点位合计缓存命中数 |
+
+**错误响应**
+
+| HTTP 状态码 | 错误类型 | 说明 |
+|------------|--------|------|
+| `404` | `RouteNotFound` | 线路 ID 不存在 |
+
+---
+
+## 5.7 枚举值定义
 
 ### `event_type` 事件类型
 

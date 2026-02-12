@@ -1,6 +1,6 @@
 # 川西旅行景观预测引擎 - 系统设计文档
 
-**版本:** v3.0  
+**版本:** v3.1  
 **日期:** 2026-02-10  
 **基于:** [需求规格说明书 v0.4](file:///Users/mpb/WorkSpace/my-home-work/旅行预测.md)
 
@@ -26,10 +26,11 @@
 
 | 版本 | 日期 | 变更内容 |
 |------|------|---------|
+| v3.1 | 2026-02-12 | 新增线路预测 (Route) 概念：02-data-model Route/RouteStop ER、05-api 线路 API §5.5-5.6、06-class-sequence Route 类图 §6.10 时序图、07-code-interface Route/RouteStop dataclass |
 | v3.0 | 2026-02-10 | 架构重构：可插拔 ScorerPlugin 体系、DataContext 数据复用、日照金山解耦云海、文档模块化拆分 |
 | v2.0 | 2026-02-10 | 全面重写：章节重组、ER图、评分一致性修复、10点光路、雾凇模型、观星时间逻辑、数值化score_breakdown、API分页、ScoreEngine注册机制 |
 | v1.0 | 2026-02-09 | 初版设计文档 |
 
 ---
 
-*文档版本: v3.0 | 最后更新: 2026-02-10 | 作者: GMP Team*
+*文档版本: v3.1 | 最后更新: 2026-02-12 | 作者: GMP Team*

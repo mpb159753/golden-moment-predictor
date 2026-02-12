@@ -17,12 +17,14 @@ flowchart TB
     M06 --> M07
     M07 --> M08["Module 08<br/>输出层 Reporter"]
     M08 --> M09["Module 09<br/>REST API 与集成测试"]
+    M09 --> M10["Module 10<br/>线路预测 Route"]
 
     style M01 fill:#e3f2fd
     style M05 fill:#fce4ec
     style M06 fill:#fce4ec
     style M07 fill:#fff3e0
     style M09 fill:#e8f5e9
+    style M10 fill:#f3e5f5
 ```
 
 ## 模块列表
@@ -44,6 +46,7 @@ flowchart TB
 1. **Phase 1 (基础)**: Module 01 → Module 02 + Module 03 (可并行)
 2. **Phase 2 (核心)**: Module 04 → Module 05 + Module 06 (可并行) 
 3. **Phase 3 (集成)**: Module 07 → Module 08 → Module 09
+4. **Phase 4 (扩展)**: Module 10
 
 ## 每个模块文件说明
 

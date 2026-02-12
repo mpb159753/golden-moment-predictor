@@ -112,14 +112,31 @@ class ScorerPlugin(Protocol):
 ### Scheduler 调度流程
 
 ```python
+# capability → event_type 映射表
+# capabilities 使用缩写 (如 "sunrise")，Plugin 使用完整名 (如 "sunrise_golden_mountain")
+_CAPABILITY_EVENT_MAP: dict[str, list[str]] = {
+    "sunrise": ["sunrise_golden_mountain"],
+    "sunset":  ["sunset_golden_mountain"],
+    "stargazing": ["stargazing"],
+    "cloud_sea":  ["cloud_sea"],
+    "frost":      ["frost"],
+    "snow_tree":  ["snow_tree"],
+    "ice_icicle": ["ice_icicle"],
+}
+
 # 伪代码：Scheduler 的 Plugin 驱动调度
 def run_day(self, viewpoint: Viewpoint, date: date, 
             events_filter: list[str] | None = None) -> list[ScoreResult]:
     
-    # 1. 收集活跃 Plugin
+    # 1. 收集活跃 Plugin (通过映射表将 capabilities 展开为 event_type 集合)
+    allowed_event_types: set[str] = set()
+    for cap in viewpoint.capabilities:
+        mapped = _CAPABILITY_EVENT_MAP.get(cap, [cap])
+        allowed_event_types.update(mapped)
+    
     active_plugins = []
     for plugin in self.score_engine.all_plugins():
-        if plugin.event_type not in viewpoint.capabilities:
+        if plugin.event_type not in allowed_event_types:
             continue
         if events_filter and plugin.event_type not in events_filter:
             continue
@@ -207,14 +224,24 @@ def run_day(self, viewpoint: Viewpoint, date: date,
 
 ```python
 class GoldenMountainPlugin:
-    event_type = "sunrise_golden_mountain"  # 或 "sunset_golden_mountain"
+    """日照金山评分器 — 通过构造函数指定 sunrise/sunset 模式"""
     display_name = "日照金山"
     data_requirement = DataRequirement(
         needs_l2_target=True,
         needs_l2_light_path=True,
         needs_astro=True,
     )
+    
+    def __init__(self, event_type: str = "sunrise_golden_mountain") -> None:
+        self._event_type = event_type  # "sunrise_golden_mountain" 或 "sunset_golden_mountain"
+    
+    @property
+    def event_type(self) -> str:
+        return self._event_type
 ```
+
+> [!TIP]
+> **双实例注册**: 需分别创建 sunrise 和 sunset 两个实例并注册到 ScoreEngine（见 §3.11）。
 
 ### 触发条件
 
@@ -698,7 +725,8 @@ class ScoreEngine:
 
 # 初始化注册
 engine = ScoreEngine()
-engine.register(GoldenMountainPlugin())
+engine.register(GoldenMountainPlugin("sunrise_golden_mountain"))  # 日出金山
+engine.register(GoldenMountainPlugin("sunset_golden_mountain"))   # 日落金山
 engine.register(StargazingPlugin())
 engine.register(CloudSeaPlugin())
 engine.register(FrostPlugin())

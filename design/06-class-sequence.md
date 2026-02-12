@@ -6,11 +6,13 @@
 classDiagram
     class GMPScheduler {
         -config: ViewpointConfig
+        -route_config: RouteConfig
         -fetcher: MeteoFetcher
         -astro: AstroUtils
         -analyzer: AnalyzerPipeline
         -score_engine: ScoreEngine
         +run(viewpoint_id: str, days: int, events: list) ForecastReport
+        +run_route(route: Route, days: int, events: list) RouteForecastReport
         +run_batch(viewpoint_ids: list) list~ForecastReport~
         -_collect_active_plugins(viewpoint, events, date) list~ScorerPlugin~
         -_build_data_context(viewpoint, date, requirement) DataContext
@@ -21,6 +23,26 @@ classDiagram
         +load(path: str) void
         +get(id: str) Viewpoint
         +list_all(page: int, page_size: int) PaginatedResult
+    }
+
+    class RouteConfig {
+        -routes: dict
+        +load(path: str) void
+        +get(id: str) Route
+        +list_all(page: int, page_size: int) PaginatedResult
+    }
+
+    class Route {
+        +id: str
+        +name: str
+        +description: str
+        +stops: list~RouteStop~
+    }
+
+    class RouteStop {
+        +viewpoint_id: str
+        +order: int
+        +stay_note: str
     }
 
     class Viewpoint {
@@ -47,8 +69,12 @@ classDiagram
     }
 
     GMPScheduler --> ViewpointConfig
+    GMPScheduler --> RouteConfig
     GMPScheduler --> ScoreEngine
     ViewpointConfig --> Viewpoint
+    RouteConfig --> Route
+    Route --> RouteStop
+    RouteStop ..> Viewpoint : viewpoint_id
     Viewpoint --> Location
     Viewpoint --> Target
 ```
@@ -158,6 +184,7 @@ classDiagram
         +local_weather: DataFrame
         +sun_events: Optional~SunEvents~
         +moon_status: Optional~MoonStatus~
+        +stargazing_window: Optional~StargazingWindow~
         +target_weather: Optional~dict~
         +light_path_weather: Optional~list~
         +l2_result: Optional~AnalysisResult~
@@ -517,3 +544,35 @@ sequenceDiagram
     Note over P: 评分: 60 + 20 + 20 - 12(Age) - 12(Temp) - 30(Sun)
     P-->>S: ScoreResult(score=46, Not Recommended)
 ```
+
+---
+
+## 6.10 线路预测时序图 — Route Forecast
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant S as GMPScheduler
+    participant RC as RouteConfig
+    participant VC as ViewpointConfig
+
+    C->>S: run_route(route_id="lixiao", days=3)
+    S->>RC: get("lixiao")
+    RC-->>S: Route(理小路, stops=[stop1, stop2, stop3])
+
+    loop 对每个停靠点 (order=1..3)
+        S->>VC: get(stop.viewpoint_id)
+        VC-->>S: Viewpoint
+        Note over S: 复用 self.run(viewpoint_id, days, events)
+        S->>S: run(stop.viewpoint_id, days=3)
+        Note over S: 内部缓存层按坐标去重，相近点位共享天气数据
+    end
+
+    Note over S: 汇总 meta: total_api_calls, total_cache_hits
+    S-->>C: RouteForecastReport(route, stops[], meta)
+```
+
+> [!NOTE]
+> **缓存复用**: 线路上多个点位可能共享相同的天气数据缓存（坐标 ROUND(2) 后相同），
+> 无需额外优化，现有缓存机制自然处理。

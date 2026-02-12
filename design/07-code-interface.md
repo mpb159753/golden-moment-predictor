@@ -34,6 +34,21 @@ class Viewpoint:
     targets: list[Target]
 
 @dataclass
+class RouteStop:
+    """线路上的一个停靠点"""
+    viewpoint_id: str
+    order: int               # 停靠顺序 (1-based)
+    stay_note: str = ""      # 停留建议 (如 "建议日落前到达")
+
+@dataclass
+class Route:
+    """旅行线路"""
+    id: str                  # 如 "lixiao"
+    name: str                # 如 "理小路"
+    description: str = ""    # 线路简介
+    stops: list[RouteStop] = field(default_factory=list)
+
+@dataclass
 class SunEvents:
     sunrise: datetime
     sunset: datetime
@@ -191,6 +206,12 @@ class ViewpointNotFoundError(GMPError):
         self.viewpoint_id = viewpoint_id
         super().__init__(f"未找到观景台: {viewpoint_id}")
 
+class RouteNotFoundError(GMPError):
+    """线路未找到"""
+    def __init__(self, route_id: str):
+        self.route_id = route_id
+        super().__init__(f"未找到线路: {route_id}")
+
 class DataDegradedWarning(UserWarning):
     """数据降级警告"""
     pass
@@ -256,9 +277,12 @@ gmp/
 ├── main.py                        # FastAPI 应用入口 + CLI
 ├── config/
 │   ├── engine_config.yaml         # 引擎配置 (阈值、权重、TTL)
-│   └── viewpoints/
-│       ├── niubei_gongga.yaml     # 牛背山观景台配置
-│       ├── zheduo_gongga.yaml     # 折多山观景台配置
+│   ├── viewpoints/
+│   │   ├── niubei_gongga.yaml     # 牛背山观景台配置
+│   │   ├── zheduo_gongga.yaml     # 折多山观景台配置
+│   │   └── ...
+│   └── routes/
+│       ├── lixiao.yaml            # 理小路线路配置
 │       └── ...
 ├── core/
 │   ├── scheduler.py               # GMP Scheduler 主调度器 (Plugin 驱动)

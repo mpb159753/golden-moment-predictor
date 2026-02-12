@@ -235,11 +235,12 @@ cloud_sea_score = {
     "time_window": "06:00 - 09:00",
     "score_breakdown": {
         "gap":     {"score": 50, "max": 50, "detail": "高差1060m > 800m"},
-        "density": {"score": 25, "max": 30, "detail": "低云75%, >50%但<80%"},
+        "density": {"score": 20, "max": 30, "detail": "低云75%, >50%档位"},
+        "mid_structure": {"factor": 1.0, "detail": "中云5%, 上层通透"},
         "wind":    {"score": 20, "max": 20, "detail": "风速2.8km/h < 10km/h"},
     },
-    "total_score": 95,
-    "status": "Perfect",
+    "total_score": 90,   # (50+20)×1.0+20 = 90
+    "status": "Recommended",
     "confidence": "High",
 }
 
@@ -328,8 +329,8 @@ frost_score = {
         {
           "type": "cloud_sea",
           "time_window": "06:00 - 09:00",
-          "score": 95,
-          "status": "Perfect",
+          "score": 90,
+          "status": "Recommended",
           "conditions": {
             "gap": "1060m (站点3660m - 云底2600m)",
             "low_cloud": "75%",
@@ -337,7 +338,7 @@ frost_score = {
           },
           "score_breakdown": {
             "gap":     {"score": 50, "max": 50},
-            "density": {"score": 25, "max": 30},
+            "density": {"score": 20, "max": 30},
             "wind":    {"score": 20, "max": 20}
           }
         },
