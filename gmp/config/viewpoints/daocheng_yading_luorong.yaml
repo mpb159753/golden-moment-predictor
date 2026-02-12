@@ -1,0 +1,24 @@
+# 稻城亚丁（洛绒牛场）代表点配置
+
+id: daocheng_yading_luorong
+name: 稻城亚丁·洛绒牛场
+location:
+  lat: 28.4338
+  lon: 100.2878
+  altitude: 4150
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+  - frost
+  - snow_tree
+
+targets:
+  - name: 仙乃日峰
+    lat: 28.447
+    lon: 100.307
+    altitude: 6032
+    weight: primary
+    applicable_events: null

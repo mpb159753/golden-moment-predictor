@@ -1,0 +1,17 @@
+# 木格措（七色海方向）代表点配置
+
+id: mugacuo_qisehai
+name: 木格措·七色海
+location:
+  lat: 30.1472
+  lon: 101.8913
+  altitude: 3490
+
+capabilities:
+  - cloud_sea
+  - frost
+  - snow_tree
+  - ice_icicle
+  - stargazing
+
+targets: []

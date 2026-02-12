@@ -1,0 +1,24 @@
+# 子梅垭口观景点配置
+
+id: zimei_pass
+name: 子梅垭口
+location:
+  lat: 29.6318
+  lon: 101.9869
+  altitude: 4550
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+  - frost
+  - snow_tree
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.595
+    lon: 101.879
+    altitude: 7556
+    weight: primary
+    applicable_events: null

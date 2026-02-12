@@ -1,0 +1,24 @@
+# S434/机场路子点：红海子
+# 说明: route_id 暂不入模，后续架构改造时补充
+
+id: honghaizi
+name: 红海子
+location:
+  lat: 30.0975
+  lon: 101.9895
+  altitude: 4300
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+  - frost
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.595
+    lon: 101.879
+    altitude: 7556
+    weight: primary
+    applicable_events: null

@@ -1,0 +1,23 @@
+# 冷嘎措观景点配置
+
+id: lenggacuo
+name: 冷嘎措
+location:
+  lat: 29.5798
+  lon: 101.9678
+  altitude: 4550
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+  - frost
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.595
+    lon: 101.879
+    altitude: 7556
+    weight: primary
+    applicable_events: null

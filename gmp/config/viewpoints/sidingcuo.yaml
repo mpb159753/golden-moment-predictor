@@ -1,0 +1,31 @@
+# S434/机场路子点：斯丁措
+# 说明: route_id 暂不入模，后续架构改造时补充
+
+id: sidingcuo
+name: 斯丁措
+location:
+  lat: 30.1689
+  lon: 101.9536
+  altitude: 4250
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+  - frost
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.595
+    lon: 101.879
+    altitude: 7556
+    weight: primary
+    applicable_events: null
+
+  - name: 雅拉神山
+    lat: 30.15
+    lon: 101.78
+    altitude: 5820
+    weight: secondary
+    applicable_events: null

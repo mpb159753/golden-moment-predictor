@@ -1,0 +1,25 @@
+# 墨石公园代表点配置
+
+id: moshi_park
+name: 墨石公园
+location:
+  lat: 30.929
+  lon: 101.541
+  altitude: 3500
+
+capabilities:
+  - sunrise
+  - sunset
+  - cloud_sea
+  - frost
+  - stargazing
+
+targets:
+  - name: 雅拉神山
+    lat: 30.15
+    lon: 101.78
+    altitude: 5820
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

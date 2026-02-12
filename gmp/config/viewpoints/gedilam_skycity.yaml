@@ -1,0 +1,23 @@
+# 格底拉姆（天空之城）观景点配置
+
+id: gedilam_skycity
+name: 格底拉姆天空之城
+location:
+  lat: 30.165
+  lon: 101.973
+  altitude: 4200
+
+capabilities:
+  - sunset
+  - stargazing
+  - cloud_sea
+  - frost
+
+targets:
+  - name: 雅拉神山
+    lat: 30.15
+    lon: 101.78
+    altitude: 5820
+    weight: primary
+    applicable_events:
+      - sunset
