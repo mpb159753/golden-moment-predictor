@@ -85,8 +85,14 @@ class PipelineResult:
     viewpoint: Viewpoint
     forecast_days: list[dict]   # 每日预测结果
     meta: dict                  # cache_stats, generated_at 等
+```
 
-# ==================== Plugin 架构 ====================
+### 7.1.2 评分数据模型 (`gmp/scoring/models.py`)
+
+> 以下数据类属于评分子系统，定义在 `gmp/scoring/models.py` 中，与核心领域模型分离。
+
+```python
+# ==================== 评分数据模型 (gmp/scoring/models.py) ====================
 
 @dataclass
 class DataRequirement:
@@ -228,7 +234,9 @@ class InvalidDateError(GMPError):
 
 ---
 
-## 7.3 配置接口
+## 7.3 配置接口 (`gmp/core/config_loader.py`)
+
+> `EngineConfig` 和 `ConfigManager` 定义在 `gmp/core/config_loader.py` 中。
 
 ```python
 @dataclass
@@ -308,8 +316,8 @@ gmp/
 ├── main.py                        # CLI 入口
 ├── core/
 │   ├── scheduler.py               # GMPScheduler (主调度器)
-│   ├── config_loader.py           # ViewpointConfig + RouteConfig 加载
-│   └── models.py                  # Viewpoint, Route, Location 等数据模型
+│   ├── config_loader.py           # EngineConfig + ConfigManager + ViewpointConfig + RouteConfig
+│   └── models.py                  # Viewpoint, Route, Location, ScoreResult, PipelineResult 等领域模型
 ├── data/
 │   ├── meteo_fetcher.py           # MeteoFetcher (Open-Meteo API)
 │   ├── astro_utils.py             # AstroUtils (天文计算)
@@ -319,7 +327,7 @@ gmp/
 │   └── repository.py              # CacheRepository (DB 操作)
 ├── scoring/
 │   ├── engine.py                  # ScoreEngine (Plugin 注册中心)
-│   ├── models.py                  # DataContext, ScoreResult, DataRequirement
+│   ├── models.py                  # DataRequirement, DataContext (评分数据模型)
 │   └── plugins/
 │       ├── golden_mountain.py     # GoldenMountainPlugin (日照金山)
 │       ├── stargazing.py          # StargazingPlugin (观星)

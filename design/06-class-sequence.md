@@ -5,17 +5,30 @@
 ```mermaid
 classDiagram
     class GMPScheduler {
-        -config: ViewpointConfig
+        -config: ConfigManager
+        -viewpoint_config: ViewpointConfig
         -route_config: RouteConfig
         -fetcher: MeteoFetcher
         -astro: AstroUtils
+        -geo: GeoUtils
         -score_engine: ScoreEngine
-        +run(viewpoint_id: str, days: int, events: list) ForecastReport
-        +run_route(route: Route, days: int, events: list) RouteForecastReport
-        +run_batch(viewpoint_ids: list) list~ForecastReport~
-        +run_with_data(viewpoint: Viewpoint, date: date, weather: DataFrame, events: list) PipelineResult
+        +run(viewpoint_id: str, days: int, events: list) PipelineResult
+        +run_route(route_id: str, days: int, events: list) list~PipelineResult~
+        +run_with_data(viewpoint_id: str, weather_data: dict, target_date: date, events: list) PipelineResult
         -_collect_active_plugins(viewpoint, events, date) list~ScorerPlugin~
         -_build_data_context(viewpoint, date, requirement) DataContext
+    }
+
+    class BatchGenerator {
+        -scheduler: GMPScheduler
+        -viewpoint_config: ViewpointConfig
+        -route_config: RouteConfig
+        -forecast_reporter: ForecastReporter
+        -timeline_reporter: TimelineReporter
+        -json_writer: JSONFileWriter
+        +generate_all(days: int, events: list, fail_fast: bool, no_archive: bool) dict
+        -_process_viewpoint(viewpoint_id: str, days: int, events: list) PipelineResult
+        -_process_route(route_id: str, days: int, events: list) dict
     }
 
     class ViewpointConfig {
@@ -71,6 +84,9 @@ classDiagram
     GMPScheduler --> ViewpointConfig
     GMPScheduler --> RouteConfig
     GMPScheduler --> ScoreEngine
+    BatchGenerator --> GMPScheduler
+    BatchGenerator --> ViewpointConfig
+    BatchGenerator --> RouteConfig
     ViewpointConfig --> Viewpoint
     RouteConfig --> Route
     Route --> RouteStop
