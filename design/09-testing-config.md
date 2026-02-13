@@ -323,7 +323,7 @@ targets:
 | `ephem` / `skyfield` | 天文计算 | 最新 |
 | `httpx` | HTTP 客户端 | ≥0.25 |
 | `pyyaml` | YAML 配置解析 | ≥6.0 |
-| `openmeteo-requests` | Open-Meteo SDK (含历史 API) | 最新 |
+
 
 ### B. 参考链接
 

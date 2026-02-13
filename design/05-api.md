@@ -15,8 +15,9 @@ gmp predict <viewpoint_id> [options]
 | `viewpoint_id` | str | ✅ | — | 观景台 ID (如 `niubei_gongga`) |
 | `--days` | int | | 7 | 预测天数 (1-16) |
 | `--events` | str | | 全部 | 逗号分隔事件类型过滤 |
-| `--format` | str | | `table` | 输出格式: `table` / `json` / `detail` |
-| `--output` | path | | — | 输出 JSON 文件路径 (仅 `--format json`) |
+| `--output` | str | | `table` | 输出格式: `table` / `json` |
+| `--detail` | flag | | — | 显示评分明细 (仅 `--output table`) |
+| `--output-file` | path | | — | 输出 JSON 文件路径 (仅 `--output json`) |
 
 **示例**
 
@@ -25,10 +26,13 @@ gmp predict <viewpoint_id> [options]
 gmp predict niubei_gongga --days 7
 
 # 只看日出金山和云海，输出 JSON
-gmp predict niubei_gongga --events sunrise_golden_mountain,cloud_sea --format json
+gmp predict niubei_gongga --events sunrise_golden_mountain,cloud_sea --output json
 
 # 输出到文件
-gmp predict niubei_gongga --format json --output result.json
+gmp predict niubei_gongga --output json --output-file result.json
+
+# 显示评分明细
+gmp predict niubei_gongga --detail
 ```
 
 ---
@@ -44,7 +48,7 @@ gmp predict-route <route_id> [options]
 | `route_id` | str | ✅ | — | 线路 ID (如 `lixiao`) |
 | `--days` | int | | 7 | 预测天数 |
 | `--events` | str | | 全部 | 逗号分隔事件类型过滤 |
-| `--format` | str | | `table` | 输出格式: `table` / `json` / `detail` |
+| `--output` | str | | `table` | 输出格式: `table` / `json` |
 
 ---
 
@@ -56,9 +60,11 @@ gmp generate-all [options]
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 |------|------|------|------|------|
+| `--days` | int | | 7 | 预测天数 |
+| `--events` | str | | 全部 | 逗号分隔事件类型过滤 |
 | `--output` | path | | `./public/data/` | JSON 输出目录 |
 | `--archive` | path | | `./archive/` | 历史归档目录 |
-| `--days` | int | | 7 | 预测天数 |
+| `--fail-fast` | flag | | — | 单站失败时立即中止 |
 | `--no-archive` | flag | | — | 跳过历史归档 |
 
 **行为**
@@ -101,7 +107,7 @@ gmp list-viewpoints [options]
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 |------|------|------|------|------|
-| `--format` | str | | `table` | 输出格式: `table` / `json` |
+| `--output` | str | | `table` | 输出格式: `table` / `json` |
 
 **输出字段**: ID、名称、坐标、海拔、支持的景观类型
 
@@ -115,7 +121,7 @@ gmp list-routes [options]
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 |------|------|------|------|------|
-| `--format` | str | | `table` | 输出格式: `table` / `json` |
+| `--output` | str | | `table` | 输出格式: `table` / `json` |
 
 **输出字段**: ID、名称、停靠站数量、各站观景台 ID
 

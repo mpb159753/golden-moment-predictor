@@ -96,9 +96,9 @@ CREATE TABLE weather_cache (
     temperature_2m REAL,
     cloud_cover_total INTEGER,        -- 0-100%
     cloud_cover_low INTEGER,
-    cloud_cover_medium INTEGER,
+    cloud_cover_medium INTEGER,       -- Open-Meteo API 字段名: cloud_cover_mid
     cloud_cover_high INTEGER,
-    cloud_base_altitude REAL,         -- meters
+    cloud_base_altitude REAL,         -- meters (Open-Meteo API 字段名: cloudbase)
     precipitation_probability INTEGER,
     visibility REAL,                  -- meters
     wind_speed_10m REAL,              -- km/h
