@@ -210,7 +210,3 @@ __marimo__/
 data/gmp.db
 public/
 archive/
-
-# AI editor
-.agent
-.gemini
