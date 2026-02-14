@@ -4,7 +4,7 @@
 
 **Goal:** 实现统一配置管理器，包括引擎配置 (`ConfigManager`)、观景台配置 (`ViewpointConfig`)、线路配置 (`RouteConfig`) 的加载与访问。
 
-**依赖模块:** M02 (数据模型: `Viewpoint`, `Route`, `RouteStop`, `Location`, `Target`) — 注意 `EngineConfig` 定义在本模块 (`gmp/core/config_loader.py`) 中，不从 M02 导入。
+**依赖模块:** M02 (数据模型: `Viewpoint`, `Route`, `RouteStop`, `Location`, `Target`, `EngineConfig`)
 
 ---
 

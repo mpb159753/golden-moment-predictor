@@ -4,7 +4,7 @@
 
 | 级别 | 场景 | 处理策略 | 用户影响 |
 |------|------|---------|---------|
-| 🟢 L0 透明恢复 | 内存缓存过期 | 自动重新获取，用户无感知 | 无 |
+| 🟢 L0 透明恢复 | SQLite 缓存自动刷新 | 缓存数据过期后自动重新获取，用户无感知 | 无 |
 | 🟡 L1 降级响应 | API 超时但有旧缓存 | 使用 stale 缓存，标记 `Degraded` | confidence 标记为 `Degraded` |
 | 🟠 L2 部分失败 | 目标天气获取失败 | 跳过该目标评分，其他正常 | 事件标记 `partial_data` |
 | 🔴 L3 服务不可用 | 所有 API 失败且无缓存 | 返回错误信息并退出 | CLI 输出错误提示 |
@@ -105,8 +105,8 @@ logger.info("forecast_generated",
 logger.debug("plugin_scored",
     plugin="GoldenMountainPlugin",
     event_type="sunrise_golden_mountain",
-    total_score=87,
-    breakdown={"light_path": 35, "target_visible": 32, "local_clear": 20},
+    total_score=90,
+    breakdown={"light_path": 35, "target_visible": 35, "local_clear": 20},
     elapsed_ms=5
 )
 

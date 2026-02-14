@@ -41,12 +41,8 @@ class Target:
     lat: float
     lon: float
     altitude: int
-    weight: Literal["primary", "secondary"]   # 仅接受这两个值
+    weight: str                              # "primary" | "secondary"
     applicable_events: Optional[list[str]]   # None = 自动计算
-
-    def __post_init__(self):
-        if self.weight not in ("primary", "secondary"):
-            raise ValueError(f"weight 必须为 'primary' 或 'secondary', 收到: {self.weight}")
 
 @dataclass
 class Viewpoint:
@@ -106,24 +102,10 @@ class ScoreResult:
     note: str = ""
 
 @dataclass
-class ForecastDay:
-    """单日预测结果 — 结构化替代原 dict 定义"""
-    date: str              # YYYY-MM-DD
-    summary: str           # 由 SummaryGenerator 生成
-    best_event: ScoreResult | None
-    events: list[ScoreResult]
-    confidence: str        # "High" | "Medium" | "Low"
-
-@dataclass
 class PipelineResult:
     viewpoint: Viewpoint
-    forecast_days: list[ForecastDay]
+    forecast_days: list[dict]
     meta: dict
-    # meta 字段说明:
-    #   generated_at: str (ISO datetime)
-    #   engine_version: str
-    #   cache_stats: dict (缓存命中/未命中统计)
-    #   data_freshness: str ("fresh" | "degraded")
 ```
 
 ### status 映射工具函数
@@ -155,9 +137,7 @@ def days_ahead_to_confidence(days_ahead: int, config: dict | None = None) -> str
 
 - 每个 dataclass 的基本构建与属性访问
 - `Location` 坐标边界值（负/0/正）
-- `Target.weight="primary"` 构建成功
-- `Target.weight="secondary"` 构建成功
-- `Target.weight="invalid"` → 抛出 `ValueError`
+- `Target.weight` 仅接受 "primary"/"secondary"
 - `Viewpoint.capabilities` 为空列表时行为
 - `Route.stops` 默认空列表
 - `StargazingWindow.quality` 各合法值

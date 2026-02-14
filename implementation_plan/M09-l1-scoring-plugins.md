@@ -1,0 +1,262 @@
+# M09: L1 评分 Plugins (CloudSea + Frost + SnowTree + IceIcicle)
+
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** 实现仅需 L1 本地天气数据的 4 个评分 Plugin：云海、雾凇、树挂积雪、冰挂。
+
+**依赖模块:** M08 (ScoreEngine + DataContext + Plugin 接口)
+
+---
+
+## 背景
+
+这 4 个 Plugin 的共同特点：
+- 仅需 `DataContext.local_weather` (L1 本地天气)
+- 不需要远程目标天气或天文数据
+- 各自独立的触发条件和评分模型
+- **所有阈值/权重/配置参数从构造函数接收，来源于 `engine_config.yaml`**
+
+### Plugin 通用结构
+
+每个 Plugin 遵循相同的结构模式：
+
+```python
+class XxxPlugin:
+    def __init__(self, config: dict):
+        """config 来自 ConfigManager.get_plugin_config(event_type)"""
+        self._config = config
+
+    @property
+    def event_type(self) -> str: ...
+    @property
+    def display_name(self) -> str: ...
+    @property
+    def data_requirement(self) -> DataRequirement: ...
+
+    def score(self, context: DataContext) -> ScoreResult | None:
+        """
+        1. 安全检查 (关注时段的降水/能见度)
+        2. 触发判定 (不满足则 return None)
+        3. 计算评分
+        4. 返回 ScoreResult
+        """
+
+    def dimensions(self) -> list[str]:
+        """返回评分维度名称列表"""
+```
+
+### 安全检查通用逻辑
+
+每个 Plugin 在 `score()` 中自行检查关注时段的天气安全条件：
+- 若该时段 `precipitation_probability > safety.precip_threshold`，剔除该时段数据
+- 若该时段 `visibility < safety.visibility_threshold`，剔除该时段数据
+- 仅使用通过安全检查的时段做评分
+
+安全阈值从配置中获取 (`safety.precip_threshold`, `safety.visibility_threshold`)。
+
+---
+
+## Task 1: CloudSeaPlugin — 云海
+
+**Files:**
+- Create: `gmp/scoring/plugins/cloud_sea.py`
+- Test: `tests/unit/test_plugin_cloud_sea.py`
+
+### 配置参数 (来自 `engine_config.yaml → scoring.cloud_sea`)
+
+```yaml
+cloud_sea:
+  weights: { gap: 50, density: 30, wind: 20 }
+  thresholds:
+    gap_meters: [800, 500, 200]              # >800=50, >500=40, >200=20, ≤200=10
+    density_pct: [80, 50, 30]                # >80%=30, >50%=20, >30%=10, ≤30%=5
+    wind_speed: [3, 5, 8]                    # <3=20, <5=15, <8=10, ≥8=5
+    mid_cloud_penalty: [30, 60]              # >60%=0.3, >30%=0.7, ≤30%=1.0
+```
+
+### 评分逻辑
+
+1. **触发判定**: `cloud_base_altitude < viewpoint.location.altitude` → 触发，否则返回 None
+2. **高差计算**: `gap = viewpoint.altitude - cloud_base_altitude`
+3. **评分公式**: `Score = (Score_gap + Score_density) × Factor_mid + Score_wind`
+4. **维度**: `["gap", "density", "mid_structure", "wind"]`
+
+### 应测试的内容
+
+- 云底高度 > 站点海拔 → 返回 None (未触发)
+- 云底高度 < 站点海拔, Gap=1060m, 低云75%, 中云5%, 风2.8km/h → score≈90
+- 极大 Gap (>800m) + 高密度 (>80%) + 极低风 (<3km/h) + 低中云 → 满分
+- 极小 Gap (<200m) → gap 维度低分
+- 中云 >60% → factor=0.3 大幅扣分
+- 中云 30-60% → factor=0.7
+- 安全检查: 关注时段有降水 → 剔除该时段
+- 配置驱动: 修改阈值后评分结果变化
+
+---
+
+## Task 2: FrostPlugin — 雾凇
+
+**Files:**
+- Create: `gmp/scoring/plugins/frost.py`
+- Test: `tests/unit/test_plugin_frost.py`
+
+### 配置参数 (来自 `engine_config.yaml → scoring.frost`)
+
+```yaml
+frost:
+  trigger: { max_temperature: 2.0 }
+  weights: { temperature: 40, moisture: 30, wind: 20, cloud: 10 }
+  thresholds:
+    temp_ranges:
+      optimal: {range: [-5, 0], score: 40}
+      good: {range: [-10, -5], score: 30}
+      acceptable: {range: [0, 2], score: 25}
+      bad: {range: [-999, -10], score: 15}
+    visibility_km: [5, 10, 20]               # <5=30, <10=20, <20=10, ≥20=5
+    wind_speed: [3, 5, 10]                   # <3=20, <5=15, <10=10, ≥10=0
+    cloud_pct:
+      optimal: {range: [30, 60], score: 10}
+      clear: {range: [0, 30], score: 5}
+      heavy: {range: [60, 100], score: 3}
+```
+
+### 评分逻辑
+
+1. **触发判定**: 温度 < `trigger.max_temperature` → 触发
+2. **评分公式**: `Score = Score_temp + Score_moisture + Score_wind + Score_cloud`
+3. **维度**: `["temperature", "moisture", "wind", "cloud"]`
+
+### 应测试的内容
+
+- 温度 ≥ 2°C → 返回 None
+- -3.8°C, 能见度 35km, 风 2.8km/h, 低云 75% → score≈72
+- -3°C, 能见度 3km (雾气充沛), 风 1km/h, 低云 45% → score≥90
+- 各温度区间正确映射
+- 各能见度区间正确映射
+- 风速 ≥ 10km/h → wind 维度 0 分
+- 安全检查: 降水 > 阈值 → 剔除
+
+---
+
+## Task 3: SnowTreePlugin — 树挂积雪
+
+**Files:**
+- Create: `gmp/scoring/plugins/snow_tree.py`
+- Test: `tests/unit/test_plugin_snow_tree.py`
+
+### 配置参数 (来自 `engine_config.yaml → scoring.snow_tree`)
+
+```yaml
+snow_tree:
+  trigger:
+    recent_path: { min_snowfall_12h_cm: 0.2 }
+    retention_path: { min_snowfall_24h_cm: 1.5, min_duration_h: 3, min_subzero_hours: 8, max_temp: 1.5 }
+  weights: { snow_signal: 60, clear_weather: 20, stability: 20 }
+  thresholds:
+    snow_signal:
+      - {snowfall: 2.5, duration: 4, score: 60}
+      - {snowfall: 1.5, duration: 3, score: 52}
+      - {snowfall: 0.8, duration: 2, score: 44}
+      - {snowfall: 0.2, duration: 0, score: 32}
+    clear_weather:
+      - {weather_code: [0], max_cloud: 20, score: 20}
+      - {weather_code: [1, 2], max_cloud: 45, score: 16}
+      - {score: 8}
+    stability_wind: [12, 20]                 # <12=20, <20=14, ≥20=8
+  deductions:
+    age: [{hours: 3, deduction: 0}, {hours: 8, deduction: 2}, ...]
+    temp: [{temp: -2, deduction: 0}, {temp: -0.5, deduction: 2}, ...]
+    sun: [{sun_score: 2, deduction: 0}, {sun_score: 5, deduction: 15}, {sun_score: 8, deduction: 30}]
+    wind_severe_threshold: 50                # >50km/h=-50
+    wind_moderate_threshold: 30              # >30km/h=-20
+  past_hours: 24
+```
+
+### 数据需求
+
+```python
+data_requirement = DataRequirement(past_hours=24)
+```
+
+### 派生指标 (Plugin 内部从 `local_weather` 计算)
+
+- `recent_snowfall_12h_cm` / `recent_snowfall_24h_cm`
+- `hours_since_last_snow`
+- `snowfall_duration_h_24h`
+- `subzero_hours_since_last_snow` / `max_temp_since_last_snow`
+- `max_wind_since_last_snow`
+- `sunshine_hours_since_snow` (按云量加权)
+
+### 触发路径
+
+- **常规路径**: 近 12h 降雪 ≥ `min_snowfall_12h_cm` + 当前晴朗
+- **留存路径**: 近 24h 降雪 ≥ 大雪阈值 + 持续低温 + 时长足够
+- 均不满足 → None
+
+### 评分公式
+
+`Score = Score_snow + Score_clear + Score_stable - Deduction_age - Deduction_temp - Deduction_sun - Deduction_wind`
+
+### 应测试的内容
+
+- 近期无降雪 → 返回 None
+- 近 12h 雪 0.5cm, 距今 6h, 晴 → 触发常规路径, score≥70
+- 大雪 3cm, 距今 19h, 暴晒 8h → 触发留存路径, score≈46
+- 各扣分项独立验证
+- 历史大风 >50km/h → 大幅扣分
+- 累积日照扣分验证
+- `past_hours=24` 数据需求正确
+
+---
+
+## Task 4: IceIciclePlugin — 冰挂
+
+**Files:**
+- Create: `gmp/scoring/plugins/ice_icicle.py`
+- Test: `tests/unit/test_plugin_ice_icicle.py`
+
+### 配置参数 (来自 `engine_config.yaml → scoring.ice_icicle`)
+
+```yaml
+ice_icicle:
+  trigger:
+    recent_path: { min_water_12h_mm: 0.4 }
+    retention_path: { min_water_24h_mm: 1.0, min_subzero_hours: 6, max_temp: 1.5 }
+  weights: { water_input: 50, freeze_strength: 30, view_quality: 20 }
+  thresholds:
+    water_input: [...]
+    freeze_strength: [...]
+    view_quality: [...]
+  deductions:
+    age: [...]
+    temp: [...]
+  past_hours: 24
+```
+
+### 派生指标
+
+- `effective_water_input_12h_mm` (`rain+showers` + 雪转水当量)
+- `effective_water_input_24h_mm`
+- `hours_since_last_water_input`
+- `subzero_hours_since_last_water`
+- `max_temp_since_last_water`
+
+### 评分公式
+
+`Score = Score_water + Score_freeze + Score_view - Deduction_age - Deduction_temp`
+
+### 应测试的内容
+
+- 近期无有效水源 → 返回 None
+- 水源 2.3mm, 冻结 11h, -1.8°C → score≈70
+- 各维度阶梯验证
+- 扣分项验证
+- 雪转水当量计算正确
+
+---
+
+## 验证命令
+
+```bash
+python -m pytest tests/unit/test_plugin_cloud_sea.py tests/unit/test_plugin_frost.py tests/unit/test_plugin_snow_tree.py tests/unit/test_plugin_ice_icicle.py -v
+```

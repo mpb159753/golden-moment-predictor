@@ -156,9 +156,7 @@ class WeatherCache:
 - `get` 无数据返回 None
 - `get_or_fetch`: 缓存命中时不调用 fetch_fn
 - `get_or_fetch`: 缓存未命中时调用 fetch_fn 并写入缓存
-- `get_or_fetch`: fetch_fn 抛异常 → 异常向上传播，缓存不写入
 - DataFrame 列名与 weather_cache 表字段对应
-- 空 DataFrame (0 行) 写入后 `get` 返回 None (视为无数据)
 
 ---
 

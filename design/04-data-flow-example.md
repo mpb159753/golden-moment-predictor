@@ -1,5 +1,9 @@
 # 4. 各阶段数据流示例
 
+> [!CAUTION]
+> **本文档中出现的所有评分数值、阈值、权重均为默认参考值（示例）。**
+> 实际运行时，所有数值均通过 `engine_config.yaml` 配置文件加载，代码中不应存在魔法数字。
+
 以 **牛背山 → 贡嘎金山 (2026-02-11 日出)** 场景完整演示各模块的输入输出。
 
 ---
@@ -191,10 +195,10 @@ golden_score = {
     "time_window": "07:15 - 07:45",
     "score_breakdown": {
         "light_path":     {"score": 35, "max": 35, "detail": "10点均值云量8%, ≤10%满分"},
-        "target_visible": {"score": 32, "max": 40, "detail": "贡嘎高+中云13%, 10-20%区间"},
-        "local_clear":    {"score": 20, "max": 25, "detail": "本地总云22%, 15-30%区间"},
+        "target_visible": {"score": 35, "max": 40, "detail": "贡嘎高+中云13%, ≤20%区间"},
+        "local_clear":    {"score": 20, "max": 25, "detail": "本地总云22%, ≤30%区间"},
     },
-    "total_score": 87,   # 35+32+20 = 87
+    "total_score": 90,   # 35+35+20 = 90
     "status": "Recommended",
     "confidence": "High",
 }
@@ -270,7 +274,7 @@ frost_score = {
         {
           "type": "sunrise_golden_mountain",
           "time_window": "07:15 - 07:45",
-          "score": 87,
+          "score": 90,
           "status": "Recommended",
           "conditions": {
             "local": {
@@ -290,7 +294,7 @@ frost_score = {
           },
           "score_breakdown": {
             "light_path":     {"score": 35, "max": 35},
-            "target_visible": {"score": 32, "max": 40},
+            "target_visible": {"score": 35, "max": 40},
             "local_clear":    {"score": 20, "max": 25}
           }
         },

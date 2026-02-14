@@ -17,7 +17,7 @@ ScoreEngine 是 GMP 评分系统的核心注册中心，职责：
 
 ### 架构要点 (设计文档 §3.2 + §6.3)
 
-- **`ScorerPlugin` Protocol**: 定义 `event_type`, `display_name`, `data_requirement`, `score(ctx) -> ScoreResult | None`, `dimensions() -> list[str]` 接口
+- **`ScorerPlugin` Protocol**: 定义 `event_type`, `display_name`, `data_requirement`, `score(ctx)`, `dimensions()` 接口
 - **`ScoreEngine`**: 注册 Plugin, 按 event_type 索引, 聚合 requirements
 - **`DataRequirement`**: Plugin 声明需要哪些数据 (L2 target, L2 light_path, astro, past_hours, season)
 - **`DataContext`**: 一天内所有 Plugin 共享的数据上下文
@@ -185,8 +185,8 @@ class StubPlugin:
     @property
     def data_requirement(self): return self._requirement
 
-    def score(self, context: DataContext) -> ScoreResult | None: return None
-    def dimensions(self) -> list[str]: return []
+    def score(self, context): return None
+    def dimensions(self): return []
 ```
 
 ---

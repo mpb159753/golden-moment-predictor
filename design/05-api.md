@@ -201,7 +201,7 @@ archive/                                  ← 历史预测归档
       "summary": "🌄☁️ 日照金山+壮观云海 — 绝佳组合日",
       "best_event": {
         "event_type": "sunrise_golden_mountain",
-        "score": 87,
+        "score": 90,
         "status": "Recommended"
       },
       "events": [
@@ -209,14 +209,14 @@ archive/                                  ← 历史预测归档
           "event_type": "sunrise_golden_mountain",
           "display_name": "日出金山",
           "time_window": "07:15 - 07:45",
-          "score": 87,
+          "score": 90,
           "status": "Recommended",
           "confidence": "High",
           "tags": ["sunrise", "golden_mountain", "clear_sky"],
           "conditions": ["东方少云 ☀️", "贡嘎可见 🏔️", "光路通畅 ✨"],
           "score_breakdown": {
             "light_path":     {"score": 35, "max": 35},
-            "target_visible": {"score": 32, "max": 40},
+            "target_visible": {"score": 35, "max": 40},
             "local_clear":    {"score": 20, "max": 25}
           }
         },

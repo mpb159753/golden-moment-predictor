@@ -249,7 +249,7 @@ class EngineConfig:
     open_meteo_base_url: str = "https://api.open-meteo.com/v1"
     forecast_days: int = 7
     light_path_points: int = 10
-    light_path_interval_km: float = 1.0
+    light_path_interval_km: float = 10.0
     
     # 数据新鲜度策略
     # forecast: 当日获取的数据视为有效
@@ -342,7 +342,7 @@ gmp/
 │   ├── summary_generator.py       # SummaryGenerator (规则模板)
 │   └── json_file_writer.py        # JSONFileWriter (JSON 写入)
 ├── backtest/
-│   └── gmp_cache.db          # SQLite 数据库文件
+│   └── backtester.py              # Backtester (历史校准)
 ├── tests/
 │   ├── core/
 │   │   └── test_exceptions.py     # 异常类测试
