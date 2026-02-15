@@ -1,0 +1,33 @@
+id: niubei_gongga
+name: 牛背山
+location:
+  lat: 29.75
+  lon: 102.35
+  altitude: 3660
+
+# 该观景台支持的景观类型 (对应注册的 Plugin event_type)
+# 新增景观只需在此添加，无需改动代码
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+  - frost
+  - snow_tree
+  - ice_icicle
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.58
+    lon: 101.88
+    altitude: 7556
+    weight: primary
+    applicable_events: null      # null = 自动根据方位角匹配
+
+  - name: 雅拉神山
+    lat: 30.15
+    lon: 101.75
+    altitude: 5820
+    weight: secondary
+    applicable_events:
+      - sunset                   # 手动指定: 仅看日落金山

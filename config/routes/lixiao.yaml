@@ -1,0 +1,10 @@
+id: lixiao
+name: 理小路
+description: 理塘→小金/丹巴 经典自驾线路
+stops:
+  - viewpoint_id: zheduo_gongga
+    order: 1
+    stay_note: 建议日出前2小时到达
+  - viewpoint_id: niubei_gongga
+    order: 2
+    stay_note: 推荐过夜，可同时观测金山+云海+星空

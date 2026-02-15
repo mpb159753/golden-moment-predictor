@@ -1,0 +1,195 @@
+# 缓存配置
+cache:
+  db_path: "data/gmp.db"
+  freshness:                        # 数据新鲜度策略
+    forecast_valid_hours: 24        # forecast 数据当日获取则有效
+    archive_never_stale: true       # archive 数据永不过期
+
+# 安全阈值 (Plugin 内部使用，用于各 Plugin 自主安全检查)
+safety:
+  precip_threshold: 50        # 降水概率 > 此值则该时段不安全
+  visibility_threshold: 1000  # 能见度 < 此值(m)则该时段不安全
+
+# 分析阈值
+analysis:
+  local_cloud_max: 30
+  target_cloud_max: 30
+  light_path_cloud_max: 50
+  wind_speed_max: 20
+  frost_temperature: 2.0
+
+# 留存判定 (雪树/冰挂)
+retention:
+  max_temp: 2.5               # 留存期最高允许气温(°C)
+  max_sun_hours: 5            # 最大日照时数
+  max_wind: 30.0              # 最大允许风速(km/h)
+
+# 光路计算
+light_path:
+  count: 10
+  interval_km: 10
+
+# 评分配置 (每个 Plugin 的权重 + 阈值阶梯 + 触发条件，统一由 ConfigManager 提供)
+# 注意: 以下所有数值均为默认参考值，代码中不应硬编码任何数值
+scoring:
+  golden_mountain:
+    trigger:
+      max_cloud_cover: 80          # 总云量 ≥ 此值时返回 None (未触发)
+    weights:
+      light_path: 35
+      target_visible: 40
+      local_clear: 25
+    thresholds:
+      light_path_cloud: [10, 20, 30, 50]   # 分界值: ≤10%=35, ≤20%=30, ≤30%=20, ≤50%=10, >50%=0
+      target_cloud: [10, 20, 30, 50]       # ≤10%=40, ≤20%=35, ≤30%=25, ≤50%=10, >50%=0
+      local_cloud: [15, 30, 50]            # ≤15%=25, ≤30%=20, ≤50%=10, >50%=0
+    veto_threshold: 0
+
+  cloud_sea:
+    trigger: {}
+    weights:
+      gap: 50
+      density: 30
+      wind: 20
+    thresholds:
+      gap_meters: [800, 500, 200]          # >800=50, >500=40, >200=20, ≤200=10
+      density_pct: [80, 50, 30]            # >80%=30, >50%=20, >30%=10, ≤30%=5
+      wind_speed: [3, 5, 8]                # <3=20, <5=15, <8=10, ≥8=5
+      mid_cloud_penalty: [30, 60]          # >60%=0.3, >30%=0.7, ≤30%=1.0
+
+  frost:
+    trigger:
+      max_temperature: 2.0         # 温度 ≥ 此值时返回 None (未触发)
+    weights:
+      temperature: 40
+      moisture: 30
+      wind: 20
+      cloud: 10
+    thresholds:
+      temp_ranges:
+        optimal: {range: [-5, 0], score: 40}
+        good: {range: [-10, -5], score: 30}
+        acceptable: {range: [0, 2], score: 25}
+        bad: {range: [-999, -10], score: 15}
+      visibility_km: [5, 10, 20]
+      wind_speed: [3, 5, 10]
+      cloud_pct:
+        optimal: {range: [30, 60], score: 10}
+        clear: {range: [0, 30], score: 5}
+        heavy: {range: [60, 100], score: 3}
+
+  stargazing:
+    trigger:
+      max_night_cloud_cover: 70
+    base_optimal: 100
+    base_good: 90
+    base_partial: 70
+    cloud_penalty_factor: 0.8
+    wind_thresholds:
+      severe: {speed: 40, penalty: 30}
+      moderate: {speed: 20, penalty: 10}
+
+  snow_tree:
+    trigger:
+      recent_path:
+        min_snowfall_12h_cm: 0.2
+      retention_path:
+        min_snowfall_24h_cm: 1.5
+        min_duration_h: 3
+        min_subzero_hours: 8
+        max_temp: 1.5
+    weights:
+      snow_signal: 60
+      clear_weather: 20
+      stability: 20
+    thresholds:
+      snow_signal:
+        - {snowfall: 2.5, duration: 4, score: 60}
+        - {snowfall: 1.5, duration: 3, score: 52}
+        - {snowfall: 0.8, duration: 2, score: 44}
+        - {snowfall: 0.2, duration: 0, score: 32}
+      clear_weather:
+        - {weather_code: [0], max_cloud: 20, score: 20}
+        - {weather_code: [1, 2], max_cloud: 45, score: 16}
+        - {score: 8}
+      stability_wind: [12, 20]
+    deductions:
+      age:
+        - {hours: 3, deduction: 0}
+        - {hours: 8, deduction: 2}
+        - {hours: 12, deduction: 5}
+        - {hours: 16, deduction: 8}
+        - {hours: 20, deduction: 12}
+        - {hours: 999, deduction: 20}
+      temp:
+        - {temp: -2, deduction: 0}
+        - {temp: -0.5, deduction: 2}
+        - {temp: 1, deduction: 6}
+        - {temp: 2.5, deduction: 12}
+        - {temp: 999, deduction: 22}
+      sun:
+        - {sun_score: 2, deduction: 0}
+        - {sun_score: 5, deduction: 15}
+        - {sun_score: 8, deduction: 30}
+      wind_max: 50
+      wind_severe_threshold: 50
+      wind_moderate_threshold: 30
+    past_hours: 24
+
+  ice_icicle:
+    trigger:
+      recent_path:
+        min_water_12h_mm: 0.4
+      retention_path:
+        min_water_24h_mm: 1.0
+        min_subzero_hours: 6
+        max_temp: 1.5
+    weights:
+      water_input: 50
+      freeze_strength: 30
+      view_quality: 20
+    thresholds:
+      water_input:
+        - {water: 3.0, score: 50}
+        - {water: 2.0, score: 42}
+        - {water: 1.0, score: 34}
+        - {water: 0.4, score: 24}
+      freeze_strength:
+        - {subzero_hours: 14, temp_now: -3, score: 30}
+        - {subzero_hours: 10, temp_now: -1, score: 24}
+        - {subzero_hours: 6, temp_now: 0, score: 16}
+        - {score: 10}
+      view_quality:
+        - {max_cloud: 20, max_wind: 12, score: 20}
+        - {max_cloud: 45, max_wind: 20, score: 14}
+        - {score: 8}
+    deductions:
+      age:
+        - {hours: 3, deduction: 0}
+        - {hours: 8, deduction: 2}
+        - {hours: 12, deduction: 5}
+        - {hours: 16, deduction: 8}
+        - {hours: 20, deduction: 12}
+        - {hours: 999, deduction: 20}
+      temp:
+        - {temp: -2, deduction: 0}
+        - {temp: -0.5, deduction: 2}
+        - {temp: 1, deduction: 6}
+        - {temp: 2.5, deduction: 12}
+        - {temp: 999, deduction: 22}
+    past_hours: 24
+
+# 置信度映射 (T+8 及以上统一为 Low)
+confidence:
+  high: [1, 2]
+  medium: [3, 4]
+  low: [5, 16]
+
+# 摘要生成
+summary:
+  mode: "rule"
+
+# 回测配置
+backtest:
+  max_history_days: 365
+  archive_api_base: "https://archive-api.open-meteo.com/v1/archive"
