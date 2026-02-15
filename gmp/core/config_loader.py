@@ -33,7 +33,13 @@ def _default_confidence() -> dict:
 
 @dataclass
 class EngineConfig:
-    """全局引擎配置 — 字段定义见设计文档 §7.3"""
+    """全局引擎配置 — 字段定义见设计文档 §7.3
+
+    .. note::
+        engine_config.yaml 中还包含 ``analysis`` 和 ``retention`` 配置段，
+        当前由 scoring 字段下游间接消费。当 L2 评分插件 (M10) 需要直接
+        访问时，应在此扩展对应字段并在 ConfigManager 增加访问方法。
+    """
 
     db_path: str = "data/gmp.db"
     output_dir: str = "public/data"
@@ -52,6 +58,10 @@ class EngineConfig:
     confidence: dict = field(default_factory=_default_confidence)
     summary_mode: str = "rule"
     backtest_max_history_days: int = 365
+
+
+# 用于获取默认值的哨兵实例，避免直接访问类属性
+_DEFAULTS = EngineConfig()
 
 
 # ==================== ConfigManager ====================
@@ -88,24 +98,24 @@ class ConfigManager:
         backtest = data.get("backtest", {})
 
         return EngineConfig(
-            db_path=cache.get("db_path", EngineConfig.db_path),
-            output_dir=data.get("output_dir", EngineConfig.output_dir),
-            archive_dir=data.get("archive_dir", EngineConfig.archive_dir),
-            log_level=data.get("log_level", EngineConfig.log_level),
+            db_path=cache.get("db_path", _DEFAULTS.db_path),
+            output_dir=data.get("output_dir", _DEFAULTS.output_dir),
+            archive_dir=data.get("archive_dir", _DEFAULTS.archive_dir),
+            log_level=data.get("log_level", _DEFAULTS.log_level),
             open_meteo_base_url=data.get(
-                "open_meteo_base_url", EngineConfig.open_meteo_base_url
+                "open_meteo_base_url", _DEFAULTS.open_meteo_base_url
             ),
             archive_api_base_url=backtest.get(
-                "archive_api_base", EngineConfig.archive_api_base_url
+                "archive_api_base", _DEFAULTS.archive_api_base_url
             ),
             forecast_days=data.get(
-                "forecast_days", EngineConfig.forecast_days
+                "forecast_days", _DEFAULTS.forecast_days
             ),
             light_path_count=light_path.get(
-                "count", EngineConfig.light_path_count
+                "count", _DEFAULTS.light_path_count
             ),
             light_path_interval_km=light_path.get(
-                "interval_km", EngineConfig.light_path_interval_km
+                "interval_km", _DEFAULTS.light_path_interval_km
             ),
             data_freshness=cache.get(
                 "freshness", _default_data_freshness()
@@ -113,9 +123,9 @@ class ConfigManager:
             safety=data.get("safety", _default_safety()),
             scoring=data.get("scoring", _default_scoring()),
             confidence=data.get("confidence", _default_confidence()),
-            summary_mode=summary.get("mode", EngineConfig.summary_mode),
+            summary_mode=summary.get("mode", _DEFAULTS.summary_mode),
             backtest_max_history_days=backtest.get(
-                "max_history_days", EngineConfig.backtest_max_history_days
+                "max_history_days", _DEFAULTS.backtest_max_history_days
             ),
         )
 
@@ -174,12 +184,25 @@ class ViewpointConfig:
 
         for yaml_file in sorted(dir_path.glob("*.yaml")):
             raw = yaml_file.read_text(encoding="utf-8")
-            data = yaml.safe_load(raw)
+            try:
+                data = yaml.safe_load(raw)
+            except yaml.YAMLError as e:
+                raise ValueError(
+                    f"YAML 解析错误 ({yaml_file.name}): {e}"
+                ) from e
             if not isinstance(data, dict):
                 continue
 
+            # 必填字段校验
+            required = {"id", "name", "location"}
+            missing = required - data.keys()
+            if missing:
+                raise ValueError(
+                    f"观景台配置缺少必填字段 ({yaml_file.name}): {missing}"
+                )
+
             # 解析 Location
-            loc_data = data.get("location", {})
+            loc_data = data["location"]
             location = Location(
                 lat=loc_data["lat"],
                 lon=loc_data["lon"],
@@ -241,9 +264,22 @@ class RouteConfig:
 
         for yaml_file in sorted(dir_path.glob("*.yaml")):
             raw = yaml_file.read_text(encoding="utf-8")
-            data = yaml.safe_load(raw)
+            try:
+                data = yaml.safe_load(raw)
+            except yaml.YAMLError as e:
+                raise ValueError(
+                    f"YAML 解析错误 ({yaml_file.name}): {e}"
+                ) from e
             if not isinstance(data, dict):
                 continue
+
+            # 必填字段校验
+            required = {"id", "name"}
+            missing = required - data.keys()
+            if missing:
+                raise ValueError(
+                    f"线路配置缺少必填字段 ({yaml_file.name}): {missing}"
+                )
 
             # 解析 Stops 并按 order 排序
             stops = []

@@ -27,6 +27,12 @@ GoldenMountainPlugin 是 L2 级别 Plugin，需要额外数据：
 
 ### 配置参数 (来自 `engine_config.yaml → scoring.golden_mountain`)
 
+> [!NOTE]
+> `engine_config.yaml` 中的 `analysis` 和 `retention` 配置段当前未通过 `EngineConfig` 字段直接暴露，
+> 由 `scoring` 字段下游间接使用。若本 Plugin 或其他 L2 Plugin 需要直接访问这些配置，
+> 需先扩展 `EngineConfig` 并在 `ConfigManager` 增加对应访问方法。
+
+
 ```yaml
 golden_mountain:
   trigger:
