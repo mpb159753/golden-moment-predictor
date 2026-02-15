@@ -53,9 +53,13 @@ scoring:
       wind: 20
     thresholds:
       gap_meters: [800, 500, 200]          # >800=50, >500=40, >200=20, ≤200=10
+      gap_scores: [50, 40, 20, 10]         # 与 gap_meters 阈值对应的分值（含兜底）
       density_pct: [80, 50, 30]            # >80%=30, >50%=20, >30%=10, ≤30%=5
+      density_scores: [30, 20, 10, 5]      # 与 density_pct 阈值对应的分值（含兜底）
       wind_speed: [3, 5, 8]                # <3=20, <5=15, <8=10, ≥8=5
+      wind_scores: [20, 15, 10, 5]         # 与 wind_speed 阈值对应的分值（含兜底）
       mid_cloud_penalty: [30, 60]          # >60%=0.3, >30%=0.7, ≤30%=1.0
+      mid_cloud_factors: [1.0, 0.7, 0.3]   # ≤30%, >30%, >60% 的系数
 
   frost:
     trigger:
