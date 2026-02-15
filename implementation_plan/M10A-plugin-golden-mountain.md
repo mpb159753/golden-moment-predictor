@@ -1,6 +1,6 @@
 # M10A: GoldenMountainPlugin — 日照金山
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现日照金山评分 Plugin，支持 sunrise/sunset 双实例，包含目标山峰方位角匹配、光路云量评估、阶梯评分与一票否决机制。
 

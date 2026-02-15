@@ -1,6 +1,6 @@
 # M07: 配置管理
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现统一配置管理器，包括引擎配置 (`ConfigManager`)、观景台配置 (`ViewpointConfig`)、线路配置 (`RouteConfig`) 的加载与访问。
 

@@ -1,6 +1,6 @@
 # M12: 调度器 GMPScheduler
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现主调度器 `GMPScheduler`，串联 Plugin 收集→数据获取→评分→输出 的完整管线。
 

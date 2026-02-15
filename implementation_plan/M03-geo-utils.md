@@ -1,6 +1,6 @@
 # M03: GeoUtils 地理计算工具
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现地理坐标相关的纯计算工具类，包括方位角计算、距离计算、目的地推算、光路点生成。
 

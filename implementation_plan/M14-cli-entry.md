@@ -1,6 +1,6 @@
 # M14: CLI 入口
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现 click CLI 入口，包括所有命令 (`predict`, `predict-route`, `generate-all`, `backtest`, `list-viewpoints`, `list-routes`)。
 

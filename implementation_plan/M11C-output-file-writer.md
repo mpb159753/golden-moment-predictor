@@ -1,6 +1,6 @@
 # M11C: JSONFileWriter — 文件写入与归档
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现 JSON 文件写入器，管理输出目录结构、文件写入和历史归档。
 

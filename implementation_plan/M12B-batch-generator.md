@@ -1,6 +1,6 @@
 # M12B: 批量生成器 BatchGenerator
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现批量生成编排器 `BatchGenerator`，负责遍历所有观景台/线路→调用 Scheduler 评分→生成 JSON 文件→归档。
 

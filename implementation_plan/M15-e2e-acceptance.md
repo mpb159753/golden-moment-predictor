@@ -1,6 +1,6 @@
 # M15: E2E 验收测试 (真实 API)
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 使用真实 Open-Meteo API 进行端到端验收测试，验证从 CLI 命令到 JSON 文件输出的完整管线。
 

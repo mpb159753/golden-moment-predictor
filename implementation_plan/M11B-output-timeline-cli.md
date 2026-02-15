@@ -1,6 +1,6 @@
 # M11B: TimelineReporter + CLIFormatter
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现时间线报告生成器和终端格式化输出，将 PipelineResult 转换为 timeline.json 格式和终端表格。
 

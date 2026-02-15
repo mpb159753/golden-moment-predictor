@@ -1,6 +1,6 @@
 # M09B: FrostPlugin — 雾凇评分
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现雾凇评分 Plugin，仅需 L1 本地天气数据。
 

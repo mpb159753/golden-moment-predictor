@@ -1,6 +1,6 @@
 # M11: 输出层 (Reporters + SummaryGenerator + JSONFileWriter)
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现输出层全部组件：ForecastReporter、TimelineReporter、CLIFormatter、SummaryGenerator、JSONFileWriter。
 
@@ -37,13 +37,17 @@ archive/YYYY-MM-DDTHH-MM/
 
 ---
 
-## Task 1: SummaryGenerator — 文字摘要
+## 子任务 A: SummaryGenerator + ForecastReporter
+
+> 此子任务可作为独立会话完成。
+
+### Task 1: SummaryGenerator — 文字摘要
 
 **Files:**
 - Create: `gmp/output/summary_generator.py`
 - Test: `tests/unit/test_summary_generator.py`
 
-### 要实现的类
+#### 要实现的类
 
 ```python
 class SummaryGenerator:
@@ -64,22 +68,20 @@ class SummaryGenerator:
         """
 ```
 
-### 应测试的内容
+#### 应测试的内容
 
 - 空事件列表 → 不推荐摘要
 - 1 个 Perfect 事件 → 包含该事件名称
 - 多个 Recommended → 列出 top 事件
 - 仅 Possible → 措辞保守
 
----
-
-## Task 2: ForecastReporter — 预测报告
+### Task 2: ForecastReporter — 预测报告
 
 **Files:**
 - Create: `gmp/output/forecast_reporter.py`
 - Test: `tests/unit/test_forecast_reporter.py`
 
-### 要实现的类
+#### 要实现的类
 
 ```python
 class ForecastReporter:
@@ -105,25 +107,61 @@ class ForecastReporter:
             ]
         }
         """
+
+    def generate_route(
+        self, stops_results: list[PipelineResult], route: Route
+    ) -> dict:
+        """将多站 PipelineResult → 线路 forecast.json 格式的 dict
+
+        输出格式 (见 05-api.md §5.2):
+        {
+            "route_id": "...",
+            "route_name": "...",
+            "generated_at": "...",
+            "stops": [
+                {
+                    "viewpoint_id": "...",
+                    "viewpoint_name": "...",
+                    "order": 1,
+                    "stay_note": "...",
+                    "forecast": {...}   # 同单站 forecast 格式
+                }
+            ]
+        }
+        """
 ```
 
-### 应测试的内容
+#### 应测试的内容
 
 - 完整 PipelineResult → 包含所有字段
 - events 按 score 降序排列
 - best_event 为最高分事件
 - summary 由 SummaryGenerator 生成
 - confidence 字段正确
+- 2 站 PipelineResult → stops 数组长度 2
+- stops 按 order 排序
+- 每站 forecast 格式与单站一致
+- route_id / route_name 正确填充
+
+#### 验证命令
+
+```bash
+python -m pytest tests/unit/test_summary_generator.py tests/unit/test_forecast_reporter.py -v
+```
 
 ---
 
-## Task 3: TimelineReporter — 时间线报告
+## 子任务 B: TimelineReporter + CLIFormatter
+
+> 此子任务可作为独立会话完成，依赖子任务 A 完成。
+
+### Task 3: TimelineReporter — 时间线报告
 
 **Files:**
 - Create: `gmp/output/timeline_reporter.py`
 - Test: `tests/unit/test_timeline_reporter.py`
 
-### 要实现的类
+#### 要实现的类
 
 ```python
 class TimelineReporter:
@@ -151,22 +189,25 @@ class TimelineReporter:
         """根据时刻和事件生成 tags (sunrise_window, cloud_sea, etc.)"""
 ```
 
-### 应测试的内容
+#### 应测试的内容
 
 - 24 小时逐时输出
 - safety_passed 正确标记
 - 活跃事件在对应时段标记
-- tags 自动生成
+- tags 自动生成:
+  - 日出时段 → 包含 `"sunrise_window"` tag
+  - 云海事件活跃 → 对应时段包含 `"cloud_sea"` tag
+  - 无事件的时段 → tags 为空列表
+- 边界: hour=0 和 hour=23 正常处理
+- 无活跃事件的日期 → hourly 仍有 24 条 weather 数据
 
----
-
-## Task 4: CLIFormatter — 终端格式化
+### Task 4: CLIFormatter — 终端格式化
 
 **Files:**
 - Create: `gmp/output/cli_formatter.py`
 - Test: `tests/unit/test_cli_formatter.py`
 
-### 要实现的类
+#### 要实现的类
 
 ```python
 class CLIFormatter:
@@ -183,22 +224,32 @@ class CLIFormatter:
         """根据 status 着色"""
 ```
 
-### 应测试的内容
+#### 应测试的内容
 
 - 输出包含日期、事件类型、分数、状态
 - Perfect/Recommended/Possible/Not Recommended 各有不同着色
 - detail 模式包含 breakdown 信息
 - color_enabled=False 时无转义序列
 
+#### 验证命令
+
+```bash
+python -m pytest tests/unit/test_timeline_reporter.py tests/unit/test_cli_formatter.py -v
+```
+
 ---
 
-## Task 5: JSONFileWriter — 文件写入
+## 子任务 C: JSONFileWriter
+
+> 此子任务可作为独立会话完成，依赖子任务 A、B 完成。
+
+### Task 5: JSONFileWriter — 文件写入
 
 **Files:**
 - Create: `gmp/output/json_file_writer.py`
 - Test: `tests/unit/test_json_file_writer.py`
 
-### 要实现的类
+#### 要实现的类
 
 ```python
 class JSONFileWriter:
@@ -222,7 +273,7 @@ class JSONFileWriter:
         """将当前 output_dir 内容复制到 archive_dir/timestamp/"""
 ```
 
-### 应测试的内容
+#### 应测试的内容
 
 - 写入文件到正确路径 (使用 tmp_path)
 - 子目录自动创建
@@ -231,9 +282,15 @@ class JSONFileWriter:
 - index.json 包含 viewpoints 和 routes
 - meta.json 包含 generated_at 和 engine_version
 
+#### 验证命令
+
+```bash
+python -m pytest tests/unit/test_json_file_writer.py -v
+```
+
 ---
 
-## 验证命令
+## 全模块验证命令
 
 ```bash
 python -m pytest tests/unit/test_summary_generator.py tests/unit/test_forecast_reporter.py tests/unit/test_timeline_reporter.py tests/unit/test_cli_formatter.py tests/unit/test_json_file_writer.py -v

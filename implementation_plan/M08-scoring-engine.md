@@ -1,6 +1,6 @@
 # M08: 评分引擎核心 (ScoreEngine + DataContext + Plugin 接口)
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现评分引擎的核心框架：`ScoreEngine` Plugin 注册中心、`DataRequirement` / `DataContext` 数据模型、`ScorerPlugin` Protocol 接口。
 

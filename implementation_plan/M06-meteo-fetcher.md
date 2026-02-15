@@ -1,6 +1,6 @@
 # M06: MeteoFetcher 气象数据获取
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现 Open-Meteo API 调用与数据解析，支持预报和历史数据获取，集成缓存和降级策略。
 

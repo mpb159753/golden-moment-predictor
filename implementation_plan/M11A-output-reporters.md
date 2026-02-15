@@ -1,6 +1,6 @@
 # M11A: SummaryGenerator + ForecastReporter
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现文字摘要生成器和预测报告生成器，将 PipelineResult 转换为 forecast.json 格式。
 

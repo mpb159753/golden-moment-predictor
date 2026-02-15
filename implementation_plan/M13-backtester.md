@@ -1,6 +1,6 @@
 # M13: Backtester 历史校准
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现历史回测模块，使用过去的气象数据验证评分模型的准确性。
 

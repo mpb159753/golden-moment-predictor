@@ -1,6 +1,6 @@
 # M09C: SnowTreePlugin — 树挂积雪评分
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现树挂积雪评分 Plugin，需要 L1 本地天气数据 + 过去 24 小时历史数据。
 

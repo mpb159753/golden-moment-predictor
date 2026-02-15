@@ -1,6 +1,6 @@
 # M02: 核心数据模型与异常定义
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现所有核心 dataclass 数据模型和自定义异常类，它们是所有后续模块的基础依赖。
 

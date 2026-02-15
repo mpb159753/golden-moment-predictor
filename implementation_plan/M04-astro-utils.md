@@ -1,6 +1,6 @@
 # M04: AstroUtils 天文计算工具
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现天文计算工具类，包括日出日落（含方位角）、天文晨暮曦、月相/月出月落、观星窗口判定。
 

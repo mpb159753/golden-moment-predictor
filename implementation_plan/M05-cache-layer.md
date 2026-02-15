@@ -1,6 +1,6 @@
 # M05: SQLite 缓存层
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现 SQLite 持久化缓存层，包括底层 DB 操作 (`CacheRepository`) 和缓存管理 (`WeatherCache`)。
 

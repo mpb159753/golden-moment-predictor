@@ -1,6 +1,6 @@
 # M01: 项目初始化与基础设施
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 创建项目骨架、虚拟环境、安装依赖、配置开发工具
 

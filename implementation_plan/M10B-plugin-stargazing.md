@@ -1,6 +1,6 @@
 # M10B: StargazingPlugin — 观星
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现观星评分 Plugin，基于月相、云量、风速等天文气象数据计算观星条件评分。
 
