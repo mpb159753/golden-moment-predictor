@@ -16,7 +16,8 @@ classDiagram
         +run_route(route_id: str, days: int, events: list) list~PipelineResult~
         +run_with_data(viewpoint_id: str, weather_data: dict, target_date: date, events: list) PipelineResult
         -_collect_active_plugins(viewpoint, events, date) list~ScorerPlugin~
-        -_build_data_context(viewpoint, date, requirement) DataContext
+        -_score_single_day(viewpoint, date, plugins, req, weather, ...) ForecastDay
+        -_fetch_light_path_weather(viewpoint, plugins, sun_events, days) list~dict~
     }
 
     class BatchGenerator {

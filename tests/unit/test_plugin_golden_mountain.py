@@ -98,7 +98,7 @@ def _local_weather(
     """创建本地天气 DataFrame"""
     return pd.DataFrame(
         {
-            "cloud_cover": [cloud_cover] * hours,
+            "cloud_cover_total": [cloud_cover] * hours,
         }
     )
 
@@ -114,8 +114,8 @@ def _target_weather(
     return {
         target_name: pd.DataFrame(
             {
-                "high_cloud_cover": [high_cloud] * hours,
-                "mid_cloud_cover": [mid_cloud] * hours,
+                "cloud_cover_high": [high_cloud] * hours,
+                "cloud_cover_medium": [mid_cloud] * hours,
             }
         ),
     }
@@ -134,8 +134,8 @@ def _light_path_weather(
             "coord": (30.0 + i * 0.1, 101.5 + i * 0.1),
             "weather": pd.DataFrame(
                 {
-                    "low_cloud_cover": [low_cloud] * hours,
-                    "mid_cloud_cover": [mid_cloud] * hours,
+                    "cloud_cover_low": [low_cloud] * hours,
+                    "cloud_cover_medium": [mid_cloud] * hours,
                 }
             ),
         }

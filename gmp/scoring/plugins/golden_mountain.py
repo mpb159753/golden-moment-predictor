@@ -69,7 +69,7 @@ class GoldenMountainPlugin:
             return None
 
         # 2. 触发判定: 总云量检查
-        avg_cloud = context.local_weather["cloud_cover"].mean()
+        avg_cloud = context.local_weather["cloud_cover_total"].mean()
         max_cloud = self._trigger["max_cloud_cover"]
         if avg_cloud >= max_cloud:
             return None
@@ -175,8 +175,8 @@ class GoldenMountainPlugin:
         point_avgs = []
         for point in context.light_path_weather:
             weather = point["weather"]
-            low = weather["low_cloud_cover"].mean()
-            mid = weather["mid_cloud_cover"].mean()
+            low = weather["cloud_cover_low"].mean()
+            mid = weather["cloud_cover_medium"].mean()
             point_avgs.append(min(low + mid, 100.0))
 
         return sum(point_avgs) / len(point_avgs) if point_avgs else 0.0
@@ -198,8 +198,8 @@ class GoldenMountainPlugin:
         if weather is None:
             return 0.0
 
-        high = weather["high_cloud_cover"].mean()
-        mid = weather["mid_cloud_cover"].mean()
+        high = weather["cloud_cover_high"].mean()
+        mid = weather["cloud_cover_medium"].mean()
         return min(high + mid, 100.0)
 
     def _score_light_path(self, cloud_pct: float) -> int:

@@ -68,8 +68,8 @@ class CloudSeaPlugin:
 
         # 计算各子维度（基于安全行均值）
         gap = viewpoint_alt - avg_cloud_base
-        low_cloud = weather["low_cloud_cover"].mean()
-        mid_cloud = weather["mid_cloud_cover"].mean()
+        low_cloud = weather["cloud_cover_low"].mean()
+        mid_cloud = weather["cloud_cover_medium"].mean()
         wind = weather["wind_speed_10m"].mean()
 
         score_gap = self._score_gap(gap)

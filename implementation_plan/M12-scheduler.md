@@ -62,16 +62,15 @@ class GMPScheduler:
         1. 获取 Viewpoint 配置 (ViewpointConfig.get)
         2. 筛选活跃 Plugin (ScoreEngine.filter_active_plugins)
         3. 聚合数据需求 (ScoreEngine.collect_requirements)
-        4. for day in days:
-           a. L1: 获取本地天气 (fetcher.fetch_hourly)
-           b. Astro (按需): 获取天文数据 — ⚠️ 必须在 L2 之前，因光路方向依赖方位角
-           c. L2 (按需): 获取目标天气 + 光路天气
-           d. 构建 DataContext
-           e. 遍历活跃 Plugin → score(context)
-           f. 收集 ScoreResult 列表
-           g. 生成 summary
-        5. 构建 meta (cache_stats, timestamp)
-        6. 返回 PipelineResult
+        4. L1: 获取本地天气 (fetcher.fetch_hourly, 一次性获取 days 天)
+        5. L2 (按需): 获取目标天气 + 光路天气 (一次性获取 days 天)
+           - 光路天气用 day0 方位角统一获取 (7天范围内变化 <1°)
+        6. for day in days:
+           a. 切片当天本地天气
+           b. Astro (按需): 获取天文数据
+           c. 调用 _score_single_day → ForecastDay
+        7. 构建 meta (data_freshness, timestamp)
+        8. 返回 PipelineResult
         """
 ```
 

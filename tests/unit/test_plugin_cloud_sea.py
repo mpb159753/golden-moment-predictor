@@ -57,8 +57,8 @@ def _weather_df(
     return pd.DataFrame(
         {
             "cloud_base_altitude": [cloud_base] * hours,
-            "low_cloud_cover": [low_cloud] * hours,
-            "mid_cloud_cover": [mid_cloud] * hours,
+            "cloud_cover_low": [low_cloud] * hours,
+            "cloud_cover_medium": [mid_cloud] * hours,
             "wind_speed_10m": [wind] * hours,
             "precipitation_probability": [precip_prob] * hours,
             "visibility": [visibility] * hours,
@@ -269,8 +269,8 @@ class TestCloudSeaSafety:
         weather = pd.DataFrame(
             {
                 "cloud_base_altitude": [1000.0, 1000.0, 1000.0],
-                "low_cloud_cover": [90.0, 90.0, 90.0],
-                "mid_cloud_cover": [10.0, 10.0, 10.0],
+                "cloud_cover_low": [90.0, 90.0, 90.0],
+                "cloud_cover_medium": [10.0, 10.0, 10.0],
                 "wind_speed_10m": [1.0, 1.0, 1.0],
                 "precipitation_probability": [0.0, 60.0, 80.0],
                 "visibility": [10000.0, 10000.0, 10000.0],
@@ -292,8 +292,8 @@ class TestCloudSeaSafety:
         weather = pd.DataFrame(
             {
                 "cloud_base_altitude": [1000.0, 1000.0],
-                "low_cloud_cover": [90.0, 90.0],
-                "mid_cloud_cover": [10.0, 10.0],
+                "cloud_cover_low": [90.0, 90.0],
+                "cloud_cover_medium": [10.0, 10.0],
                 "wind_speed_10m": [1.0, 1.0],
                 "precipitation_probability": [60.0, 80.0],
                 "visibility": [10000.0, 10000.0],
@@ -314,8 +314,8 @@ class TestCloudSeaSafety:
         weather = pd.DataFrame(
             {
                 "cloud_base_altitude": [1000.0, 1000.0],
-                "low_cloud_cover": [90.0, 90.0],
-                "mid_cloud_cover": [10.0, 10.0],
+                "cloud_cover_low": [90.0, 90.0],
+                "cloud_cover_medium": [10.0, 10.0],
                 "wind_speed_10m": [1.0, 1.0],
                 "precipitation_probability": [0.0, 0.0],
                 "visibility": [500.0, 500.0],  # 低于 1000m
