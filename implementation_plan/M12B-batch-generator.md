@@ -78,7 +78,12 @@ class BatchGenerator:
     def _process_viewpoint(
         self, viewpoint_id: str, days: int, events: list[str] | None
     ) -> PipelineResult | None:
-        """处理单个观景台：评分 + 文件生成，失败返回 None"""
+        """处理单个观景台：评分 + 文件生成，失败返回 None
+
+        多日 timeline 策略：
+        - 每个 forecast_day 生成独立 timeline_{date}.json
+        - 当日(或首日)的 timeline 同时写入主 timeline.json（向后兼容）
+        """
 
     def _process_route(
         self, route_id: str, days: int, events: list[str] | None
@@ -103,7 +108,7 @@ class BatchGenerator:
 - no_archive=True → 不调用 `json_writer.archive()`
 
 **输出统计:**
-- `meta.json` 包含 `generated_at`, `engine_version`, `viewpoints_count`, `routes_count`
+- `meta.json` 包含 `generated_at`, `viewpoints_count`, `routes_count`
 - `index.json` 包含所有成功处理的 viewpoint 和 route
 
 ---

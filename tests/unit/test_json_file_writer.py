@@ -93,6 +93,30 @@ class TestWriteViewpoint:
         assert "牛背山" in text
 
 
+# ── write_viewpoint_timeline ─────────────────────────────
+
+
+class TestWriteViewpointTimeline:
+    def test_creates_dated_timeline_file(self, writer: JSONFileWriter):
+        """写入 viewpoint 每日 timeline 到 timeline_{date}.json"""
+        timeline = {"viewpoint_id": "vp001", "date": "2026-02-12", "hourly": []}
+        writer.write_viewpoint_timeline("vp001", "2026-02-12", timeline)
+
+        path = Path(writer._output_dir) / "viewpoints" / "vp001" / "timeline_2026-02-12.json"
+        assert path.exists()
+        data = json.loads(path.read_text(encoding="utf-8"))
+        assert data["date"] == "2026-02-12"
+
+    def test_multiple_dates(self, writer: JSONFileWriter):
+        """多日 timeline 各自独立写入"""
+        for d in ["2026-02-12", "2026-02-13"]:
+            writer.write_viewpoint_timeline("vp001", d, {"date": d, "hourly": []})
+
+        for d in ["2026-02-12", "2026-02-13"]:
+            path = Path(writer._output_dir) / "viewpoints" / "vp001" / f"timeline_{d}.json"
+            assert path.exists()
+
+
 # ── write_route ──────────────────────────────────────────
 
 
@@ -131,14 +155,13 @@ class TestWriteIndex:
 class TestWriteMeta:
     def test_creates_meta_json(self, writer: JSONFileWriter):
         """应在 output_dir 根目录创建 meta.json"""
-        metadata = {"generated_at": "2026-02-14T00:00:00Z", "engine_version": "1.0.0"}
+        metadata = {"generated_at": "2026-02-14T00:00:00Z"}
         writer.write_meta(metadata)
 
         path = Path(writer._output_dir) / "meta.json"
         assert path.exists()
         data = json.loads(path.read_text(encoding="utf-8"))
         assert data["generated_at"] == "2026-02-14T00:00:00Z"
-        assert data["engine_version"] == "1.0.0"
 
 
 # ── archive ──────────────────────────────────────────────
@@ -153,7 +176,7 @@ class TestArchive:
     ):
         """archive 应将 output_dir 全部内容复制到 archive_dir/timestamp/"""
         writer.write_viewpoint("vp001", sample_forecast, sample_timeline)
-        writer.write_meta({"generated_at": "2026-02-14T00:00:00Z", "engine_version": "1.0.0"})
+        writer.write_meta({"generated_at": "2026-02-14T00:00:00Z"})
 
         writer.archive("2026-02-14T00-00")
 

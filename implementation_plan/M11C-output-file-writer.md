@@ -65,7 +65,7 @@ class JSONFileWriter:
 - JSON 格式正确可读
 - archive 复制完整
 - index.json 包含 viewpoints 和 routes
-- meta.json 包含 generated_at 和 engine_version
+- meta.json 包含 generated_at
 
 ---
 

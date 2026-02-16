@@ -84,7 +84,6 @@ def _make_pipeline_result(
         forecast_days=[day],
         meta={
             "generated_at": "2026-02-12T05:00:00+08:00",
-            "engine_version": "4.0.0",
             "hourly_weather": hourly_weather or _make_hourly_weather(),
             "safety_hours": safety_hours or _make_safety_hours(),
         },

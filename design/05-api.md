@@ -369,7 +369,6 @@ archive/                                  ← 历史预测归档
 ```json
 {
   "generated_at": "2026-02-12T05:00:00+08:00",
-  "engine_version": "4.0.0",
   "forecast_days": 7,
   "viewpoint_count": 12,
   "route_count": 3,

@@ -238,11 +238,10 @@ class TestPipelineResult:
         pr = PipelineResult(
             viewpoint=vp,
             forecast_days=[],
-            meta={"generated_at": "2025-01-15T12:00:00", "engine_version": "0.1"},
+            meta={"generated_at": "2025-01-15T12:00:00"},
         )
         assert pr.viewpoint is vp
         assert pr.forecast_days == []
-        assert pr.meta["engine_version"] == "0.1"
 
 
 # ==================== score_to_status ====================

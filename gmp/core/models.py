@@ -144,7 +144,6 @@ class PipelineResult:
     meta: dict
     # meta 字段说明:
     #   generated_at: str (ISO datetime)
-    #   engine_version: str
     #   cache_stats: dict (缓存命中/未命中统计)
     #   data_freshness: str ("fresh" | "degraded")
 

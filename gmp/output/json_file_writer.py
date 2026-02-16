@@ -34,6 +34,17 @@ class JSONFileWriter:
         self._write_json(vp_dir / "forecast.json", forecast)
         self._write_json(vp_dir / "timeline.json", timeline)
 
+    def write_viewpoint_timeline(
+        self,
+        viewpoint_id: str,
+        date_str: str,
+        timeline: dict,
+    ) -> None:
+        """写入 viewpoints/{id}/timeline_{date}.json"""
+        vp_dir = Path(self._output_dir) / "viewpoints" / viewpoint_id
+        vp_dir.mkdir(parents=True, exist_ok=True)
+        self._write_json(vp_dir / f"timeline_{date_str}.json", timeline)
+
     def write_route(self, route_id: str, forecast: dict) -> None:
         """写入 routes/{id}/forecast.json"""
         route_dir = Path(self._output_dir) / "routes" / route_id

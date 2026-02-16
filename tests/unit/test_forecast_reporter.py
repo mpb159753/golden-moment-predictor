@@ -71,7 +71,6 @@ def _make_pipeline_result(
         forecast_days=days,
         meta={
             "generated_at": "2026-02-12T05:00:00+08:00",
-            "engine_version": "4.0.0",
         },
     )
 
