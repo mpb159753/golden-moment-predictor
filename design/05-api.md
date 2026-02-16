@@ -280,61 +280,83 @@ archive/                                  ← 历史预测归档
 
 ### `routes/{id}/forecast.json` — 线路聚合预测
 
+> [!NOTE]
+> **结构设计**: 线路以 `stops` 为顶层组织，每站内嵌独立的 `forecast`（与单站格式一致）。这种设计适合多日行程规划——线路往往跨越多天，用户需要独立查看每站在不同日期的预测，以决定何时到达哪个站点。CLI/前端需要的"按日聚合"视图可在展示层按需计算。
+
 ```json
 {
   "route_id": "lixiao",
   "route_name": "理小路",
   "generated_at": "2026-02-12T05:00:00+08:00",
   "forecast_days": 7,
-  "daily": [
+  "stops": [
     {
-      "date": "2026-02-12",
-      "route_highlight": "牛背山云海+金山绝佳，建议优先前往",
-      "route_score": 83,
-      "stops": [
-        {
-          "order": 1,
-          "viewpoint_id": "zheduo_gongga",
-          "viewpoint_name": "折多山",
-          "best_event": {
-            "event_type": "sunrise_golden_mountain",
-            "score": 75,
-            "status": "Possible"
-          },
-          "events": [
-            {
+      "viewpoint_id": "zheduo_gongga",
+      "viewpoint_name": "折多山",
+      "order": 1,
+      "stay_note": "建议停留2小时观赏日出金山",
+      "forecast": {
+        "viewpoint_id": "zheduo_gongga",
+        "viewpoint_name": "折多山",
+        "generated_at": "2026-02-12T05:00:00+08:00",
+        "forecast_days": 7,
+        "daily": [
+          {
+            "date": "2026-02-12",
+            "summary": "推荐观景 — 日出金山",
+            "best_event": {
               "event_type": "sunrise_golden_mountain",
               "score": 75,
-              "status": "Possible",
-              "confidence": "High"
-            }
-          ]
-        },
-        {
-          "order": 2,
-          "viewpoint_id": "niubei_gongga",
-          "viewpoint_name": "牛背山",
-          "best_event": {
-            "event_type": "cloud_sea",
-            "score": 90,
-            "status": "Recommended"
-          },
-          "events": [
-            {
-              "event_type": "sunrise_golden_mountain",
-              "score": 87,
-              "status": "Recommended",
-              "confidence": "High"
+              "status": "Possible"
             },
-            {
+            "events": [
+              {
+                "event_type": "sunrise_golden_mountain",
+                "score": 75,
+                "status": "Possible",
+                "confidence": "High"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "viewpoint_id": "niubei_gongga",
+      "viewpoint_name": "牛背山",
+      "order": 2,
+      "stay_note": "建议停留3小时，云海+金山绝佳组合",
+      "forecast": {
+        "viewpoint_id": "niubei_gongga",
+        "viewpoint_name": "牛背山",
+        "generated_at": "2026-02-12T05:00:00+08:00",
+        "forecast_days": 7,
+        "daily": [
+          {
+            "date": "2026-02-12",
+            "summary": "推荐观景 — 日出金山+云海",
+            "best_event": {
               "event_type": "cloud_sea",
               "score": 90,
-              "status": "Recommended",
-              "confidence": "High"
-            }
-          ]
-        }
-      ]
+              "status": "Recommended"
+            },
+            "events": [
+              {
+                "event_type": "sunrise_golden_mountain",
+                "score": 87,
+                "status": "Recommended",
+                "confidence": "High"
+              },
+              {
+                "event_type": "cloud_sea",
+                "score": 90,
+                "status": "Recommended",
+                "confidence": "High"
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

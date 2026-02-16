@@ -44,8 +44,19 @@ class TimelineReporter:
         }
         """
 
-    def _assign_tags(self, hour: int, ...) -> list[str]:
-        """根据时刻和事件生成 tags (sunrise_window, cloud_sea, etc.)"""
+    def _assign_tags(self, hour: int, event_hours: ..., weather: dict) -> list[str]:
+        """根据时刻、事件和天气生成 tags
+
+        Tags 定义 (对齐 05-api.md):
+        - sunrise: 日出相关事件活跃
+        - sunset: 日落相关事件活跃
+        - golden_mountain: 金山事件活跃
+        - cloud_sea: 云海事件活跃
+        - stargazing: 观星事件活跃
+        - magnificent: 活跃事件 score >= 85
+        - clear_sky: 当前小时 cloud_cover_total < 30
+        - partial_data: 当前小时天气数据缺失
+        """
 ```
 
 ### 应测试的内容
@@ -54,9 +65,15 @@ class TimelineReporter:
 - safety_passed 正确标记
 - 活跃事件在对应时段标记
 - tags 自动生成:
-  - 日出时段 → 包含 `"sunrise_window"` tag
-  - 云海事件活跃 → 对应时段包含 `"cloud_sea"` tag
-  - 无事件的时段 → tags 为空列表
+  - 日出时段 → 包含 `"sunrise"` tag
+  - 日落时段 → 包含 `"sunset"` tag
+  - 金山事件 → 包含 `"golden_mountain"` tag
+  - 云海事件活跃 → 包含 `"cloud_sea"` tag
+  - cloud_cover_total < 30 → 包含 `"clear_sky"` tag
+  - 活跃事件 score >= 85 → 包含 `"magnificent"` tag
+  - 天气数据缺失 → 包含 `"partial_data"` tag
+  - 无事件且天气完整的时段 → tags 为空列表
+- 跨午夜时间窗口正确解析 (如 21:00 - 03:00)
 - 边界: hour=0 和 hour=23 正常处理
 - 无活跃事件的日期 → hourly 仍有 24 条 weather 数据
 
@@ -87,7 +104,7 @@ class CLIFormatter:
 
 ### 应测试的内容
 
-- 输出包含日期、事件类型、分数、状态
+- 输出包含日期、事件中文显示名、分数、状态
 - Perfect/Recommended/Possible/Not Recommended 各有不同着色
 - detail 模式包含 breakdown 信息
 - color_enabled=False 时无转义序列

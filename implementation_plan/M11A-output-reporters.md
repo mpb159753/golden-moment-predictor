@@ -97,6 +97,7 @@ class ForecastReporter:
             "route_id": "...",
             "route_name": "...",
             "generated_at": "...",
+            "forecast_days": 7,
             "stops": [
                 {
                     "viewpoint_id": "...",
@@ -117,10 +118,12 @@ class ForecastReporter:
 - best_event 为最高分事件
 - summary 由 SummaryGenerator 生成
 - confidence 字段正确
+- tags 字段正确 (sunrise_golden_mountain → `["sunrise", "golden_mountain", "magnificent"]`)
+- 有 warnings 的事件 → 包含 `partial_data` tag
 - 2 站 PipelineResult → stops 数组长度 2
 - stops 按 order 排序
 - 每站 forecast 格式与单站一致
-- route_id / route_name 正确填充
+- route_id / route_name / forecast_days 正确填充
 
 ---
 
