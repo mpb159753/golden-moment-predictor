@@ -110,7 +110,7 @@ class IceIciclePlugin:
                 "view_quality": {
                     "score": score_view,
                     "max": self._config["weights"]["view_quality"],
-                    "detail": f"云量{float(current['cloud_cover']):.0f}%",
+                    "detail": f"云量{float(current['cloud_cover_total']):.0f}%",
                 },
                 "age_deduction": {
                     "score": -ded_age,
@@ -207,7 +207,7 @@ class IceIciclePlugin:
     def _score_view_quality(self, current_row) -> int:
         """观赏通透性得分"""
         thresholds = self._config["thresholds"]["view_quality"]
-        cloud = float(current_row["cloud_cover"])
+        cloud = float(current_row["cloud_cover_total"])
         wind = float(current_row["wind_speed_10m"])
         for t in thresholds:
             max_cloud = t.get("max_cloud")

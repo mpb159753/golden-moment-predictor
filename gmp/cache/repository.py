@@ -190,6 +190,35 @@ class CacheRepository:
         self._conn.execute(sql, list(values.values()))
         self._conn.commit()
 
+    def _upsert_weather_no_commit(
+        self,
+        lat: float,
+        lon: float,
+        target_date: date,
+        hour: int,
+        data: dict,
+    ) -> None:
+        """INSERT OR REPLACE 天气数据（不 commit），供批量操作使用。"""
+        lat_r = round(lat, 2)
+        lon_r = round(lon, 2)
+        date_str = target_date.isoformat()
+
+        values = {
+            "lat_rounded": lat_r,
+            "lon_rounded": lon_r,
+            "forecast_date": date_str,
+            "forecast_hour": hour,
+            "fetched_at": data["fetched_at"],
+        }
+        for col in _WEATHER_DATA_COLUMNS:
+            if col in data:
+                values[col] = data[col]
+
+        columns = ", ".join(values.keys())
+        placeholders = ", ".join("?" for _ in values)
+        sql = f"INSERT OR REPLACE INTO weather_cache ({columns}) VALUES ({placeholders})"
+        self._conn.execute(sql, list(values.values()))
+
     def upsert_weather_batch(
         self,
         lat: float,
@@ -200,7 +229,8 @@ class CacheRepository:
         """批量写入 (一天24条)。使用事务优化性能。"""
         for row in rows:
             hour = row["forecast_hour"]
-            self.upsert_weather(lat, lon, target_date, hour, row)
+            self._upsert_weather_no_commit(lat, lon, target_date, hour, row)
+        self._conn.commit()
 
     # ==================== prediction_history 操作 ====================
 

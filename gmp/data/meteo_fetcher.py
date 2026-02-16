@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import time
 import warnings
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -19,6 +19,8 @@ from gmp.cache.weather_cache import WeatherCache
 from gmp.core.exceptions import APITimeoutError, DataDegradedWarning
 
 logger = structlog.get_logger()
+
+_CST = timezone(timedelta(hours=8))
 
 # Open-Meteo API 需要请求的 hourly 字段
 _HOURLY_FIELDS = (
@@ -113,7 +115,7 @@ class MeteoFetcher:
         6. 返回 DataFrame
         """
         # 1) 尝试缓存
-        today = date.today()
+        today = datetime.now(_CST).date()
         cached = self._cache.get(lat, lon, today)
         if cached is not None:
             logger.debug("meteo_fetcher.cache_hit", lat=lat, lon=lon)
@@ -138,7 +140,8 @@ class MeteoFetcher:
 
         # 5) 写入缓存 — 按日期分组存储
         for d, group in df.groupby("forecast_date"):
-            self._cache.set(lat, lon, d, group)
+            cache_date = date.fromisoformat(d) if isinstance(d, str) else d
+            self._cache.set(lat, lon, cache_date, group)
 
         return df
 
@@ -242,7 +245,7 @@ class MeteoFetcher:
         hours = []
         for ts in timestamps:
             dt = datetime.fromisoformat(ts)
-            dates.append(dt.date())
+            dates.append(dt.date().isoformat())
             hours.append(dt.hour)
 
         # 构建 DataFrame

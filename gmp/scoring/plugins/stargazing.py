@@ -56,7 +56,7 @@ class StargazingPlugin:
         # ── 夜间平均云量触发判定 ──
         trigger = self._config.get("trigger", {})
         max_cloud = trigger.get("max_night_cloud_cover", 70)
-        avg_cloud = weather["cloud_cover"].mean()
+        avg_cloud = weather["cloud_cover_total"].mean()
 
         if avg_cloud >= max_cloud:
             return None

@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-import logging
+
 from datetime import date, datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
 
@@ -80,7 +80,7 @@ class GMPScheduler:
         viewpoint = self._viewpoint_config.get(viewpoint_id)
 
         # 2. 筛选活跃 Plugin (使用今天作为基准日期)
-        today = date.today()
+        today = datetime.now(_CST).date()
         active_plugins = self._score_engine.filter_active_plugins(
             capabilities=viewpoint.capabilities,
             target_date=today,
@@ -313,9 +313,10 @@ class GMPScheduler:
         data_freshness: str,
     ) -> ForecastDay:
         """评分单日 — 构建 DataContext 并遍历 Plugin"""
-        # 切片当天本地天气
+        # 切片当天本地天气 (forecast_date 为字符串，需转换 target_date)
+        target_date_str = target_date.isoformat()
         day_weather = local_weather[
-            local_weather["forecast_date"] == target_date
+            local_weather["forecast_date"] == target_date_str
         ].copy()
         if day_weather.empty:
             return ForecastDay(
@@ -356,7 +357,7 @@ class GMPScheduler:
                 key = (round(target.lat, 2), round(target.lon, 2))
                 if key in target_weather_all:
                     tw = target_weather_all[key]
-                    day_tw = tw[tw["forecast_date"] == target_date].copy()
+                    day_tw = tw[tw["forecast_date"] == target_date_str].copy()
                     if not day_tw.empty:
                         target_weather[target.name] = day_tw
 

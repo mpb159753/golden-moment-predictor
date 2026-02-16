@@ -100,7 +100,7 @@ class TestParseResponse:
         fetcher = _make_fetcher()
         df = fetcher._parse_response(SAMPLE_API_RESPONSE)
 
-        assert df["forecast_date"].iloc[0] == date(2025, 12, 1)
+        assert df["forecast_date"].iloc[0] == "2025-12-01"
         assert df["forecast_hour"].iloc[0] == 0
         assert df["forecast_hour"].iloc[1] == 1
         assert df["forecast_hour"].iloc[2] == 2

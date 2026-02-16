@@ -72,7 +72,7 @@ def _make_weather_df(
             {
                 "time": t,
                 "temperature_2m": -5.0,
-                "cloud_cover": cloud_cover,
+                "cloud_cover_total": cloud_cover,
                 "wind_speed_10m": wind_speed,
             }
         )

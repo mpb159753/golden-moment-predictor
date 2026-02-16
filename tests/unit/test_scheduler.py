@@ -87,7 +87,7 @@ def _make_clear_weather(days: int = 1, past_days: int = 0) -> pd.DataFrame:
         current_date = base_date + timedelta(days=d)
         for h in range(hours_per_day):
             rows.append({
-                "forecast_date": current_date,
+                "forecast_date": current_date.isoformat(),
                 "forecast_hour": h,
                 "temperature_2m": -3.0 + h * 0.5,
                 "cloud_cover_total": 20,

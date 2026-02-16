@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Callable
 
 import pandas as pd
@@ -15,6 +15,8 @@ import structlog
 from gmp.cache.repository import CacheRepository
 
 logger = structlog.get_logger()
+
+_CST = timezone(timedelta(hours=8))
 
 
 class WeatherCache:
@@ -113,5 +115,5 @@ class WeatherCache:
         if data_source == "archive":
             return True
         # forecast: 同一天视为新鲜
-        today = datetime.now().date()
+        today = datetime.now(_CST).date()
         return fetched_at.date() == today

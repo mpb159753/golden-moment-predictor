@@ -148,7 +148,7 @@ class SnowTreePlugin:
         """从 local_weather DataFrame 计算所有派生指标"""
         snowfall = df["snowfall"].values
         temp = df["temperature_2m"].values
-        cloud = df["cloud_cover"].values
+        cloud = df["cloud_cover_total"].values
         wind = df["wind_speed_10m"].values
         n = len(snowfall)
 
@@ -232,7 +232,7 @@ class SnowTreePlugin:
         """晴朗程度得分"""
         thresholds = self._config["thresholds"]["clear_weather"]
         wc = int(current_row["weather_code"])
-        cc = float(current_row["cloud_cover"])
+        cc = float(current_row["cloud_cover_total"])
         for t in thresholds:
             codes = t.get("weather_code")
             max_cloud = t.get("max_cloud")

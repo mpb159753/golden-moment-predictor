@@ -168,16 +168,23 @@ class GoldenMountainPlugin:
         return GeoUtils.is_opposite_direction(bearing, sun_azimuth)
 
     def _calc_light_path_cloud(self, context: DataContext) -> float:
-        """计算光路云量: 从 context.light_path_weather 取 (low_cloud + mid_cloud) 的均值"""
+        """计算光路云量: 从 context.light_path_weather 取 (low_cloud + mid_cloud) 的均值
+
+        light_path_weather 结构:
+            [{"azimuth": float, "points": [...], "weather": {(lat,lon): DataFrame}}]
+        """
         if not context.light_path_weather:
             return 0.0
 
         point_avgs = []
-        for point in context.light_path_weather:
-            weather = point["weather"]
-            low = weather["cloud_cover_low"].mean()
-            mid = weather["cloud_cover_medium"].mean()
-            point_avgs.append(min(low + mid, 100.0))
+        for path_entry in context.light_path_weather:
+            weather_dict = path_entry["weather"]  # dict[(lat,lon) -> DataFrame]
+            for _coord, df in weather_dict.items():
+                if df.empty:
+                    continue
+                low = df["cloud_cover_low"].mean()
+                mid = df["cloud_cover_medium"].mean()
+                point_avgs.append(min(low + mid, 100.0))
 
         return sum(point_avgs) / len(point_avgs) if point_avgs else 0.0
 

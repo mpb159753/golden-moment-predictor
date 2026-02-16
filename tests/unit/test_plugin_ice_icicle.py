@@ -115,7 +115,7 @@ def _make_weather_df(
                 "rain": rain,
                 "showers": showers,
                 "snowfall": snowfall,
-                "cloud_cover": cloud_cover,
+                "cloud_cover_total": cloud_cover,
                 "weather_code": weather_code,
                 "wind_speed_10m": wind_speed,
                 "precipitation_probability": precipitation_probability,
@@ -209,7 +209,7 @@ class TestIceIcicleScoring:
 
         # 当前时刻晴朗微风
         df.loc[47, "weather_code"] = 0
-        df.loc[47, "cloud_cover"] = 15.0
+        df.loc[47, "cloud_cover_total"] = 15.0
         df.loc[47, "wind_speed_10m"] = 5.0
 
         ctx = _make_context(df)

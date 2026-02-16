@@ -128,18 +128,26 @@ def _light_path_weather(
     n_points: int = 10,
     hours: int = 3,
 ) -> list[dict]:
-    """创建光路天气数据 — 10个检查点"""
+    """创建光路天气数据 — 结构与 scheduler._fetch_light_path_weather() 一致
+
+    结构: [{"azimuth": float, "points": [...], "weather": {(lat,lon): DataFrame}}]
+    """
+    points = [(30.0 + i * 0.1, 101.5 + i * 0.1) for i in range(n_points)]
+    weather_dict = {
+        coord: pd.DataFrame(
+            {
+                "cloud_cover_low": [low_cloud] * hours,
+                "cloud_cover_medium": [mid_cloud] * hours,
+            }
+        )
+        for coord in points
+    }
     return [
         {
-            "coord": (30.0 + i * 0.1, 101.5 + i * 0.1),
-            "weather": pd.DataFrame(
-                {
-                    "cloud_cover_low": [low_cloud] * hours,
-                    "cloud_cover_medium": [mid_cloud] * hours,
-                }
-            ),
+            "azimuth": 90.0,
+            "points": points,
+            "weather": weather_dict,
         }
-        for i in range(n_points)
     ]
 
 

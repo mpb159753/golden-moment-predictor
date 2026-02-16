@@ -122,7 +122,7 @@ def _make_weather_df(
                 "time": t,
                 "temperature_2m": base_temp,
                 "snowfall": snowfall,
-                "cloud_cover": cloud_cover,
+                "cloud_cover_total": cloud_cover,
                 "weather_code": weather_code,
                 "wind_speed_10m": wind_speed,
                 "precipitation_probability": precipitation_probability,
@@ -209,12 +209,12 @@ class TestSnowTreeRecentPath:
         # hour 42-46: 阴天（避免日照扣分）
         for i in range(42, 47):
             df.loc[i, "weather_code"] = 3
-            df.loc[i, "cloud_cover"] = 50.0
+            df.loc[i, "cloud_cover_total"] = 50.0
             df.loc[i, "wind_speed_10m"] = 5.0
 
         # hour 47: 当前时刻晴朗
         df.loc[47, "weather_code"] = 0
-        df.loc[47, "cloud_cover"] = 10.0
+        df.loc[47, "cloud_cover_total"] = 10.0
         df.loc[47, "wind_speed_10m"] = 5.0
 
         ctx = _make_context(df)
@@ -254,12 +254,12 @@ class TestSnowTreeRetentionPath:
         # hour 37-46: 暴晒 (cloud < 10, ~10h 但按 sun_score 只算8h有效)
         for i in range(37, 47):
             df.loc[i, "temperature_2m"] = -1.0  # 升温但仍在零下
-            df.loc[i, "cloud_cover"] = 5.0  # 强晒
+            df.loc[i, "cloud_cover_total"] = 5.0  # 强晒
             df.loc[i, "weather_code"] = 0
 
         # hour 47: 当前时刻
         df.loc[47, "weather_code"] = 0
-        df.loc[47, "cloud_cover"] = 10.0
+        df.loc[47, "cloud_cover_total"] = 10.0
         df.loc[47, "wind_speed_10m"] = 5.0
         df.loc[47, "temperature_2m"] = -0.5
 
@@ -285,7 +285,7 @@ class TestSnowTreeDeductions:
         # hour 46-47: 晴朗
         for i in range(46, 48):
             df.loc[i, "weather_code"] = 0
-            df.loc[i, "cloud_cover"] = 10.0
+            df.loc[i, "cloud_cover_total"] = 10.0
             df.loc[i, "wind_speed_10m"] = 5.0
             df.loc[i, "temperature_2m"] = -10.0
         return df
@@ -341,14 +341,14 @@ class TestSnowTreeDeductions:
 
         # hour 29-38: 暴晒 10h（强晒：cloud<10%）
         for i in range(29, 39):
-            df.loc[i, "cloud_cover"] = 5.0
+            df.loc[i, "cloud_cover_total"] = 5.0
             df.loc[i, "weather_code"] = 0
             df.loc[i, "temperature_2m"] = -3.0
 
         # 当前晴
         for i in range(39, 48):
             df.loc[i, "weather_code"] = 0
-            df.loc[i, "cloud_cover"] = 10.0
+            df.loc[i, "cloud_cover_total"] = 10.0
             df.loc[i, "wind_speed_10m"] = 5.0
             df.loc[i, "temperature_2m"] = -3.0
 
@@ -360,13 +360,13 @@ class TestSnowTreeDeductions:
         for i in range(24, 29):
             df2.loc[i, "snowfall"] = 0.6
         for i in range(29, 48):
-            df2.loc[i, "cloud_cover"] = 80.0  # 多云，不晒
+            df2.loc[i, "cloud_cover_total"] = 80.0  # 多云，不晒
             df2.loc[i, "weather_code"] = 3
             df2.loc[i, "wind_speed_10m"] = 5.0
             df2.loc[i, "temperature_2m"] = -5.0
         # 当前时刻晴
         df2.loc[47, "weather_code"] = 0
-        df2.loc[47, "cloud_cover"] = 10.0
+        df2.loc[47, "cloud_cover_total"] = 10.0
 
         ctx2 = _make_context(df2)
         result_no_sun = plugin.score(ctx2)
