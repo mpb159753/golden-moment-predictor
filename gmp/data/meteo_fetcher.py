@@ -24,7 +24,7 @@ logger = structlog.get_logger()
 _HOURLY_FIELDS = (
     "temperature_2m,"
     "cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,"
-    "cloudbase,"
+    "cloud_base,"
     "precipitation_probability,"
     "visibility,"
     "wind_speed_10m,"
@@ -36,7 +36,7 @@ _HOURLY_FIELDS = (
 _COLUMN_RENAME = {
     "cloud_cover": "cloud_cover_total",
     "cloud_cover_mid": "cloud_cover_medium",
-    "cloudbase": "cloud_base_altitude",
+    "cloud_base": "cloud_base_altitude",
 }
 
 # DataFrame 最终列顺序
@@ -258,7 +258,7 @@ class MeteoFetcher:
             "cloud_cover_low",
             "cloud_cover_mid",
             "cloud_cover_high",
-            "cloudbase",
+            "cloud_base",
             "precipitation_probability",
             "visibility",
             "wind_speed_10m",

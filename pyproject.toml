@@ -7,6 +7,9 @@ requires-python = ">=3.11"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "e2e: End-to-end tests with real API calls (deselect with '-m not e2e')",
+]
 
 [project.scripts]
 gmp = "gmp.main:cli"

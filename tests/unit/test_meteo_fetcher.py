@@ -31,7 +31,7 @@ SAMPLE_API_RESPONSE: dict = {
         "cloud_cover_low": [5, 10, 15],
         "cloud_cover_mid": [3, 8, 12],
         "cloud_cover_high": [2, 5, 10],
-        "cloudbase": [3000.0, 2800.0, 2500.0],
+        "cloud_base": [3000.0, 2800.0, 2500.0],
         "precipitation_probability": [0, 5, 10],
         "visibility": [20000.0, 18000.0, 15000.0],
         "wind_speed_10m": [3.0, 4.0, 5.0],

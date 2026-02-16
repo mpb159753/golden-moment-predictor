@@ -61,13 +61,17 @@ def _load_configs(
 
 def _register_plugins(engine: ScoreEngine, config: ConfigManager) -> None:
     """注册所有评分 Plugin"""
-    engine.register(GoldenMountainPlugin("sunrise_golden_mountain", config))
-    engine.register(GoldenMountainPlugin("sunset_golden_mountain", config))
-    engine.register(StargazingPlugin(config))
-    engine.register(CloudSeaPlugin(config))
-    engine.register(FrostPlugin(config))
-    engine.register(SnowTreePlugin(config))
-    engine.register(IceIciclePlugin(config))
+    gm_cfg = config.get_plugin_config("golden_mountain")
+    engine.register(GoldenMountainPlugin("sunrise_golden_mountain", gm_cfg))
+    engine.register(GoldenMountainPlugin("sunset_golden_mountain", gm_cfg))
+    engine.register(StargazingPlugin(config.get_plugin_config("stargazing")))
+    engine.register(CloudSeaPlugin(
+        config.get_plugin_config("cloud_sea"),
+        config.get_safety_config(),
+    ))
+    engine.register(FrostPlugin(config.get_plugin_config("frost")))
+    engine.register(SnowTreePlugin(config.get_plugin_config("snow_tree")))
+    engine.register(IceIciclePlugin(config.get_plugin_config("ice_icicle")))
 
 
 def _create_core_components(
@@ -88,7 +92,7 @@ def _create_core_components(
     cache = WeatherCache(
         repo, config_manager.config.data_freshness
     )
-    fetcher = MeteoFetcher(cache, config_manager.config.timeout)
+    fetcher = MeteoFetcher(cache)
 
     engine = ScoreEngine()
     _register_plugins(engine, config_manager)

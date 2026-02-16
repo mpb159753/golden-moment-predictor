@@ -63,7 +63,10 @@ class WeatherCache:
         """将 DataFrame 写入缓存。空 DataFrame 不写入。"""
         if data.empty:
             return
+        now = datetime.now().isoformat()
         rows = data.to_dict("records")
+        for row in rows:
+            row["fetched_at"] = now
         self._repo.upsert_weather_batch(lat, lon, target_date, rows)
 
     def get_or_fetch(

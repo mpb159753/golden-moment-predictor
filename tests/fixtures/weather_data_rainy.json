@@ -13,7 +13,7 @@
         "cloud_cover_low": "%",
         "cloud_cover_mid": "%",
         "cloud_cover_high": "%",
-        "cloudbase": "m",
+        "cloud_base": "m",
         "precipitation_probability": "%",
         "visibility": "m",
         "wind_speed_10m": "km/h",
@@ -179,7 +179,7 @@
             40,
             35
         ],
-        "cloudbase": [
+        "cloud_base": [
             800,
             750,
             700,
