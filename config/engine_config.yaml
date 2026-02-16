@@ -40,9 +40,12 @@ scoring:
       target_visible: 40
       local_clear: 25
     thresholds:
-      light_path_cloud: [10, 20, 30, 50]   # 分界值: ≤10%=35, ≤20%=30, ≤30%=20, ≤50%=10, >50%=0
-      target_cloud: [10, 20, 30, 50]       # ≤10%=40, ≤20%=35, ≤30%=25, ≤50%=10, >50%=0
-      local_cloud: [15, 30, 50]            # ≤15%=25, ≤30%=20, ≤50%=10, >50%=0
+      light_path_cloud: [10, 20, 30, 50]   # 分界值阈值
+      light_path_scores: [35, 30, 20, 10, 0]  # 与阈值对应的分值（含兜底）
+      target_cloud: [10, 20, 30, 50]       # 分界值阈值
+      target_scores: [40, 35, 25, 10, 0]   # 与阈值对应的分值（含兜底）
+      local_cloud: [15, 30, 50]            # 分界值阈值
+      local_scores: [25, 20, 10, 0]        # 与阈值对应的分值（含兜底）
     veto_threshold: 0
 
   cloud_sea:
@@ -88,6 +91,7 @@ scoring:
     base_optimal: 100
     base_good: 90
     base_partial: 70
+    base_poor: 100
     cloud_penalty_factor: 0.8
     wind_thresholds:
       severe: {speed: 40, penalty: 30}
