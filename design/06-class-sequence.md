@@ -532,10 +532,14 @@ classDiagram
     class Backtester {
         -scheduler: GMPScheduler
         -fetcher: MeteoFetcher
-        -repo: CacheRepository
-        +run(viewpoint_id: str, date: date, events: list, save: bool) BacktestReport
+        -config: ConfigManager
+        -cache_repo: CacheRepository
+        -viewpoint_config: ViewpointConfig
+        +run(viewpoint_id: str, date: date, events: list, save: bool) dict
         -_validate_date(date: date) void
-        -_fetch_historical(coords: tuple, date: date) DataFrame
+        -_resolve_weather_data(viewpoint_id: str, target_date: date, required_coords: list) tuple
+        -_build_report(...) dict
+        -_save_results(report: dict, pipeline_result: Any) void
     }
 
     class BacktestRequest {
@@ -545,20 +549,16 @@ classDiagram
         +save: bool
     }
 
-    class BacktestReport {
-        +backtest_date: date
-        +data_source: str
-        +viewpoint: str
-        +forecast_days: list~dict~
-        +meta: dict
-    }
-
     Backtester --> GMPScheduler : 复用评分管线
     Backtester --> MeteoFetcher : 获取历史数据
-    Backtester --> CacheRepository : 保存回测结果
+    Backtester --> ConfigManager : 读取 backtest_max_history_days
+    Backtester --> CacheRepository : 缓存查询与保存回测结果
+    Backtester --> ViewpointConfig : 获取观景台配置
     Backtester --> BacktestRequest
-    Backtester --> BacktestReport
 ```
+
+> [!NOTE]
+> Backtester.run() 返回 dict 而非 dataclass，便于灵活序列化。报告格式包含 `viewpoint_id, target_date, is_backtest, data_source, events, meta` 等字段。
 
 ---
 
