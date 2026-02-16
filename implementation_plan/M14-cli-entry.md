@@ -4,7 +4,7 @@
 
 **Goal:** 实现 click CLI 入口，包括所有命令 (`predict`, `predict-route`, `generate-all`, `backtest`, `list-viewpoints`, `list-routes`)。
 
-**依赖模块:** M07 (ConfigManager), M12 (GMPScheduler), M13 (Backtester)
+**依赖模块:** M07 (ConfigManager), M11 (输出层), M12 (GMPScheduler), M12B (BatchGenerator), M13 (Backtester)
 
 ---
 
@@ -19,9 +19,9 @@ GMP 以 CLI 为唯一入口。所有命令通过 `python -m gmp.main` 或 `gmp` 
 ### 命令列表
 
 ```
-gmp predict <viewpoint_id>     [--days N] [--events e1,e2] [--output json|table] [--detail]
+gmp predict <viewpoint_id>     [--days N] [--events e1,e2] [--output json|table] [--detail] [--output-file path]
 gmp predict-route <route_id>   [--days N] [--events e1,e2] [--output json|table]
-gmp generate-all               [--days N] [--events e1,e2] [--fail-fast]
+gmp generate-all               [--days N] [--events e1,e2] [--fail-fast] [--no-archive] [--output dir] [--archive dir]
 gmp backtest <viewpoint_id>    --date YYYY-MM-DD [--events e1,e2] [--save]
 gmp list-viewpoints            [--output json|table]
 gmp list-routes                [--output json|table]
@@ -39,7 +39,7 @@ gmp list-routes                [--output json|table]
 
 ```python
 def create_scheduler(config_path: str = "config/engine_config.yaml") -> GMPScheduler:
-    """创建完整的 Scheduler 及其所有依赖组件
+    """创建 Scheduler 及其核心依赖组件
 
     1. ConfigManager(config_path)
     2. ViewpointConfig.load("config/viewpoints/")
@@ -50,8 +50,20 @@ def create_scheduler(config_path: str = "config/engine_config.yaml") -> GMPSched
     7. ScoreEngine() → 注册所有 Plugin
     8. AstroUtils()
     9. GeoUtils()
-    10. ForecastReporter + TimelineReporter + JSONFileWriter
-    11. GMPScheduler(所有组件)
+    10. GMPScheduler(核心组件)
+    """
+
+def create_batch_generator(
+    scheduler: GMPScheduler,
+    viewpoint_config: ViewpointConfig,
+    route_config: RouteConfig,
+    config: ConfigManager,
+) -> BatchGenerator:
+    """创建 BatchGenerator 及输出层组件
+
+    1. ForecastReporter + TimelineReporter
+    2. JSONFileWriter(output_dir, archive_dir)
+    3. BatchGenerator(scheduler, viewpoint_config, route_config, reporters, writer)
     """
 
 def _register_plugins(engine: ScoreEngine, config: ConfigManager) -> None:
@@ -73,19 +85,25 @@ def _register_plugins(engine: ScoreEngine, config: ConfigManager) -> None:
 ```python
 @cli.command()
 @click.argument("viewpoint_id")
-@click.option("--days", default=7, type=int, help="预测天数 (1-16)")
+@click.option("--days", default=7, type=click.IntRange(1, 16), help="预测天数 (1-16)")
 @click.option("--events", default=None, help="逗号分隔的事件过滤")
 @click.option("--output", "output_format", default="table", type=click.Choice(["json", "table"]))
 @click.option("--detail", is_flag=True, help="显示评分明细")
+@click.option("--output-file", default=None, type=click.Path(), help="输出 JSON 文件路径 (仅 --output json)")
 @click.option("--config", default="config/engine_config.yaml", help="配置文件路径")
-def predict(viewpoint_id, days, events, output_format, detail, config):
+def predict(viewpoint_id, days, events, output_format, detail, output_file, config):
     """对指定观景台生成预测"""
     scheduler = create_scheduler(config)
     result = scheduler.run(viewpoint_id, days=days, events=events_list)
 
     if output_format == "json":
         forecast = ForecastReporter().generate(result)
-        click.echo(json.dumps(forecast, ensure_ascii=False, indent=2))
+        json_output = json.dumps(forecast, ensure_ascii=False, indent=2)
+        if output_file:
+            Path(output_file).write_text(json_output, encoding="utf-8")
+            click.echo(f"已输出到: {output_file}")
+        else:
+            click.echo(json_output)
     else:
         formatter = CLIFormatter()
         if detail:
@@ -101,7 +119,7 @@ def predict(viewpoint_id, days, events, output_format, detail, config):
 ```python
 @cli.command("predict-route")
 @click.argument("route_id")
-@click.option("--days", default=7, type=int)
+@click.option("--days", default=7, type=click.IntRange(1, 16))
 @click.option("--events", default=None)
 @click.option("--output", "output_format", default="table", type=click.Choice(["json", "table"]))
 @click.option("--config", default="config/engine_config.yaml")
@@ -115,12 +133,23 @@ def predict_route(route_id, days, events, output_format, config):
 
 ```python
 @cli.command("generate-all")
-@click.option("--days", default=7, type=int)
+@click.option("--days", default=7, type=click.IntRange(1, 16))
 @click.option("--events", default=None)
-@click.option("--fail-fast", is_flag=True)
+@click.option("--fail-fast", is_flag=True, help="单站失败时立即中止")
+@click.option("--no-archive", is_flag=True, help="跳过历史归档")
+@click.option("--output", "output_dir", default="public/data", type=click.Path(), help="JSON 输出目录")
+@click.option("--archive", "archive_dir", default="archive", type=click.Path(), help="历史归档目录")
 @click.option("--config", default="config/engine_config.yaml")
-def generate_all(days, events, fail_fast, config):
+def generate_all(days, events, fail_fast, no_archive, output_dir, archive_dir, config):
     """批量生成所有观景台和线路的预测 JSON 文件"""
+    scheduler = create_scheduler(config)
+    batch_gen = create_batch_generator(
+        scheduler, viewpoint_config, route_config, config_manager
+    )
+    result = batch_gen.generate_all(
+        days=days, events=events_list,
+        fail_fast=fail_fast, no_archive=no_archive
+    )
 ```
 
 ---
@@ -184,12 +213,15 @@ def predict(...):
 
 - `gmp predict niubei_gongga --days 1` → 正常输出
 - `gmp predict niubei_gongga --output json` → 有效 JSON
+- `gmp predict niubei_gongga --output json --output-file out.json` → 写入文件
 - `gmp predict 不存在的id` → 错误提示, exit code=1
 - `gmp predict-route lixiao --days 3` → 线路预测
 - `gmp list-viewpoints` → 显示所有观景台
 - `gmp list-routes` → 显示所有线路
 - `gmp backtest niubei_gongga --date 2025-12-01` → 回测输出
 - `gmp generate-all --days 1` → 生成 JSON 文件
+- `gmp generate-all --no-archive` → 跳过归档
+- `gmp generate-all --output ./custom/data --archive ./custom/archive` → 自定义路径
 - `--config` 参数可指定不同配置文件
 
 ---

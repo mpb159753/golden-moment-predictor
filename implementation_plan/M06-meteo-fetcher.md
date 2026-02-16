@@ -16,6 +16,8 @@ MeteoFetcher 是 GMP 的核心数据获取组件，负责：
 3. 支持多坐标批量请求 (光路 10 点)
 4. 通过 WeatherCache 实现缓存和降级
 
+> **HTTP 方案选择**: 使用 `httpx` 直接调用 Open-Meteo REST JSON API，而非 `openmeteo-requests` SDK。原因：GMP 单次数据量小 (7×24=168 条)，FlatBuffers 性能优势可忽略；已有完整缓存层 (M05) 和重试机制；JSON 按名称访问字段比 SDK 的按索引访问更直观安全。
+
 ### API 请求参数
 
 **Forecast API**: `https://api.open-meteo.com/v1/forecast`
@@ -108,7 +110,14 @@ class MeteoFetcher:
         """HTTP 调用 + 重试 + 超时处理"""
 
     def _parse_response(self, response: dict) -> pd.DataFrame:
-        """解析 Open-Meteo JSON → DataFrame"""
+        """解析 Open-Meteo JSON → DataFrame
+
+        字段名映射 (Open-Meteo API → GMP 内部):
+        - cloud_cover → cloud_cover_total
+        - cloud_cover_mid → cloud_cover_medium
+        - cloudbase → cloud_base_altitude
+        其余字段名与 API 一致。
+        """
 
     def _validate_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """数据校验: clip 异常值, None 填充默认值"""
@@ -156,10 +165,22 @@ columns = [
 **错误处理测试:**
 - API 超时 → 抛出 `APITimeoutError`
 - API 返回格式无效 → 合理错误
+- 重试行为: 第 1 次超时, 第 2 次成功 → 返回正常数据
+- 重试次数耗尽 → 抛出 `APITimeoutError`
+
+**`past_days` 参数测试:**
+- `past_days=1` → API 请求包含 `past_days=1`
+- `past_days=0` → API 请求不含 `past_days` 或为 0
+
+**`fetch_historical` 测试:**
+- 使用 Archive API URL (非 Forecast)
+- 正确传入 `start_date` 和 `end_date`
+- 返回 DataFrame 格式与 `fetch_hourly` 一致
 
 **`fetch_multi_points` 测试:**
 - 坐标去重: 输入 3 个坐标, 其中 2 个 ROUND 后相同 → 实际请求 2 个
 - 返回字典 key 为 rounded 坐标
+- 空坐标列表 → 返回空字典
 
 ---
 
