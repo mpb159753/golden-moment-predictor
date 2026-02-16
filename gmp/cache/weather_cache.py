@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Callable
 
 import pandas as pd
@@ -63,7 +63,7 @@ class WeatherCache:
         """将 DataFrame 写入缓存。空 DataFrame 不写入。"""
         if data.empty:
             return
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         rows = data.to_dict("records")
         for row in rows:
             row["fetched_at"] = now

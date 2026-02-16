@@ -84,7 +84,7 @@ class TestParseResponse:
         assert list(df.columns) == expected_columns
 
     def test_parse_column_name_mapping(self) -> None:
-        """Open-Meteo 字段名正确映射：cloud_cover→cloud_cover_total, cloud_cover_mid→cloud_cover_medium, cloudbase→cloud_base_altitude"""
+        """Open-Meteo 字段名正确映射：cloud_cover→cloud_cover_total, cloud_cover_mid→cloud_cover_medium, cloud_base→cloud_base_altitude"""
         fetcher = _make_fetcher()
         df = fetcher._parse_response(SAMPLE_API_RESPONSE)
 

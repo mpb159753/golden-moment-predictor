@@ -232,7 +232,7 @@ class MeteoFetcher:
         字段名映射:
         - cloud_cover → cloud_cover_total
         - cloud_cover_mid → cloud_cover_medium
-        - cloudbase → cloud_base_altitude
+        - cloud_base → cloud_base_altitude
         """
         hourly = response["hourly"]
 
