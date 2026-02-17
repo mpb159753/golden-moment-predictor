@@ -1,0 +1,22 @@
+id: gongga_yuzixi
+name: 鱼子西
+location:
+  lat: 30.067
+  lon: 101.675
+  altitude: 4100
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.58
+    lon: 101.88
+    altitude: 7556
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

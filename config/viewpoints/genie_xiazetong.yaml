@@ -1,0 +1,21 @@
+id: genie_xiazetong
+name: 下则通村
+location:
+  lat: 30.056
+  lon: 99.882
+  altitude: 3890
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+
+targets:
+  - name: 格聂主峰
+    lat: 30.12
+    lon: 99.79
+    altitude: 6204
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

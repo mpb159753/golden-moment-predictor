@@ -1,0 +1,19 @@
+id: genie_nuda_camp
+name: 努达营地
+location:
+  lat: 29.998
+  lon: 99.793
+  altitude: 4480
+
+capabilities:
+  - stargazing
+  - sunrise
+
+targets:
+  - name: 格聂主峰
+    lat: 30.12
+    lon: 99.79
+    altitude: 6204
+    weight: primary
+    applicable_events:
+      - sunrise

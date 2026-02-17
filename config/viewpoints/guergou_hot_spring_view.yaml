@@ -1,0 +1,21 @@
+id: guergou_hot_spring_view
+name: 河谷温泉机位
+location:
+  lat: 31.575
+  lon: 103.389
+  altitude: 1800
+
+capabilities:
+  - sunrise
+  - sunset
+  - frost
+
+targets:
+  - name: 鹧鸪山主峰
+    lat: 31.792
+    lon: 102.922
+    altitude: 4450
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

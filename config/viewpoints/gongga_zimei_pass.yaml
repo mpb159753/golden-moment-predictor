@@ -1,0 +1,22 @@
+id: gongga_zimei_pass
+name: 子梅垭口
+location:
+  lat: 29.689
+  lon: 101.997
+  altitude: 4550
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.58
+    lon: 101.88
+    altitude: 7556
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

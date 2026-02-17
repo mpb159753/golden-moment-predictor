@@ -1,0 +1,20 @@
+id: transit_lixiao_tunnel_view
+name: 理小隧道口观景台
+location:
+  lat: 31.351
+  lon: 102.984
+  altitude: 3900
+
+capabilities:
+  - sunrise
+  - sunset
+
+targets:
+  - name: 幺妹峰
+    lat: 31.06
+    lon: 102.89
+    altitude: 6247
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

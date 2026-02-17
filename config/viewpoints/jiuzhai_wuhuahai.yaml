@@ -1,0 +1,22 @@
+id: jiuzhai_wuhuahai
+name: 五花海
+location:
+  lat: 33.184
+  lon: 103.903
+  altitude: 2472
+
+capabilities:
+  - sunrise
+  - sunset
+  - autumn_foliage
+  - waterfall
+
+targets:
+  - name: 雪宝顶
+    lat: 32.74
+    lon: 103.85
+    altitude: 5588
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

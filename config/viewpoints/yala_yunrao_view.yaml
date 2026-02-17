@@ -1,0 +1,21 @@
+id: yala_yunrao_view
+name: 云绕亚拉
+location:
+  lat: 30.205
+  lon: 101.724
+  altitude: 4000
+
+capabilities:
+  - sunrise
+  - sunset
+  - cloud_sea
+
+targets:
+  - name: 亚拉神山
+    lat: 30.15
+    lon: 101.75
+    altitude: 5820
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

@@ -1,0 +1,18 @@
+id: transit_lixiao_redstone
+name: 理小路红石滩（凉台沟）
+location:
+  lat: 31.327
+  lon: 102.962
+  altitude: 3490
+
+capabilities:
+  - sunset
+
+targets:
+  - name: 幺妹峰
+    lat: 31.06
+    lon: 102.89
+    altitude: 6247
+    weight: primary
+    applicable_events:
+      - sunset

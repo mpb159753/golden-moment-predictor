@@ -1,0 +1,21 @@
+id: siguniang_changping
+name: 长坪沟
+location:
+  lat: 31.09
+  lon: 102.941
+  altitude: 3400
+
+capabilities:
+  - sunrise
+  - sunset
+  - cloud_sea
+
+targets:
+  - name: 幺妹峰
+    lat: 31.06
+    lon: 102.89
+    altitude: 6247
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

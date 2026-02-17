@@ -1,0 +1,23 @@
+id: dagu_4860
+name: 4860观景台
+location:
+  lat: 32.2
+  lon: 102.708
+  altitude: 4860
+
+capabilities:
+  - sunrise
+  - sunset
+  - cloud_sea
+  - stargazing
+  - snow_tree
+
+targets:
+  - name: 达古雪山
+    lat: 32.206
+    lon: 102.713
+    altitude: 5286
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

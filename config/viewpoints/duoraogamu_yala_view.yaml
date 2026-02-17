@@ -1,0 +1,21 @@
+id: duoraogamu_yala_view
+name: 亚拉主景平台
+location:
+  lat: 30.153
+  lon: 101.719
+  altitude: 4100
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+
+targets:
+  - name: 亚拉神山
+    lat: 30.15
+    lon: 101.75
+    altitude: 5820
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

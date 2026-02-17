@@ -1,0 +1,18 @@
+id: transit_18bends_view
+name: 天路十八弯观景台
+location:
+  lat: 30.103
+  lon: 100.248
+  altitude: 3970
+
+capabilities:
+  - sunset
+
+targets:
+  - name: 海子山主峰
+    lat: 29.95
+    lon: 100.35
+    altitude: 5020
+    weight: primary
+    applicable_events:
+      - sunset

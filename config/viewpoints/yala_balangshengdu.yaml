@@ -1,0 +1,21 @@
+id: yala_balangshengdu
+name: 八郎生都
+location:
+  lat: 30.185
+  lon: 101.706
+  altitude: 4200
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+
+targets:
+  - name: 亚拉神山
+    lat: 30.15
+    lon: 101.75
+    altitude: 5820
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

@@ -1,0 +1,23 @@
+id: gongga_lenggacuo
+name: 冷嘎措
+location:
+  lat: 29.676
+  lon: 101.995
+  altitude: 4520
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+  - frost
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.58
+    lon: 101.88
+    altitude: 7556
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

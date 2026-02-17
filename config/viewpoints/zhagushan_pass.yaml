@@ -1,0 +1,21 @@
+id: zhagushan_pass
+name: 鹧鸪山垭口机位
+location:
+  lat: 31.779
+  lon: 102.929
+  altitude: 3780
+
+capabilities:
+  - sunrise
+  - sunset
+  - snow_tree
+
+targets:
+  - name: 鹧鸪山主峰
+    lat: 31.792
+    lon: 102.922
+    altitude: 4450
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

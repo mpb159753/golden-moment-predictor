@@ -1,0 +1,20 @@
+id: genie_chachongxi
+name: 查冲西村
+location:
+  lat: 30.107
+  lon: 99.905
+  altitude: 3780
+
+capabilities:
+  - sunrise
+  - sunset
+
+targets:
+  - name: 格聂主峰
+    lat: 30.12
+    lon: 99.79
+    altitude: 6204
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

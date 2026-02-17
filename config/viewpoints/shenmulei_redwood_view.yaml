@@ -1,0 +1,22 @@
+id: shenmulei_redwood_view
+name: 红杉林主机位
+location:
+  lat: 30.782
+  lon: 102.872
+  altitude: 3000
+
+capabilities:
+  - sunrise
+  - sunset
+  - frost
+  - snow_tree
+
+targets:
+  - name: 夹金山主峰
+    lat: 30.949
+    lon: 102.844
+    altitude: 4930
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

@@ -1,0 +1,21 @@
+id: transit_zheduoshan_pass
+name: 折多山垭口
+location:
+  lat: 30.049
+  lon: 101.724
+  altitude: 4298
+
+capabilities:
+  - sunrise
+  - sunset
+  - cloud_sea
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.58
+    lon: 101.88
+    altitude: 7556
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

@@ -1,0 +1,22 @@
+id: genie_eye
+name: 格聂之眼
+location:
+  lat: 30.018
+  lon: 99.844
+  altitude: 4300
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+
+targets:
+  - name: 格聂主峰
+    lat: 30.12
+    lon: 99.79
+    altitude: 6204
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

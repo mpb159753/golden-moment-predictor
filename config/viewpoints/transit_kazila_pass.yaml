@@ -1,0 +1,20 @@
+id: transit_kazila_pass
+name: 卡子拉山垭口
+location:
+  lat: 30.065
+  lon: 100.582
+  altitude: 4718
+
+capabilities:
+  - sunrise
+  - sunset
+
+targets:
+  - name: 海子山主峰
+    lat: 29.95
+    lon: 100.35
+    altitude: 5020
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

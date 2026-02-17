@@ -1,0 +1,21 @@
+id: yala_tagong_view
+name: 塔公草原机位
+location:
+  lat: 30.02
+  lon: 101.546
+  altitude: 3730
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+
+targets:
+  - name: 亚拉神山
+    lat: 30.15
+    lon: 101.75
+    altitude: 5820
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

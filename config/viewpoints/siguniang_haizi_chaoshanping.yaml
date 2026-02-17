@@ -1,0 +1,21 @@
+id: siguniang_haizi_chaoshanping
+name: 海子沟-朝山坪
+location:
+  lat: 31.073
+  lon: 102.918
+  altitude: 3820
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+
+targets:
+  - name: 幺妹峰
+    lat: 31.06
+    lon: 102.89
+    altitude: 6247
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

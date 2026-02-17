@@ -1,0 +1,19 @@
+id: yala_gedilamu
+name: 格底拉姆
+location:
+  lat: 30.083
+  lon: 101.664
+  altitude: 4300
+
+capabilities:
+  - sunset
+  - stargazing
+
+targets:
+  - name: 亚拉神山
+    lat: 30.15
+    lon: 101.75
+    altitude: 5820
+    weight: primary
+    applicable_events:
+      - sunset

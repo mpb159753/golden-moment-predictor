@@ -1,0 +1,21 @@
+id: majiagou_main_view
+name: 主沟观景点
+location:
+  lat: 31.571
+  lon: 102.884
+  altitude: 3320
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+
+targets:
+  - name: 幺妹峰
+    lat: 31.06
+    lon: 102.89
+    altitude: 6247
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

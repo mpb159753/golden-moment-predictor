@@ -1,0 +1,19 @@
+id: tagong_muya
+name: 木雅金塔机位
+location:
+  lat: 30.008
+  lon: 101.542
+  altitude: 3730
+
+capabilities:
+  - sunset
+  - stargazing
+
+targets:
+  - name: 亚拉神山
+    lat: 30.15
+    lon: 101.75
+    altitude: 5820
+    weight: primary
+    applicable_events:
+      - sunset

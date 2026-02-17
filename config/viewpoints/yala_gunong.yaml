@@ -1,0 +1,20 @@
+id: yala_gunong
+name: 姑弄村
+location:
+  lat: 30.112
+  lon: 101.681
+  altitude: 3600
+
+capabilities:
+  - sunrise
+  - sunset
+
+targets:
+  - name: 亚拉神山
+    lat: 30.15
+    lon: 101.75
+    altitude: 5820
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

@@ -1,0 +1,21 @@
+id: gongga_yaha_pass
+name: 雅哈垭口
+location:
+  lat: 29.886
+  lon: 101.839
+  altitude: 4568
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.58
+    lon: 101.88
+    altitude: 7556
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

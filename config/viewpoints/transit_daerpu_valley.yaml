@@ -1,0 +1,19 @@
+id: transit_daerpu_valley
+name: 大二普
+location:
+  lat: 31.377
+  lon: 102.938
+  altitude: 3300
+
+capabilities:
+  - sunset
+  - stargazing
+
+targets:
+  - name: 幺妹峰
+    lat: 31.06
+    lon: 102.89
+    altitude: 6247
+    weight: primary
+    applicable_events:
+      - sunset

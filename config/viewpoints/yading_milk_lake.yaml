@@ -1,0 +1,20 @@
+id: yading_milk_lake
+name: 牛奶海
+location:
+  lat: 28.438
+  lon: 100.327
+  altitude: 4600
+
+capabilities:
+  - sunrise
+  - sunset
+
+targets:
+  - name: 央迈勇
+    lat: 28.91
+    lon: 100.14
+    altitude: 5958
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

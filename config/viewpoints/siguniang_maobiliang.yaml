@@ -1,0 +1,21 @@
+id: siguniang_maobiliang
+name: 猫鼻梁
+location:
+  lat: 31.096
+  lon: 102.932
+  altitude: 3500
+
+capabilities:
+  - sunrise
+  - sunset
+  - cloud_sea
+
+targets:
+  - name: 幺妹峰
+    lat: 31.06
+    lon: 102.89
+    altitude: 6247
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

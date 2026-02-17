@@ -1,0 +1,21 @@
+id: lianbaoyeze_zhagaer
+name: 扎尕尔措
+location:
+  lat: 32.964
+  lon: 100.784
+  altitude: 4200
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+
+targets:
+  - name: 莲宝叶则主峰
+    lat: 33.004
+    lon: 100.742
+    altitude: 5141
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

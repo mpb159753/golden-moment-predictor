@@ -1,0 +1,22 @@
+id: siguniang_shuangqiao
+name: 双桥沟
+location:
+  lat: 31.137
+  lon: 102.966
+  altitude: 3250
+
+capabilities:
+  - sunrise
+  - sunset
+  - cloud_sea
+  - frost
+
+targets:
+  - name: 幺妹峰
+    lat: 31.06
+    lon: 102.89
+    altitude: 6247
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

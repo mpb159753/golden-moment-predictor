@@ -1,0 +1,21 @@
+id: genie_laolenggusi
+name: 老冷古寺
+location:
+  lat: 30.036
+  lon: 99.856
+  altitude: 4100
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+
+targets:
+  - name: 格聂主峰
+    lat: 30.12
+    lon: 99.79
+    altitude: 6204
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

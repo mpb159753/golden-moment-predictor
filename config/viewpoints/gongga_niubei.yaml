@@ -1,0 +1,23 @@
+id: gongga_niubei
+name: 牛背山（贡嘎）
+location:
+  lat: 29.839
+  lon: 102.283
+  altitude: 3660
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+  - cloud_sea
+  - snow_tree
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.58
+    lon: 101.88
+    altitude: 7556
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

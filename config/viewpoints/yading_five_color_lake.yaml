@@ -1,0 +1,20 @@
+id: yading_five_color_lake
+name: 五色海
+location:
+  lat: 28.435
+  lon: 100.338
+  altitude: 4700
+
+capabilities:
+  - sunrise
+  - sunset
+
+targets:
+  - name: 夏诺多吉
+    lat: 28.87
+    lon: 100.16
+    altitude: 5958
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

@@ -1,0 +1,21 @@
+id: mengtun_gaoqiaogou
+name: 高桥沟
+location:
+  lat: 31.466
+  lon: 103.188
+  altitude: 2740
+
+capabilities:
+  - sunrise
+  - sunset
+  - stargazing
+
+targets:
+  - name: 太子城雪山
+    lat: 31.388
+    lon: 103.082
+    altitude: 4638
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

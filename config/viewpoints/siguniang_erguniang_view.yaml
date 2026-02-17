@@ -1,0 +1,20 @@
+id: siguniang_erguniang_view
+name: 二姑娘峰观景位
+location:
+  lat: 31.077
+  lon: 102.905
+  altitude: 3600
+
+capabilities:
+  - sunrise
+  - sunset
+
+targets:
+  - name: 二姑娘峰
+    lat: 31.08
+    lon: 102.89
+    altitude: 5276
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset

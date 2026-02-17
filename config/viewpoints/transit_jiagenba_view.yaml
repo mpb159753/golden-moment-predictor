@@ -1,0 +1,19 @@
+id: transit_jiagenba_view
+name: 甲根坝机位
+location:
+  lat: 29.93
+  lon: 101.654
+  altitude: 3600
+
+capabilities:
+  - sunset
+  - cloud_sea
+
+targets:
+  - name: 贡嘎主峰
+    lat: 29.58
+    lon: 101.88
+    altitude: 7556
+    weight: primary
+    applicable_events:
+      - sunset

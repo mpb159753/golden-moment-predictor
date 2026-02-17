@@ -1,0 +1,21 @@
+id: moshi_main_view
+name: 异域星球观景位
+location:
+  lat: 30.045
+  lon: 101.565
+  altitude: 3500
+
+capabilities:
+  - sunrise
+  - sunset
+  - geology
+
+targets:
+  - name: 亚拉神山
+    lat: 30.15
+    lon: 101.75
+    altitude: 5820
+    weight: primary
+    applicable_events:
+      - sunrise
+      - sunset
