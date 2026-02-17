@@ -114,12 +114,22 @@ class MeteoFetcher:
         5. 写入缓存
         6. 返回 DataFrame
         """
-        # 1) 尝试缓存
+        # 1) 尝试缓存 — 需要所有 days 天全部命中才使用
         today = datetime.now(_CST).date()
-        cached = self._cache.get(lat, lon, today)
-        if cached is not None:
-            logger.debug("meteo_fetcher.cache_hit", lat=lat, lon=lon)
-            return cached
+        all_cached: list[pd.DataFrame] = []
+        all_hit = True
+        for offset in range(days):
+            d = today + timedelta(days=offset)
+            cached = self._cache.get(lat, lon, d)
+            if cached is not None:
+                all_cached.append(cached)
+            else:
+                all_hit = False
+                break
+
+        if all_hit and all_cached:
+            logger.debug("meteo_fetcher.cache_hit", lat=lat, lon=lon, days=days)
+            return pd.concat(all_cached, ignore_index=True)
 
         # 2) 构建请求参数
         params: dict[str, Any] = {

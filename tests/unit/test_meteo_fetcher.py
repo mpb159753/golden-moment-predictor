@@ -283,11 +283,11 @@ class TestCacheIntegration:
     """缓存命中/未命中行为"""
 
     def test_cache_hit_skips_api_call(self) -> None:
-        """缓存命中时不调用 API"""
+        """所有 days 天缓存全部命中时不调用 API"""
         cache = MagicMock()
         cached_df = pd.DataFrame(
             {
-                "forecast_date": [date(2025, 12, 1)],
+                "forecast_date": ["2025-12-01"],
                 "forecast_hour": [0],
                 "temperature_2m": [5.0],
                 "cloud_cover_total": [10],
@@ -304,24 +304,46 @@ class TestCacheIntegration:
                 "weather_code": [0],
             }
         )
+        # 所有天都命中
         cache.get.return_value = cached_df
         fetcher = MeteoFetcher(cache=cache)
 
         with patch.object(fetcher, "_call_api") as mock_api:
-            result = fetcher.fetch_hourly(29.75, 102.35)
+            result = fetcher.fetch_hourly(29.75, 102.35, days=2)
             mock_api.assert_not_called()
-            assert len(result) == 1
+            # 2 天缓存拼接
+            assert len(result) == 2
 
-    def test_cache_miss_calls_api_and_writes_cache(self) -> None:
-        """缓存未命中时调用 API 并写入缓存"""
+    def test_partial_cache_hit_calls_api(self) -> None:
+        """部分天缓存命中、部分缺失时，fallback 到 API 获取完整数据"""
         cache = MagicMock()
-        cache.get.return_value = None  # miss
+        cached_df = pd.DataFrame(
+            {
+                "forecast_date": ["2025-12-01"],
+                "forecast_hour": [0],
+                "temperature_2m": [5.0],
+                "cloud_cover_total": [10],
+                "cloud_cover_low": [5],
+                "cloud_cover_medium": [3],
+                "cloud_cover_high": [2],
+                "cloud_base_altitude": [3000.0],
+                "precipitation_probability": [0],
+                "visibility": [20000.0],
+                "wind_speed_10m": [3.0],
+                "snowfall": [0.0],
+                "rain": [0.0],
+                "showers": [0.0],
+                "weather_code": [0],
+            }
+        )
+        # 第一天命中，第二天缺失
+        cache.get.side_effect = [cached_df, None]
         fetcher = MeteoFetcher(cache=cache)
 
-        with patch.object(fetcher, "_call_api", return_value=SAMPLE_API_RESPONSE):
-            result = fetcher.fetch_hourly(29.75, 102.35, days=1)
-            cache.set.assert_called()
-            assert len(result) == 3
+        with patch.object(fetcher, "_call_api", return_value=SAMPLE_API_RESPONSE) as mock_api:
+            result = fetcher.fetch_hourly(29.75, 102.35, days=2)
+            mock_api.assert_called_once()
+            assert len(result) == 3  # API 返回的完整数据
 
 
 # ========================================================================

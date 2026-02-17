@@ -121,6 +121,7 @@ scoring:
         - {weather_code: [1, 2], max_cloud: 45, score: 16}
         - {score: 8}
       stability_wind: [12, 20]
+      stability_scores: [20, 14, 8]
     deductions:
       age:
         - {hours: 3, deduction: 0}
@@ -141,7 +142,9 @@ scoring:
         - {sun_score: 8, deduction: 30}
       wind_max: 50
       wind_severe_threshold: 50
+      wind_severe_deduction: 20
       wind_moderate_threshold: 30
+      wind_moderate_deduction: 10
     past_hours: 24
 
   ice_icicle:

@@ -522,42 +522,89 @@ def test_backtest_real_api():
 
 
 @pytest.mark.e2e
-def test_backtest_seasonal_plugin_real_api():
-    """通过回测验证季节性 plugin 在对应季节的产出
+@pytest.mark.parametrize(
+    "backtest_date, expected_plugins, description",
+    [
+        # 2026-01-10: 冬季晴天 → golden_mountain + stargazing
+        ("2026-01-10", {"sunrise_golden_mountain", "sunset_golden_mountain", "stargazing"},
+         "冬季晴天应触发日照金山+观星"),
+        # 2026-02-16: 严冬降温 → frost
+        ("2026-02-16", {"frost"},
+         "降温日应触发霜冻"),
+        # 2025-12-01: 初冬晴天 → golden_mountain + stargazing
+        ("2025-12-01", {"sunrise_golden_mountain", "sunset_golden_mountain", "stargazing"},
+         "初冬晴天应触发日照金山+观星"),
+        # 2026-01-28: 多云冬天 → 仅 golden_mountain（无观星）
+        ("2026-01-28", {"sunrise_golden_mountain", "sunset_golden_mountain"},
+         "多云冬天应仅触发日照金山"),
+    ],
+    ids=["winter_clear", "frost_day", "early_winter", "cloudy_winter"],
+)
+def test_backtest_multi_date_plugin_coverage(backtest_date, expected_plugins, description):
+    """通过多个精选历史日期验证不同 Plugin 路径的触发
 
-    选取 1 月份 (冬季) 日期，验证 frost/snow_tree/ice_icicle 等冬季 plugin 能产出结果。
+    每个日期经实际回测确认能触发特定 Plugin 组合。
+    使用固定日期（非相对日期）确保历史天气数据不变。
     """
-    # 选取去年 1 月 15 日 (确保在 backtest_max_history_days=365 范围内)
-    today = date.today()
-    winter_date = date(today.year - 1, 1, 15)
-    # 如果距今超过 365 天，使用今年的 1 月
-    if (today - winter_date).days > 360:
-        winter_date = date(today.year, 1, 15)
-    # 如果今年 1 月 15 日是未来日期，退回到去年
-    if winter_date >= today:
-        winter_date = date(today.year - 1, 1, 15)
-
     runner = CliRunner()
     result = _invoke(runner, [
-        "backtest", "niubei_gongga", "--date", winter_date.isoformat()
+        "backtest", "niubei_gongga", "--date", backtest_date
     ])
 
     assert result.exit_code == 0, f"CLI failed: {result.output}"
     data = _extract_json_object(result.output)
     assert data["is_backtest"] is True
+    assert data["target_date"] == backtest_date
 
-    # 冬季回测应有事件
-    assert len(data["events"]) > 0, "冬季回测 events 为空"
+    # 回测应有事件
+    assert len(data["events"]) > 0, f"{description}，但 events 为空"
 
     actual_types = {e["event_type"] for e in data["events"]}
-    # 实际返回的类型应全部在配置范围内
+
+    # 所有事件类型应在配置范围内
     unexpected = actual_types - NIUBEI_EXPECTED_EVENT_TYPES
     assert not unexpected, f"回测出现超出配置的 event_type: {unexpected}"
 
-    # 冬季回测应至少产出多种事件类型
-    assert len(actual_types) >= 2, (
-        f"冬季回测仅产出 {len(actual_types)} 种事件: {actual_types}，预期至少 2 种"
+    # 验证期望的 Plugin 确实被触发
+    missing = expected_plugins - actual_types
+    assert not missing, (
+        f"{description}，但缺少: {missing}。实际触发: {actual_types}"
     )
+
+    # 每个事件的字段完整性
+    for event in data["events"]:
+        _assert_backtest_event_fields(event, NIUBEI_EXPECTED_EVENT_TYPES)
+
+
+@pytest.mark.e2e
+def test_backtest_aggregate_plugin_diversity():
+    """验证多日期回测累积覆盖多种 Plugin 类型
+
+    单个日期可能只触发 1-2 种 Plugin，但多个日期合在一起应覆盖
+    至少 4 种不同的 event_type，证明回测能有效触及不同 Plugin 路径。
+    """
+    test_dates = ["2026-01-10", "2026-02-16", "2025-12-01", "2026-01-28"]
+    all_triggered: set[str] = set()
+    runner = CliRunner()
+
+    for test_date in test_dates:
+        result = _invoke(runner, [
+            "backtest", "niubei_gongga", "--date", test_date
+        ])
+        assert result.exit_code == 0, f"CLI failed for {test_date}: {result.output}"
+        data = _extract_json_object(result.output)
+        for event in data["events"]:
+            all_triggered.add(event["event_type"])
+
+    # 累积应覆盖至少 4 种不同 Plugin
+    assert len(all_triggered) >= 4, (
+        f"多日期回测累积仅覆盖 {len(all_triggered)} 种 Plugin: {all_triggered}，"
+        f"预期至少 4 种。可能需要更新测试日期。"
+    )
+
+    # 至少包含既有非冬季 Plugin(golden_mountain/stargazing) 和冬季 Plugin(frost)
+    assert "frost" in all_triggered, "累积回测缺少 frost 触发"
+    assert "stargazing" in all_triggered, "累积回测缺少 stargazing 触发"
 
 
 # ==================== Task 6: 错误处理验证 ====================
