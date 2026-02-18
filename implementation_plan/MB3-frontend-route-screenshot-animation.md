@@ -30,6 +30,7 @@ B 方案的线路模式通过标签切换进入，列表替换为线路卡片。
 | Prop | Type | Default | 说明 |
 |------|------|---------|------|
 | `route` | Object | required | 线路数据 (id, name, stops[]) |
+| `selectedDate` | String | '' | 当前选中日期 (§10.B.7 卡片显示日期) |
 
 ### Emits
 
@@ -58,10 +59,11 @@ B 方案的线路模式通过标签切换进入，列表替换为线路卡片。
 <!-- frontend/src/components/scheme-b/RouteListItem.vue -->
 <template>
   <div class="route-list-item" @click="emit('click')">
-    <!-- 头部: 线路名称 + 站数 -->
+    <!-- 头部: 线路名称 + 站数 + 日期 -->
     <div class="route-header">
       <h3 class="route-name">{{ route.name }}</h3>
       <span class="stop-count">({{ stops.length }}站)</span>
+      <span class="route-date">📅 {{ formatDate(selectedDate) }}</span>
     </div>
 
     <!-- 站点连线 -->
@@ -115,6 +117,7 @@ import { useViewpointStore } from '@/stores/viewpoints'
 
 const props = defineProps({
   route: { type: Object, required: true },
+  selectedDate: { type: String, default: '' },
 })
 
 const emit = defineEmits(['click', 'stop-click'])
@@ -150,6 +153,13 @@ const bestStopSummary = computed(() => {
   const forecast = vpStore.forecasts[bestStop.value.viewpoint_id]
   return forecast?.daily?.[0]?.summary ?? ''
 })
+
+// 日期格式化 (§10.B.7)
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}
 </script>
 
 <style scoped>
@@ -184,6 +194,13 @@ const bestStopSummary = computed(() => {
 .stop-count {
   font-size: var(--text-sm);
   color: var(--text-secondary);
+}
+
+/* 日期显示 (§10.B.7) */
+.route-date {
+  margin-left: auto;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
 .stops-flow {

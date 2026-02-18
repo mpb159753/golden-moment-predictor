@@ -64,6 +64,8 @@ App.vue
 | `ratio-change` | Number (0-1) | 拖拽导致比例变化 |
 | `map-hidden` | — | 地图被完全隐藏 |
 | `map-restored` | — | 地图从隐藏状态恢复 |
+| `list-hidden` | — | 列表被完全隐藏 (向下拖至极限) |
+| `list-restored` | — | 列表从隐藏状态恢复 |
 
 ### Slots
 
@@ -78,7 +80,7 @@ App.vue
 ```vue
 <!-- frontend/src/components/scheme-b/SplitContainer.vue -->
 <template>
-  <div ref="containerRef" class="split-container" :class="{ 'map-hidden': isMapHidden }">
+  <div ref="containerRef" class="split-container" :class="{ 'map-hidden': isMapHidden, 'list-hidden': isListHidden }">
     <!-- 地图区域 -->
     <div
       class="split-map"
@@ -91,11 +93,14 @@ App.vue
     <slot name="drag">
       <DragBar
         :is-map-hidden="isMapHidden"
+        :is-list-hidden="isListHidden"
+        :direction="direction"
         @drag-start="onDragStart"
         @drag-move="onDragMove"
         @drag-end="onDragEnd"
         @double-click="onDoubleClick"
         @restore-map="restoreMap"
+        @restore-list="restoreList"
       />
     </slot>
 
@@ -117,12 +122,25 @@ const props = defineProps({
   storageKey: { type: String, default: 'split-ratio' },
 })
 
-const emit = defineEmits(['ratio-change', 'map-hidden', 'map-restored'])
+const emit = defineEmits(['ratio-change', 'map-hidden', 'map-restored', 'list-hidden', 'list-restored'])
 
 const containerRef = ref(null)
 const currentRatio = ref(props.initialRatio)
 const isDragging = ref(false)
 const isMapHidden = ref(false)
+const isListHidden = ref(false)
+
+// 横屏/竖屏自动检测拖拽方向
+const direction = ref('vertical') // 'vertical' | 'horizontal'
+function updateDirection() {
+  direction.value = window.innerWidth >= 1024 ? 'horizontal' : 'vertical'
+}
+onMounted(() => {
+  updateDirection()
+  window.addEventListener('resize', updateDirection)
+})
+onUnmounted(() => window.removeEventListener('resize', updateDirection))
+
 let startY = 0
 let startRatio = 0
 
@@ -159,11 +177,13 @@ function onDragStart(y) {
   startRatio = currentRatio.value
 }
 
-function onDragMove(y) {
+function onDragMove(pos) {
   if (!isDragging.value || !containerRef.value) return
-  const containerHeight = containerRef.value.clientHeight
-  const delta = y - startY
-  const deltaRatio = delta / containerHeight
+  const containerSize = direction.value === 'horizontal'
+    ? containerRef.value.clientWidth
+    : containerRef.value.clientHeight
+  const delta = pos - startY
+  const deltaRatio = delta / containerSize
   const newRatio = Math.max(
     props.minRatio,
     Math.min(props.maxRatio, startRatio + deltaRatio)
@@ -178,7 +198,16 @@ function onDragEnd() {
   if (currentRatio.value <= 0.05) {
     currentRatio.value = 0
     isMapHidden.value = true
+    isListHidden.value = false
     emit('map-hidden')
+  }
+
+  // 拖至极大 → 隐藏列表 (§10.B.6 向下拖至极限)
+  if (currentRatio.value >= props.maxRatio - 0.05) {
+    currentRatio.value = 1.0
+    isListHidden.value = true
+    isMapHidden.value = false
+    emit('list-hidden')
   }
 
   saveRatio(currentRatio.value)
@@ -189,17 +218,29 @@ function onDragEnd() {
 function onDoubleClick() {
   currentRatio.value = props.initialRatio
   isMapHidden.value = false
+  isListHidden.value = false
   saveRatio(currentRatio.value)
   emit('ratio-change', currentRatio.value)
-  emit('map-restored')
+  if (isMapHidden.value) emit('map-restored')
+  if (isListHidden.value) emit('list-restored')
 }
 
 // 从隐藏状态恢复地图
 function restoreMap() {
   currentRatio.value = props.initialRatio
   isMapHidden.value = false
+  isListHidden.value = false
   saveRatio(currentRatio.value)
   emit('map-restored')
+}
+
+// 从隐藏状态恢复列表 (§10.B.6)
+function restoreList() {
+  currentRatio.value = props.initialRatio
+  isListHidden.value = false
+  isMapHidden.value = false
+  saveRatio(currentRatio.value)
+  emit('list-restored')
 }
 </script>
 
@@ -233,6 +274,12 @@ function restoreMap() {
 .map-hidden .split-map {
   height: 0 !important;
 }
+
+/* 列表隐藏时地图占满 (§10.B.6 向下拖至极限 → 纯地图模式) */
+.list-hidden .split-list {
+  flex: 0 !important;
+  overflow: hidden;
+}
 </style>
 ```
 
@@ -263,6 +310,8 @@ git commit -m "feat(frontend-b): add SplitContainer with drag-resizable split"
 | Prop | Type | Default | 说明 |
 |------|------|---------|------|
 | `isMapHidden` | Boolean | false | 地图是否被隐藏 |
+| `isListHidden` | Boolean | false | 列表是否被隐藏 |
+| `direction` | String | 'vertical' | 拖拽方向: 'vertical' (竖屏) / 'horizontal' (横屏) |
 
 ### Emits
 
@@ -273,6 +322,7 @@ git commit -m "feat(frontend-b): add SplitContainer with drag-resizable split"
 | `drag-end` | — | 拖拽结束 |
 | `double-click` | — | 双击恢复 |
 | `restore-map` | — | 点击"显示地图"按钮 |
+| `restore-list` | — | 点击"显示列表"按钮 |
 
 ### 实现
 
@@ -285,10 +335,16 @@ git commit -m "feat(frontend-b): add SplitContainer with drag-resizable split"
       🗺️ 显示地图
     </button>
 
+    <!-- 列表隐藏时显示恢复按钮 (§10.B.6) -->
+    <button v-else-if="isListHidden" class="restore-btn" @click="emit('restore-list')">
+      📋 显示列表
+    </button>
+
     <!-- 拖拽条 -->
     <div
       v-else
       class="drag-bar"
+      :class="{ horizontal: direction === 'horizontal' }"
       @touchstart.passive="onTouchStart"
       @touchmove.passive="onTouchMove"
       @touchend="onTouchEnd"
@@ -303,28 +359,35 @@ git commit -m "feat(frontend-b): add SplitContainer with drag-resizable split"
 <script setup>
 defineProps({
   isMapHidden: { type: Boolean, default: false },
+  isListHidden: { type: Boolean, default: false },
+  direction: { type: String, default: 'vertical' },
 })
 
-const emit = defineEmits(['drag-start', 'drag-move', 'drag-end', 'double-click', 'restore-map'])
+const emit = defineEmits(['drag-start', 'drag-move', 'drag-end', 'double-click', 'restore-map', 'restore-list'])
 
-// Touch 事件
+// Touch 事件 (支持竖屏/横屏方向)
+function getPosition(e) {
+  const touch = e.touches?.[0] ?? e
+  return props.direction === 'horizontal' ? touch.clientX : touch.clientY
+}
+
 function onTouchStart(e) {
-  emit('drag-start', e.touches[0].clientY)
+  emit('drag-start', getPosition(e))
 }
 
 function onTouchMove(e) {
-  emit('drag-move', e.touches[0].clientY)
+  emit('drag-move', getPosition(e))
 }
 
 function onTouchEnd() {
   emit('drag-end')
 }
 
-// Mouse 事件 (桌面端)
+// Mouse 事件 (桌面端，支持横屏时水平拖拽)
 function onMouseDown(e) {
-  emit('drag-start', e.clientY)
+  emit('drag-start', getPosition(e))
 
-  const onMouseMove = (ev) => emit('drag-move', ev.clientY)
+  const onMouseMove = (ev) => emit('drag-move', getPosition(ev))
   const onMouseUp = () => {
     emit('drag-end')
     document.removeEventListener('mousemove', onMouseMove)
@@ -352,6 +415,21 @@ function onMouseDown(e) {
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   touch-action: none;
   user-select: none;
+}
+
+/* 横屏时水平方向拖拽 */
+.drag-bar.horizontal {
+  width: 24px;
+  height: 100%;
+  cursor: col-resize;
+  border-top: none;
+  border-bottom: none;
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.drag-bar.horizontal .drag-handle {
+  writing-mode: vertical-rl;
 }
 
 .drag-handle {
@@ -414,6 +492,8 @@ git commit -m "feat(frontend-b): add DragBar with touch/mouse drag and double-cl
 | `activeFilters` | Array | [] | 当前激活的事件类型筛选 |
 | `sortBy` | String | 'score' | 当前排序方式 |
 | `activeTab` | String | 'viewpoints' | 当前标签: 'viewpoints' / 'routes' |
+| `scoreThreshold` | Number | 0 | 评分门槛滑块值 (0-100) (§10.B.5) |
+| `statusFilter` | String | 'all' | 状态过滤: 'recommended' / 'possible' / 'all' (§10.B.5) |
 
 ### Emits
 
@@ -424,6 +504,8 @@ git commit -m "feat(frontend-b): add DragBar with touch/mouse drag and double-cl
 | `date-change` | dateString | 日期切换 |
 | `sort-change` | sortKey | 排序方式变更 |
 | `tab-change` | 'viewpoints' / 'routes' | 标签切换 |
+| `score-threshold-change` | Number (0-100) | 评分门槛变更 (§10.B.5) |
+| `status-filter-change` | String | 状态过滤变更 (§10.B.5) |
 
 ### 实现
 
@@ -436,6 +518,15 @@ git commit -m "feat(frontend-b): add DragBar with touch/mouse drag and double-cl
       <button class="date-btn" @click="showDatePicker = !showDatePicker">
         📅 {{ formatDate(selectedDate) }}
       </button>
+
+      <!-- 日期选择器弹出层 (§10.B.5 修复: 渲染实际 DatePicker 组件) -->
+      <DatePicker
+        v-if="showDatePicker"
+        :dates="availableDates"
+        :selected="selectedDate"
+        @select="onDateSelect"
+        class="date-picker-popup"
+      />
 
       <div class="search-box">
         <span class="search-icon">🔍</span>
@@ -497,11 +588,40 @@ git commit -m "feat(frontend-b): add DragBar with touch/mouse drag and double-cl
         <span class="sort-icon">▼</span>
       </div>
     </div>
+
+    <!-- 第三行: 评分门槛 + 状态过滤 (§10.B.5) -->
+    <div class="filter-row">
+      <!-- 评分门槛滑块 -->
+      <div class="score-threshold">
+        <label>评分≥{{ scoreThreshold }}</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          :value="scoreThreshold"
+          @input="emit('score-threshold-change', Number($event.target.value))"
+          class="threshold-slider"
+        />
+      </div>
+
+      <!-- 状态过滤按钮组 -->
+      <div class="status-filter">
+        <button
+          v-for="opt in statusOptions"
+          :key="opt.value"
+          :class="['status-btn', { active: statusFilter === opt.value }]"
+          @click="emit('status-filter-change', opt.value)"
+        >
+          {{ opt.label }}
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import DatePicker from '@/components/layout/DatePicker.vue'
 
 const props = defineProps({
   viewpoints: { type: Array, default: () => [] },
@@ -510,10 +630,13 @@ const props = defineProps({
   activeFilters: { type: Array, default: () => [] },
   sortBy: { type: String, default: 'score' },
   activeTab: { type: String, default: 'viewpoints' },
+  scoreThreshold: { type: Number, default: 0 },
+  statusFilter: { type: String, default: 'all' },
 })
 
 const emit = defineEmits([
   'search', 'filter', 'date-change', 'sort-change', 'tab-change',
+  'score-threshold-change', 'status-filter-change',
 ])
 
 const searchQuery = ref('')
@@ -524,6 +647,13 @@ const filterOptions = [
   { type: 'cloud_sea', icon: '☁️' },
   { type: 'stargazing', icon: '⭐' },
   { type: 'frost', icon: '❄️' },
+]
+
+// 状态过滤选项 (§10.B.5)
+const statusOptions = [
+  { value: 'recommended', label: '推荐' },
+  { value: 'possible', label: '可能' },
+  { value: 'all', label: '全部' },
 ]
 
 const searchResults = computed(() => {
@@ -553,6 +683,11 @@ function formatDate(dateStr) {
   if (!dateStr) return '今天'
   const d = new Date(dateStr)
   return `${d.getMonth() + 1}月${d.getDate()}日`
+}
+
+function onDateSelect(date) {
+  showDatePicker.value = false
+  emit('date-change', date)
 }
 </script>
 
@@ -718,6 +853,63 @@ function formatDate(dateStr) {
   pointer-events: none;
   color: var(--text-muted);
 }
+
+/* 第三行: 评分门槛 + 状态过滤 (§10.B.5) */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.score-threshold {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.score-threshold label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.threshold-slider {
+  width: 80px;
+  accent-color: var(--color-primary);
+}
+
+.status-filter {
+  display: flex;
+  background: var(--bg-primary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.status-btn {
+  padding: 3px 10px;
+  border: none;
+  background: transparent;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all var(--duration-fast);
+}
+
+.status-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-full);
+}
+
+/* DatePicker 弹出层 */
+.date-picker-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 200;
+  margin-top: 4px;
+}
 </style>
 ```
 
@@ -815,6 +1007,11 @@ defineExpose({
   panTo: (lon, lat) => {
     const map = mapRef.value?.getMap?.()
     if (map) map.panTo([lon, lat], true)
+  },
+  // §10.B.3: 点击卡片时使用 flyTo (带缩放动画)
+  flyTo: (lon, lat, zoom = 12) => {
+    const map = mapRef.value?.getMap?.()
+    if (map) map.setZoomAndCenter(zoom, [lon, lat], true, 800)
   },
 })
 </script>
@@ -923,11 +1120,15 @@ git commit -m "feat(frontend-b): add MapPanel and MapToggleBtn"
       :active-filters="activeFilters"
       :sort-by="sortBy"
       :active-tab="activeTab"
+      :score-threshold="scoreThreshold"
+      :status-filter="statusFilter"
       @search="onSearch"
       @filter="onFilter"
       @date-change="onDateChange"
       @sort-change="onSortChange"
       @tab-change="onTabChange"
+      @score-threshold-change="onScoreThresholdChange"
+      @status-filter-change="onStatusFilterChange"
     />
 
     <!-- 分割容器 -->
@@ -977,6 +1178,7 @@ git commit -m "feat(frontend-b): add MapPanel and MapToggleBtn"
             v-for="route in routes"
             :key="route.id"
             :route="route"
+            :selected-date="selectedDate"
             @click="onRouteClick(route)"
           />
         </div>
@@ -1019,6 +1221,8 @@ const sortBy = ref('score')
 const activeTab = ref('viewpoints')
 const expandedId = ref(null)
 const highlightedId = ref(null)
+const scoreThreshold = ref(0)         // §10.B.5 评分门槛
+const statusFilter = ref('all')       // §10.B.5 状态过滤
 
 // 列表项 ref 映射 (用于 scrollIntoView)
 const itemRefs = {}
@@ -1037,14 +1241,35 @@ const availableDates = computed(() => {
   return first?.daily?.map(d => d.date) ?? []
 })
 
-// 筛选后的观景台
+// 筛选后的观景台 (合并事件类型 + 评分门槛 + 状态过滤 §10.B.5)
 const filteredViewpoints = computed(() => {
-  if (activeFilters.value.length === 0) return viewpoints.value
-  return viewpoints.value.filter(vp =>
-    vp.capabilities?.some(cap =>
-      activeFilters.value.some(f => cap.includes(f))
+  let list = viewpoints.value
+
+  // 事件类型筛选
+  if (activeFilters.value.length > 0) {
+    list = list.filter(vp =>
+      vp.capabilities?.some(cap =>
+        activeFilters.value.some(f => cap.includes(f))
+      )
     )
-  )
+  }
+
+  // 评分门槛筛选 (§10.B.5)
+  if (scoreThreshold.value > 0) {
+    list = list.filter(vp => getBestScore(vp.id) >= scoreThreshold.value)
+  }
+
+  // 状态过滤 (§10.B.5)
+  if (statusFilter.value !== 'all') {
+    list = list.filter(vp => {
+      const score = getBestScore(vp.id)
+      if (statusFilter.value === 'recommended') return score >= 80
+      if (statusFilter.value === 'possible') return score >= 50
+      return true
+    })
+  }
+
+  return list
 })
 
 // 排序后的观景台
@@ -1112,9 +1337,9 @@ function onMarkerClick(vp) {
 
 function onCardClick(vp) {
   highlightedId.value = vp.id
-  // 地图 flyTo
+  // 地图 flyTo (§10.B.3: 点击卡片用 flyTo，区别于滚动联动 panTo)
   if (mapPanelRef.value) {
-    mapPanelRef.value.panTo(vp.location.lon, vp.location.lat)
+    mapPanelRef.value.flyTo(vp.location.lon, vp.location.lat)
   }
 }
 
@@ -1147,6 +1372,14 @@ function onSortChange(key) {
 
 function onTabChange(tab) {
   activeTab.value = tab
+}
+
+function onScoreThresholdChange(val) {
+  scoreThreshold.value = val
+}
+
+function onStatusFilterChange(val) {
+  statusFilter.value = val
 }
 
 function onRatioChange(ratio) {

@@ -158,6 +158,8 @@ const bestScore = computed(() =>
 )
 
 const statusClass = computed(() => {
+  // 无事件时使用 no-event 样式 (§10.C.4)
+  if (!props.dayForecast?.events?.length) return 'card--no-event'
   const status = getStatus(bestScore.value)
   return `card--${status}`
 })
@@ -208,6 +210,12 @@ const bestTimeWindow = computed(() => {
 
 .card--not-recommended {
   background: linear-gradient(160deg, #6B7280, #D1D5DB);
+  color: var(--text-primary);
+}
+
+/* 无事件状态 (§10.C.4) */
+.card--no-event {
+  background: linear-gradient(160deg, #9CA3AF, #E5E7EB);
   color: var(--text-primary);
 }
 
@@ -731,13 +739,12 @@ const swiperOptions = {
   <div class="card-swiper-container">
     <Swiper
       ref="swiperRef"
-      :modules="[EffectCards, Pagination]"
+      :modules="[EffectCards]"
       :effect="'cards'"
       :grab-cursor="true"
       :centered-slides="true"
       :slides-per-view="1"
       :space-between="16"
-      :pagination="{ el: '.swiper-pagination', dynamicBullets: true }"
       class="card-swiper"
       @slide-change="onSlideChange"
     >
@@ -773,10 +780,10 @@ const swiperOptions = {
 <script setup>
 import { ref, watch } from 'vue'
 import { Swiper, SwiperSlide } from 'swiper/vue'
-import { EffectCards, Pagination } from 'swiper/modules'
+import { EffectCards } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/effect-cards'
-import 'swiper/css/pagination'
+// 分页指示器由 CardTopBar 自定义实现，不使用 Swiper 原生 pagination
 import PredictionCard from './PredictionCard.vue'
 
 const props = defineProps({
@@ -868,10 +875,25 @@ defineExpose({ slideTo })
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* Desktop 横屏: 显示多张卡片 */
+/* Desktop 横屏: 显示多张卡片 (§10.C.2) */
 @media (min-width: 1024px) {
   .card-swiper {
     height: 70vh;
+  }
+
+  /* Desktop 下切换为 slide effect，露出相邻卡片 */
+  .card-swiper :deep(.swiper) {
+    overflow: visible;
+  }
+
+  .card-slide {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* 非当前卡片缩小 + 半透明 */
+  .card-slide:not(.swiper-slide-active) {
+    transform: scale(0.85);
+    opacity: 0.5;
   }
 }
 </style>

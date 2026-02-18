@@ -49,6 +49,7 @@ ViewpointListItem 是 B 方案的核心卡片组件。每张卡片代表一个�
 │  ScoreRing(90)  牛背山              ❯    │
 │                 🏔️日出金山 ☁️云海          │
 │                 日出金山+壮观云海 推荐     │
+│                 2/12 周三                 │
 │  ┌──────┬──────┬──────┬──────┐          │
 │  │🏔️ 90│☁️ 88│⭐ 45│❄️ --│          │
 │  └──────┴──────┴──────┴──────┘          │
@@ -89,6 +90,11 @@ ViewpointListItem 是 B 方案的核心卡片组件。每张卡片代表一个�
             <EventIcon :type="event.event_type" size="sm" />
           </span>
           <span class="summary-text">{{ todaySummary }}</span>
+        </div>
+
+        <!-- 日期行 (§10.B.4) -->
+        <div class="date-row">
+          <span class="date-text">{{ formattedDate }}</span>
         </div>
 
         <!-- 所有事件 mini 评分一行 -->
@@ -196,6 +202,15 @@ const todaySummary = computed(() =>
   currentDay.value?.summary ?? ''
 )
 
+// 日期格式化 (§10.B.4: 收起态显示日期)
+const formattedDate = computed(() => {
+  const date = currentDay.value?.date || props.selectedDate
+  if (!date) return ''
+  const d = new Date(date)
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  return `${d.getMonth() + 1}/${d.getDate()} ${weekDays[d.getDay()]}`
+})
+
 // 该观景台不支持但全局存在的事件类型 (显示 --)
 const missingCapabilities = computed(() => {
   const active = dayEvents.value.map(e => e.event_type)
@@ -292,6 +307,16 @@ function onTrendDateSelect(date) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 日期行 (§10.B.4) */
+.date-row {
+  margin-bottom: 4px;
+}
+
+.date-text {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .events-mini-row {

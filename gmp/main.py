@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import unicodedata
 from datetime import datetime as _DateTime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -164,6 +165,20 @@ def create_backtester(
         cache_repo=repo,
         viewpoint_config=viewpoint_config,
     )
+
+
+def _display_width(s: str) -> int:
+    """计算字符串在终端中的显示宽度（中文占 2 列）"""
+    w = 0
+    for ch in s:
+        eaw = unicodedata.east_asian_width(ch)
+        w += 2 if eaw in ("W", "F") else 1
+    return w
+
+
+def _pad(s: str, width: int) -> str:
+    """将字符串填充到指定显示宽度（兼容中文）"""
+    return s + " " * max(0, width - _display_width(s))
 
 
 def _parse_events(events: str | None) -> list[str] | None:
@@ -412,6 +427,22 @@ def backtest(
 @click.option("--config", default="config/engine_config.yaml", help="配置文件路径")
 def list_viewpoints(output_format: str, config: str) -> None:
     """列出所有可用观景台"""
+    capability_zh: dict[str, str] = {
+        "sunrise": "日出",
+        "sunset": "日落",
+        "cloud_sea": "云海",
+        "stargazing": "星空",
+        "snow_tree": "雾凇",
+        "frost": "霜冻",
+        "ice_icicle": "冰挂",
+        "autumn_foliage": "红叶",
+        "waterfall": "瀑布",
+        "geology": "地质",
+    }
+
+    def _cap_zh(cap: str) -> str:
+        return capability_zh.get(cap, cap)
+
     viewpoint_config, _, _ = _load_configs(config)
     viewpoints = viewpoint_config.list_all()
 
@@ -425,18 +456,19 @@ def list_viewpoints(output_format: str, config: str) -> None:
                     "lon": vp.location.lon,
                     "altitude": vp.location.altitude,
                 },
-                "capabilities": vp.capabilities,
+                "capabilities": [_cap_zh(c) for c in vp.capabilities],
             }
             for vp in viewpoints
         ]
         click.echo(json.dumps(data, ensure_ascii=False, indent=2))
     else:
-        click.echo(f"{'ID':<25} {'名称':<15} {'海拔(m)':<10} {'景观类型'}")
-        click.echo("-" * 70)
+        click.echo(f"{_pad('ID', 30)}{_pad('名称', 24)}{_pad('海拔(m)', 10)}景观类型")
+        click.echo("-" * 84)
         for vp in viewpoints:
-            caps = ", ".join(vp.capabilities)
+            caps = ", ".join(_cap_zh(c) for c in vp.capabilities)
+            alt = str(vp.location.altitude)
             click.echo(
-                f"{vp.id:<25} {vp.name:<15} {vp.location.altitude:<10} {caps}"
+                f"{_pad(vp.id, 30)}{_pad(vp.name, 24)}{_pad(alt, 10)}{caps}"
             )
 
 
@@ -469,12 +501,12 @@ def list_routes(output_format: str, config: str) -> None:
         ]
         click.echo(json.dumps(data, ensure_ascii=False, indent=2))
     else:
-        click.echo(f"{'ID':<20} {'名称':<15} {'站数':<8} {'站点'}")
-        click.echo("-" * 70)
+        click.echo(f"{_pad('ID', 22)}{_pad('名称', 18)}{_pad('站数', 8)}站点")
+        click.echo("-" * 78)
         for r in routes:
             stops = " → ".join(s.viewpoint_id for s in r.stops)
             click.echo(
-                f"{r.id:<20} {r.name:<15} {len(r.stops):<8} {stops}"
+                f"{_pad(r.id, 22)}{_pad(r.name, 18)}{_pad(str(len(r.stops)), 8)}{stops}"
             )
 
 

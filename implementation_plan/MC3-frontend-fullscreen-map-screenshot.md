@@ -50,10 +50,14 @@
 
 ### 实现
 
+> [!IMPORTANT]
+> 设计要求分步过渡：(1) 背景模糊层淡出 300ms → (2) 卡片缩小淡出 300ms → (3) 地图变为可交互。
+> 通过 HomeView 在 `showFullscreenMap` 变化时为 BackgroundMap 和 CardSwiper 添加 CSS 过渡类驱动分步动画。
+
 ```vue
 <!-- frontend/src/components/scheme-c/FullscreenMap.vue -->
 <template>
-  <Transition name="map-modal">
+  <Transition name="map-modal" @after-enter="onAfterEnter">
     <div class="fullscreen-map">
       <!-- 关闭按钮 -->
       <button class="close-btn" @click="emit('close')">
@@ -106,6 +110,13 @@ const mapOptions = {
 
 function onMapReady(map) {
   mapInstance.value = map
+}
+
+function onAfterEnter() {
+  // 入场动画完成后，确保地图瓦片加载
+  if (mapInstance.value) {
+    mapInstance.value.resize()
+  }
 }
 
 function getBestScore(vpId) {
@@ -165,7 +176,44 @@ function onMarkerClick(vp) {
 </style>
 ```
 
+**分步过渡的 HomeView 联动:**
+
+在 `HomeView.vue` 中，打开/关闭全屏地图时通过 CSS 类控制 CardSwiper 和 BackgroundMap 的过渡：
+
+```css
+/* HomeView.vue <style scoped> 中追加 */
+
+/* 全屏地图打开时：卡片缩小淡出、模糊层淡出 (§10.C.5) */
+.home-view.map-active .card-swiper-container {
+  transform: scale(0.9);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 300ms var(--ease-out-expo);
+}
+
+.home-view.map-active .background-map .blur-overlay {
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out-expo);
+}
+```
+
+```javascript
+// HomeView.vue <script setup> 中修改 onOpenMap
+function onOpenMap() {
+  // 先触发卡片+模糊层的淡出过渡 (300ms)，再显示全屏地图
+  // 通过 CSS class 'map-active' 驱动
+  showFullscreenMap.value = true
+}
+```
+
+```html
+<!-- HomeView.vue 模板根元素加 class 绑定 -->
+<div :class="['home-view', { 'map-active': showFullscreenMap }]">
+```
+
 **Step 1: 创建 FullscreenMap.vue**
+
+**Step 2: 在 HomeView 中添加分步过渡 CSS 和 class 绑定**
 
 **Step 2: 提交**
 
