@@ -30,13 +30,14 @@
     </svg>
     <!-- 中心数字 -->
     <span v-if="showLabel" class="score-ring__label" :style="{ fontSize: labelSize }">
-      {{ score }}
+      {{ displayScore }}
     </span>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import gsap from 'gsap'
 import { useScoreColor } from '@/composables/useScoreColor'
 
 const props = defineProps({
@@ -47,6 +48,25 @@ const props = defineProps({
 })
 
 const { getScoreColor } = useScoreColor()
+
+// CountUp animation — displayScore drives the label text
+const displayScore = ref(props.score)
+
+watch(() => props.score, (newScore) => {
+  if (props.animated) {
+    const obj = { value: displayScore.value }
+    gsap.to(obj, {
+      value: newScore,
+      duration: 0.8,
+      ease: 'power2.out',
+      onUpdate: () => {
+        displayScore.value = Math.round(obj.value)
+      },
+    })
+  } else {
+    displayScore.value = newScore
+  }
+})
 
 // 每个实例唯一 ID，避免多实例渐变 ID 冲突
 const uid = Math.random().toString(36).slice(2, 8)

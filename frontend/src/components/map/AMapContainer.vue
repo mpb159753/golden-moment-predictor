@@ -25,11 +25,15 @@ const emit = defineEmits(['ready'])
 const containerId = `amap-${Date.now()}`
 const containerRef = ref(null)
 const { init, destroy, map, getAMapModule } = useAMap(containerId)
+const amapSdkRef = ref(null)
+
+// provide must be called in setup scope (synchronous)
+provide('AMapSDK', amapSdkRef)
 
 onMounted(async () => {
   const result = await init(props.mapOptions)
   if (result.success) {
-    provide('AMapSDK', getAMapModule())
+    amapSdkRef.value = getAMapModule()
     emit('ready', map())
   }
 })

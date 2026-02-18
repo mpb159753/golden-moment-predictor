@@ -8,26 +8,32 @@
     <span v-if="!capturing" class="screenshot-btn__icon">📷</span>
     <span v-else class="screenshot-btn__spinner" />
     <span class="screenshot-btn__text">
-      {{ capturing ? '截图中...' : '截图' }}
+      {{ capturing ? '截图中...' : displayLabel }}
     </span>
   </button>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useScreenshot } from '@/composables/useScreenshot'
 
 const props = defineProps({
   target: { type: [String, Object], required: true },
   filename: { type: String, default: 'gmp-prediction.png' },
+  beforeCapture: { type: Function, default: null },
+  afterCapture: { type: Function, default: null },
+  label: { type: String, default: '截图' },
 })
 
 const { capture } = useScreenshot()
 const capturing = ref(false)
 
+const displayLabel = computed(() => props.label)
+
 async function handleCapture() {
   capturing.value = true
   try {
+    if (props.beforeCapture) await props.beforeCapture()
     const element = typeof props.target === 'string'
       ? document.querySelector(props.target)
       : props.target?.$el ?? props.target
@@ -35,6 +41,7 @@ async function handleCapture() {
   } catch (e) {
     console.error('Screenshot failed:', e)
   } finally {
+    if (props.afterCapture) await props.afterCapture()
     capturing.value = false
   }
 }

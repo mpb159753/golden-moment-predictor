@@ -1,5 +1,6 @@
 <script>
 import { watch, inject, onMounted, onUnmounted } from 'vue'
+import gsap from 'gsap'
 import { useScoreColor } from '@/composables/useScoreColor'
 
 /**
@@ -20,6 +21,9 @@ export default {
     viewpoint: { type: Object, required: true },
     score: { type: Number, default: 0 },
     selected: { type: Boolean, default: false },
+    zoom: { type: Number, default: 10 },
+    enterDelay: { type: Number, default: 0 },
+    loading: { type: Boolean, default: false },
     map: { type: Object, default: null },
   },
   emits: ['click'],
@@ -32,10 +36,18 @@ export default {
     function createContent() {
       const colorInfo = getScoreColor(props.score)
       const bg = colorInfo.gradient || colorInfo.color
-      const scale = props.selected ? 'transform: scale(1.2);' : ''
-      const shadow = props.selected
-        ? 'box-shadow: 0 4px 16px rgba(0,0,0,0.35);'
-        : 'box-shadow: 0 2px 8px rgba(0,0,0,0.2);'
+      const isZoomMini = props.zoom < 9 && !props.selected
+
+      // 缩略态: 仅圆点 (zoom < 9 且未选中)
+      if (isZoomMini) {
+        return `<div class="marker-dot" style="
+          width: 12px; height: 12px; border-radius: 50%;
+          background: ${bg};
+          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+          cursor: pointer;
+        "></div>`
+      }
+
       const pulse = props.score >= 95
         ? `<div style="
             position: absolute; top: -4px; left: -4px;
@@ -45,11 +57,50 @@ export default {
             pointer-events: none;
           "></div>`
         : ''
-      const bounce = props.selected ? 'animation: marker-bounce 0.4s ease-out;' : ''
 
+      // 选中态: 展开名称 + 评分 + 弹跳动画 + 脉冲光圈
+      if (props.selected) {
+        return `<div style="
+          position: relative;
+          transform: scale(1.2);
+          animation: marker-bounce 0.4s ease-out;
+          transition: transform 0.3s ease;
+        ">
+          ${pulse}
+          <div class="marker-expanded" style="
+            position: relative;
+            background: ${bg};
+            color: white; padding: 6px 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+            cursor: pointer;
+            text-align: center;
+            min-width: 60px;
+          ">
+            <div style="font-weight: 700; font-size: 13px; white-space: nowrap;">${props.viewpoint.name}</div>
+            <div style="font-size: 12px; margin-top: 2px;">${props.score}</div>
+          </div>
+          <div class="pulse-glow-ring" style="
+            position: absolute;
+            inset: -4px;
+            border-radius: 8px;
+            border: 2px solid ${colorInfo.color};
+            animation: pulse-glow 2s ease-in-out infinite;
+            pointer-events: none;
+          "></div>
+          <div style="
+            width: 0; height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid ${bg};
+            margin: 0 auto;
+          "></div>
+        </div>`
+      }
+
+      // 默认态: 圆形评分标记
       return `<div style="
         position: relative;
-        ${scale} ${bounce}
         transition: transform 0.3s ease;
       ">
         ${pulse}
@@ -58,15 +109,40 @@ export default {
           background: ${bg};
           color: white; display: flex; align-items: center; justify-content: center;
           font-weight: 700; font-size: 14px;
-          ${shadow}
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
           cursor: pointer;
           transition: box-shadow 0.3s ease, transform 0.3s ease;
         ">${props.score}</div>
+        <div style="
+          width: 0; height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 5px solid ${bg};
+          margin: 0 auto;
+        "></div>
       </div>`
     }
 
     function getAMap() {
       return AMapSDK || window.AMap
+    }
+
+    function playEnterAnimation() {
+      if (!marker) return
+      const el = marker.getContentElement?.()
+      if (!el) return
+      gsap.fromTo(el, {
+        y: 30,
+        scale: 0,
+        opacity: 0,
+      }, {
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        duration: 0.6,
+        ease: 'back.out(1.7)',
+        delay: props.enterDelay,
+      })
     }
 
     function createMarker() {
@@ -84,6 +160,7 @@ export default {
 
       marker.on('click', () => emit('click', props.viewpoint))
       props.map.add(marker)
+      playEnterAnimation()
     }
 
     function updateMarker() {
@@ -106,8 +183,8 @@ export default {
       }
     })
 
-    // 监听 score / selected 变化更新样式
-    watch(() => [props.score, props.selected], () => {
+    // 监听 score / selected / zoom 变化更新样式
+    watch(() => [props.score, props.selected, props.zoom], () => {
       updateMarker()
     })
 

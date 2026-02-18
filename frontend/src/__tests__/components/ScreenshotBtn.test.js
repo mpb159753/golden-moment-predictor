@@ -151,4 +151,57 @@ describe('ScreenshotBtn', () => {
             expect(mockCapture).toHaveBeenCalledWith(el, 'gmp-prediction.png')
         })
     })
+
+    it('calls beforeCapture and afterCapture around capture', async () => {
+        const callOrder = []
+        const beforeCapture = vi.fn(() => callOrder.push('before'))
+        const afterCapture = vi.fn(() => callOrder.push('after'))
+        mockCapture.mockImplementationOnce(async () => { callOrder.push('capture') })
+
+        const el = document.createElement('div')
+        el.id = 'hook-target'
+        document.body.appendChild(el)
+
+        const wrapper = mount(ScreenshotBtn, {
+            props: { target: '#hook-target', beforeCapture, afterCapture },
+        })
+
+        await wrapper.find('.screenshot-btn').trigger('click')
+        await vi.waitFor(() => {
+            expect(afterCapture).toHaveBeenCalled()
+        })
+
+        expect(callOrder).toEqual(['before', 'capture', 'after'])
+        document.body.removeChild(el)
+    })
+
+    it('calls afterCapture even when capture fails', async () => {
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
+        const beforeCapture = vi.fn()
+        const afterCapture = vi.fn()
+        mockCapture.mockRejectedValueOnce(new Error('fail'))
+
+        const el = document.createElement('div')
+        el.id = 'hook-error-target'
+        document.body.appendChild(el)
+
+        const wrapper = mount(ScreenshotBtn, {
+            props: { target: '#hook-error-target', beforeCapture, afterCapture },
+        })
+
+        await wrapper.find('.screenshot-btn').trigger('click')
+        await vi.waitFor(() => {
+            expect(afterCapture).toHaveBeenCalled()
+        })
+
+        consoleSpy.mockRestore()
+        document.body.removeChild(el)
+    })
+
+    it('renders custom label text when provided', () => {
+        const wrapper = mount(ScreenshotBtn, {
+            props: { target: '#test', label: '📸 截图分享' },
+        })
+        expect(wrapper.text()).toContain('截图分享')
+    })
 })
