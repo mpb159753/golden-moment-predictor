@@ -1,8 +1,8 @@
 id: duoraogamu_yala_view
 name: 亚拉主景平台
 location:
-  lat: 30.153
-  lon: 101.719
+  lat: 30.447693
+  lon: 101.540804
   altitude: 4100
 
 capabilities:
@@ -12,8 +12,8 @@ capabilities:
 
 targets:
   - name: 亚拉神山
-    lat: 30.15
-    lon: 101.75
+    lat: 30.380
+    lon: 101.560
     altitude: 5820
     weight: primary
     applicable_events:

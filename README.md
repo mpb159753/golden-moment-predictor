@@ -22,11 +22,13 @@ Scheduler 聚合 Plugin 数据需求 → 统一获取气象数据
 → 输出层 (JSON / CLI Table / 文件)
 ```
 
-**技术栈:** Python 3.11+, Click, structlog, pandas, ephem, httpx, PyYAML, SQLite
+**后端技术栈:** Python 3.11+, Click, structlog, pandas, ephem, httpx, PyYAML, SQLite
+
+**前端技术栈:** Vue 3 + Vite, Pinia, Vue Router, 高德地图 JS API, GSAP, ECharts, html2canvas
 
 ## 🚀 快速开始
 
-### 安装
+### 后端安装
 
 ```bash
 git clone https://github.com/your-username/golden-moment-predictor.git
@@ -41,6 +43,46 @@ pip install -r requirements-dev.txt
 
 # 安装项目 (可选，使 gmp 命令可用)
 pip install -e .
+```
+
+### 前端安装与启动
+
+```bash
+cd frontend
+
+# 安装依赖
+npm install
+
+# 启动开发服务器 (默认 http://localhost:5173)
+npm run dev
+
+# 运行测试
+npm test
+
+# 生产构建
+npm run build
+
+# 预览生产构建
+npm run preview
+```
+
+> [!NOTE]
+> 前端使用高德地图 JS API，需要在 `frontend/.env.development` 中配置 API Key：
+> ```
+> VITE_AMAP_KEY=你的高德地图Key
+> VITE_AMAP_SECURITY_CODE=你的安全密钥
+> ```
+> 可在 [高德开放平台](https://lbs.amap.com/) 申请。
+
+### 全栈开发流程
+
+```bash
+# 1. 生成预测数据（后端 → public/data）
+source venv/bin/activate
+python -m gmp.main generate-all --days 7
+
+# 2. 启动前端开发服务器（读取 public/data 中的 JSON）
+cd frontend && npm run dev
 ```
 
 ### 基本用法
@@ -343,6 +385,26 @@ golden-moment-predictor/
 │   │   └── json_file_writer.py     # JSON 文件写入
 │   └── backtest/
 │       └── backtester.py           # 历史回测
+├── frontend/                        # 前端 Vue 应用
+│   ├── src/
+│   │   ├── views/                  # 页面视图
+│   │   │   ├── HomeView.vue        # 首页 (沉浸式地图)
+│   │   │   ├── ViewpointDetail.vue # 观景台详情
+│   │   │   └── RouteDetail.vue     # 线路详情
+│   │   ├── components/             # 组件库
+│   │   │   ├── map/                # 地图组件 (AMap/Marker/RouteLine)
+│   │   │   ├── scheme-a/           # A方案组件 (TopBar/BottomSheet/推荐)
+│   │   │   ├── score/              # 评分展示 (ScoreRing/ScoreBar)
+│   │   │   ├── forecast/           # 预测展示 (DaySummary/WeekTrend)
+│   │   │   ├── event/              # 事件组件 (EventIcon/EventCard)
+│   │   │   ├── export/             # 导出 (ScreenshotBtn/ShareCard)
+│   │   │   └── layout/             # 布局 (DatePicker/FilterBar)
+│   │   ├── stores/                 # Pinia 状态管理
+│   │   ├── composables/            # 组合式函数
+│   │   ├── router/                 # Vue Router 配置
+│   │   └── assets/                 # 静态资源与样式
+│   ├── public/data/                # 预测数据 JSON (由后端生成)
+│   └── package.json
 ├── tests/
 │   ├── unit/                       # 单元测试
 │   ├── integration/                # 集成测试
@@ -352,6 +414,8 @@ golden-moment-predictor/
 ```
 
 ## 🧪 测试
+
+### 后端测试 (Python)
 
 ```bash
 # 激活虚拟环境
@@ -365,6 +429,18 @@ python -m pytest tests/e2e/ -v -m e2e
 
 # 带覆盖率报告
 python -m pytest tests/ --cov=gmp --cov-report=term-missing -m "not e2e"
+```
+
+### 前端测试 (Vitest)
+
+```bash
+cd frontend
+
+# 运行所有测试
+npm test
+
+# 监听模式 (开发时推荐)
+npx vitest
 ```
 
 ## ⚙️ 配置

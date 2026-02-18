@@ -121,6 +121,7 @@ import { ref, computed, onMounted, watch, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { useViewpointStore } from '@/stores/viewpoints'
 import { useRouteStore } from '@/stores/routes'
+import { convertToGCJ02 } from '@/composables/useCoordConvert'
 import AMapContainer from '@/components/map/AMapContainer.vue'
 import ViewpointMarker from '@/components/map/ViewpointMarker.vue'
 import RouteLine from '@/components/map/RouteLine.vue'
@@ -228,7 +229,9 @@ async function onMarkerClick(vp) {
   await vpStore.selectViewpoint(vp.id)
   const map = mapRef.value?.getMap?.()
   if (map) {
-    map.setZoomAndCenter(12, [vp.location.lon, vp.location.lat], true, 800)
+    const AMap = window.AMap
+    const [gcjLon, gcjLat] = await convertToGCJ02(AMap, vp.location.lon, vp.location.lat)
+    map.setZoomAndCenter(12, [gcjLon, gcjLat], true, 800)
   }
   sheetState.value = 'half'
 }
@@ -350,8 +353,15 @@ watch(mapInstance, (map) => {
 .map-screenshot-btn {
   position: fixed;
   right: 16px;
-  bottom: 28%;
+  bottom: calc(20vh + 16px);
   z-index: 90;
+}
+
+@media (max-width: 767px) {
+  .map-screenshot-btn {
+    right: 12px;
+    bottom: calc(20vh + 12px);
+  }
 }
 
 .half-content,
@@ -377,12 +387,8 @@ watch(mapInstance, (map) => {
   background: #2563EB;
 }
 
-@media (min-width: 1024px) {
-  .home-view {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-  }
-}
+/* 不再需要 grid 布局 — BottomSheet 是 position: fixed，
+   不参与正常文档流，map 应全屏 */
 
 .full-actions {
   display: flex;

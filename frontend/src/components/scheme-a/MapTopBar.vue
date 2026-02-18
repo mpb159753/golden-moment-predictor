@@ -152,11 +152,15 @@ function onDateSelect(date) {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  /* 防止子元素超出视口 */
+  max-width: 100vw;
+  overflow: hidden;
 }
 
 .search-box {
   position: relative;
   flex: 1;
+  min-width: 0; /* 允许 flex 子元素收缩 */
   display: flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.6);
@@ -166,6 +170,7 @@ function onDateSelect(date) {
 
 .search-box input {
   flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   outline: none;
@@ -207,6 +212,7 @@ function onDateSelect(date) {
 .filter-chips {
   display: flex;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .chip {
@@ -221,6 +227,7 @@ function onDateSelect(date) {
   align-items: center;
   justify-content: center;
   transition: all var(--duration-fast);
+  flex-shrink: 0;
 }
 
 .chip.active {
@@ -240,6 +247,7 @@ function onDateSelect(date) {
   font-size: var(--text-xs);
   white-space: nowrap;
   transition: all var(--duration-fast);
+  flex-shrink: 0;
 }
 
 .route-btn.active {
@@ -250,6 +258,7 @@ function onDateSelect(date) {
 
 .date-picker-wrapper {
   position: relative;
+  flex-shrink: 0;
 }
 
 .date-picker-dropdown {
@@ -262,5 +271,37 @@ function onDateSelect(date) {
   padding: 8px;
   z-index: 200;
   min-width: 320px;
+}
+
+/* 小屏适配 —— 搜索框缩短、filter chips 隐藏在滚动中 */
+@media (max-width: 480px) {
+  .map-top-bar {
+    gap: 6px;
+    padding: 8px 12px;
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+
+  .search-box {
+    flex: 1 1 80px;
+    min-width: 80px;
+  }
+
+  .chip {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .date-btn,
+  .route-btn {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .date-picker-dropdown {
+    right: -40px;
+    min-width: 280px;
+  }
 }
 </style>

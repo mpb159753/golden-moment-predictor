@@ -1,8 +1,8 @@
 id: niubei_gongga
 name: 牛背山
 location:
-  lat: 29.75
-  lon: 102.35
+  lat: 29.77381
+  lon: 102.414969
   altitude: 3660
 
 # 该观景台支持的景观类型 (对应注册的 Plugin event_type)
@@ -18,7 +18,7 @@ capabilities:
 
 targets:
   - name: 贡嘎主峰
-    lat: 29.58
+    lat: 29.596
     lon: 101.88
     altitude: 7556
     weight: primary

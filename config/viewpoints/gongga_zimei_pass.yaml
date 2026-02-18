@@ -1,8 +1,8 @@
 id: gongga_zimei_pass
 name: 子梅垭口
 location:
-  lat: 29.689
-  lon: 101.997
+  lat: 29.518239
+  lon: 101.721355
   altitude: 4550
 
 capabilities:
@@ -13,7 +13,7 @@ capabilities:
 
 targets:
   - name: 贡嘎主峰
-    lat: 29.58
+    lat: 29.596
     lon: 101.88
     altitude: 7556
     weight: primary

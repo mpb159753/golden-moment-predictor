@@ -1,8 +1,8 @@
 id: siguniang_maobiliang
 name: 猫鼻梁
 location:
-  lat: 31.096
-  lon: 102.932
+  lat: 30.988782
+  lon: 102.842315
   altitude: 3500
 
 capabilities:
@@ -12,8 +12,8 @@ capabilities:
 
 targets:
   - name: 幺妹峰
-    lat: 31.06
-    lon: 102.89
+    lat: 31.106
+    lon: 102.902
     altitude: 6247
     weight: primary
     applicable_events:

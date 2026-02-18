@@ -1,8 +1,8 @@
 id: transit_jiagenba_view
 name: 甲根坝机位
 location:
-  lat: 29.93
-  lon: 101.654
+  lat: 29.846973
+  lon: 101.55904
   altitude: 3600
 
 capabilities:
@@ -11,7 +11,7 @@ capabilities:
 
 targets:
   - name: 贡嘎主峰
-    lat: 29.58
+    lat: 29.596
     lon: 101.88
     altitude: 7556
     weight: primary

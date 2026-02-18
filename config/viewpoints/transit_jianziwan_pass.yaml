@@ -1,8 +1,8 @@
 id: transit_jianziwan_pass
 name: 剪子弯山垭口
 location:
-  lat: 29.954
-  lon: 100.773
+  lat: 30.021268
+  lon: 100.796678
   altitude: 4659
 
 capabilities:

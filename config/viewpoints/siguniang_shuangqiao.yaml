@@ -1,8 +1,8 @@
 id: siguniang_shuangqiao
 name: 双桥沟
 location:
-  lat: 31.137
-  lon: 102.966
+  lat: 30.982511
+  lon: 102.768042
   altitude: 3250
 
 capabilities:
@@ -13,8 +13,8 @@ capabilities:
 
 targets:
   - name: 幺妹峰
-    lat: 31.06
-    lon: 102.89
+    lat: 31.106
+    lon: 102.902
     altitude: 6247
     weight: primary
     applicable_events:

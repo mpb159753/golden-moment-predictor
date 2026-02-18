@@ -1,8 +1,8 @@
 id: transit_zheduoshan_pass
 name: 折多山垭口
 location:
-  lat: 30.049
-  lon: 101.724
+  lat: 30.074318
+  lon: 101.803517
   altitude: 4298
 
 capabilities:
@@ -12,7 +12,7 @@ capabilities:
 
 targets:
   - name: 贡嘎主峰
-    lat: 29.58
+    lat: 29.596
     lon: 101.88
     altitude: 7556
     weight: primary

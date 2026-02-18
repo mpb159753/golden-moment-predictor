@@ -1,8 +1,8 @@
 id: jiuzhai_wuhuahai
 name: 五花海
 location:
-  lat: 33.184
-  lon: 103.903
+  lat: 33.161324
+  lon: 103.878596
   altitude: 2472
 
 capabilities:

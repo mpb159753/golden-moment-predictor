@@ -1,8 +1,8 @@
 id: transit_18bends_view
 name: 天路十八弯观景台
 location:
-  lat: 30.103
-  lon: 100.248
+  lat: 29.999766
+  lon: 100.873712
   altitude: 3970
 
 capabilities:

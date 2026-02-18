@@ -1,8 +1,8 @@
 id: yading_pearl_lake
 name: 珍珠海
 location:
-  lat: 28.431
-  lon: 100.288
+  lat: 28.438425
+  lon: 100.305771
   altitude: 4100
 
 capabilities:
@@ -12,8 +12,8 @@ capabilities:
 
 targets:
   - name: 仙乃日
-    lat: 28.9
-    lon: 100.06
+    lat: 28.433
+    lon: 100.316
     altitude: 6032
     weight: primary
     applicable_events:

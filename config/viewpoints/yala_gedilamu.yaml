@@ -1,8 +1,8 @@
 id: yala_gedilamu
 name: 格底拉姆
 location:
-  lat: 30.083
-  lon: 101.664
+  lat: 30.2359
+  lon: 101.644077
   altitude: 4300
 
 capabilities:
@@ -11,8 +11,8 @@ capabilities:
 
 targets:
   - name: 亚拉神山
-    lat: 30.15
-    lon: 101.75
+    lat: 30.380
+    lon: 101.560
     altitude: 5820
     weight: primary
     applicable_events:

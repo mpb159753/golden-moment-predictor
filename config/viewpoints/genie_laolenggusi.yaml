@@ -1,8 +1,8 @@
 id: genie_laolenggusi
 name: 老冷古寺
 location:
-  lat: 30.036
-  lon: 99.856
+  lat: 29.819585
+  lon: 99.643822
   altitude: 4100
 
 capabilities:
@@ -12,8 +12,8 @@ capabilities:
 
 targets:
   - name: 格聂主峰
-    lat: 30.12
-    lon: 99.79
+    lat: 29.831
+    lon: 99.773
     altitude: 6204
     weight: primary
     applicable_events:

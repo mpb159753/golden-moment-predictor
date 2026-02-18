@@ -1,8 +1,8 @@
 id: yala_gunong
 name: 姑弄村
 location:
-  lat: 30.112
-  lon: 101.681
+  lat: 30.355645
+  lon: 101.516433
   altitude: 3600
 
 capabilities:
@@ -11,8 +11,8 @@ capabilities:
 
 targets:
   - name: 亚拉神山
-    lat: 30.15
-    lon: 101.75
+    lat: 30.380
+    lon: 101.560
     altitude: 5820
     weight: primary
     applicable_events:

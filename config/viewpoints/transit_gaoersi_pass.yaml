@@ -1,8 +1,8 @@
 id: transit_gaoersi_pass
 name: 高尔寺山垭口
 location:
-  lat: 29.789
-  lon: 101.546
+  lat: 30.039849
+  lon: 101.345279
   altitude: 4412
 
 capabilities:
@@ -12,7 +12,7 @@ capabilities:
 
 targets:
   - name: 贡嘎主峰
-    lat: 29.58
+    lat: 29.596
     lon: 101.88
     altitude: 7556
     weight: primary

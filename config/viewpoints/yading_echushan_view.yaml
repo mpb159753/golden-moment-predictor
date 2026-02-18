@@ -1,8 +1,8 @@
 id: yading_echushan_view
 name: 俄初山观景台
 location:
-  lat: 28.586
-  lon: 100.242
+  lat: 28.562789
+  lon: 100.194275
   altitude: 3900
 
 capabilities:
@@ -11,8 +11,8 @@ capabilities:
 
 targets:
   - name: 仙乃日
-    lat: 28.9
-    lon: 100.06
+    lat: 28.433
+    lon: 100.316
     altitude: 6032
     weight: primary
     applicable_events:

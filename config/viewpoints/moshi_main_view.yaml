@@ -1,8 +1,8 @@
 id: moshi_main_view
 name: 异域星球观景位
 location:
-  lat: 30.045
-  lon: 101.565
+  lat: 30.447693
+  lon: 101.540804
   altitude: 3500
 
 capabilities:

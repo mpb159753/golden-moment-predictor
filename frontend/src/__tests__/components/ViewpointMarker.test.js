@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import ViewpointMarker from '@/components/map/ViewpointMarker.vue'
+import { clearConvertCache } from '@/composables/useCoordConvert'
 
 // Mock AMap SDK
 function createMockAMap() {
@@ -15,8 +16,20 @@ function createMockAMap() {
     }
     function MockPixel(x, y) { this.x = x; this.y = y }
 
+    // Mock convertFrom: simulate GCJ-02 offset (lon + 0.006, lat + 0.003)
+    function mockConvertFrom(lnglat, type, callback) {
+        const [lon, lat] = lnglat
+        callback('complete', {
+            info: 'ok',
+            locations: [{
+                getLng: () => lon + 0.006,
+                getLat: () => lat + 0.003,
+            }],
+        })
+    }
+
     return {
-        AMap: { Marker: MockMarker, Pixel: MockPixel },
+        AMap: { Marker: MockMarker, Pixel: MockPixel, convertFrom: vi.fn(mockConvertFrom) },
         markerInstances,
     }
 }
@@ -38,6 +51,7 @@ describe('ViewpointMarker', () => {
     let mockAMap, markerInstances, mockMap
 
     beforeEach(() => {
+        clearConvertCache()
         const mock = createMockAMap()
         mockAMap = mock.AMap
         markerInstances = mock.markerInstances
@@ -65,34 +79,41 @@ describe('ViewpointMarker', () => {
     }
 
     // --- 基本渲染 ---
-    it('creates a marker on the map when mounted', () => {
+    it('creates a marker on the map when mounted', async () => {
         mountMarker()
+        await flushPromises()
         expect(mockMap.add).toHaveBeenCalled()
         expect(markerInstances.length).toBe(1)
     })
 
-    it('positions marker at viewpoint coordinates', () => {
+    it('positions marker at converted GCJ-02 coordinates', async () => {
         mountMarker()
-        expect(markerInstances[0].position).toEqual([102.5, 29.8])
+        await flushPromises()
+        // Original: [102.5, 29.8] → Converted: [102.506, 29.803]
+        expect(markerInstances[0].position[0]).toBeCloseTo(102.506, 3)
+        expect(markerInstances[0].position[1]).toBeCloseTo(29.803, 3)
     })
 
-    it('renders score in default marker content', () => {
+    it('renders score in default marker content', async () => {
         mountMarker({ score: 80 })
+        await flushPromises()
         const content = markerInstances[0].content
         expect(content).toContain('80')
     })
 
     // --- 三种状态 ---
-    it('renders default state: circle with score number', () => {
+    it('renders default state: circle with score number', async () => {
         mountMarker({ score: 75, selected: false, zoom: 10 })
+        await flushPromises()
         const content = markerInstances[0].content
         expect(content).toContain('75')
         // 默认标记不应包含观景台名称
         expect(content).not.toContain('牛背山')
     })
 
-    it('renders selected state: expanded with viewpoint name', () => {
+    it('renders selected state: expanded with viewpoint name', async () => {
         mountMarker({ score: 90, selected: true, zoom: 10 })
+        await flushPromises()
         const content = markerInstances[0].content
         // 选中态应包含名称
         expect(content).toContain('牛背山')
@@ -101,8 +122,9 @@ describe('ViewpointMarker', () => {
         expect(content).toContain('scale(1.2)')
     })
 
-    it('renders mini state when zoom < 9', () => {
+    it('renders mini state when zoom < 9', async () => {
         mountMarker({ score: 85, selected: false, zoom: 7 })
+        await flushPromises()
         const content = markerInstances[0].content
         // 缩略态应该只有简单圆点，不包含分数
         expect(content).toContain('marker-dot')
@@ -110,35 +132,40 @@ describe('ViewpointMarker', () => {
         expect(content).not.toContain('85')
     })
 
-    it('selected state overrides mini state even at low zoom', () => {
+    it('selected state overrides mini state even at low zoom', async () => {
         mountMarker({ score: 85, selected: true, zoom: 7 })
+        await flushPromises()
         const content = markerInstances[0].content
         // 即使 zoom 低，选中态也应该显示名称
         expect(content).toContain('牛背山')
     })
 
     // --- 样式 ---
-    it('applies bounce animation when selected', () => {
+    it('applies bounce animation when selected', async () => {
         mountMarker({ selected: true })
+        await flushPromises()
         const content = markerInstances[0].content
         expect(content).toContain('marker-bounce')
     })
 
-    it('applies pulse animation for score >= 95', () => {
+    it('applies pulse animation for score >= 95', async () => {
         mountMarker({ score: 98 })
+        await flushPromises()
         const content = markerInstances[0].content
         expect(content).toContain('marker-pulse')
     })
 
-    it('does not apply pulse animation for score < 95', () => {
+    it('does not apply pulse animation for score < 95', async () => {
         mountMarker({ score: 80 })
+        await flushPromises()
         const content = markerInstances[0].content
         expect(content).not.toContain('marker-pulse')
     })
 
     // --- 事件 ---
-    it('emits click when marker is clicked', () => {
+    it('emits click when marker is clicked', async () => {
         const wrapper = mountMarker()
+        await flushPromises()
         expect(markerInstances[0].on).toHaveBeenCalledWith('click', expect.any(Function))
         // Simulate click
         const clickHandler = markerInstances[0].on.mock.calls[0][1]
@@ -150,6 +177,7 @@ describe('ViewpointMarker', () => {
     // --- 更新 ---
     it('updates marker content when score changes', async () => {
         const wrapper = mountMarker({ score: 60 })
+        await flushPromises()
         await wrapper.setProps({ score: 95 })
         expect(markerInstances[0].setContent).toHaveBeenCalled()
         const newContent = markerInstances[0].setContent.mock.calls[0][0]
@@ -158,13 +186,15 @@ describe('ViewpointMarker', () => {
 
     it('updates marker content when selected changes', async () => {
         const wrapper = mountMarker({ selected: false })
+        await flushPromises()
         await wrapper.setProps({ selected: true })
         expect(markerInstances[0].setContent).toHaveBeenCalled()
     })
 
     // --- 清理 ---
-    it('removes marker from map on unmount', () => {
+    it('removes marker from map on unmount', async () => {
         const wrapper = mountMarker()
+        await flushPromises()
         wrapper.unmount()
         expect(mockMap.remove).toHaveBeenCalled()
     })

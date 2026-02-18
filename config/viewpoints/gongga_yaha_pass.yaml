@@ -1,8 +1,8 @@
 id: gongga_yaha_pass
 name: 雅哈垭口
 location:
-  lat: 29.886
-  lon: 101.839
+  lat: 29.7425
+  lon: 101.723135
   altitude: 4568
 
 capabilities:
@@ -12,7 +12,7 @@ capabilities:
 
 targets:
   - name: 贡嘎主峰
-    lat: 29.58
+    lat: 29.596
     lon: 101.88
     altitude: 7556
     weight: primary

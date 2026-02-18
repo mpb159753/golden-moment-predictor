@@ -1,8 +1,8 @@
 id: shenmulei_redwood_view
 name: 红杉林主机位
 location:
-  lat: 30.782
-  lon: 102.872
+  lat: 30.678644
+  lon: 102.674996
   altitude: 3000
 
 capabilities:

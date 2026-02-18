@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
+import { clearConvertCache } from '@/composables/useCoordConvert'
 
 // Mock gsap — vi.hoisted ensures the variable is available before vi.mock is hoisted
 const { mockFromTo } = vi.hoisted(() => ({
@@ -32,8 +33,17 @@ function createMockAMap() {
     }
     function MockPixel(x, y) { this.x = x; this.y = y }
 
+    // Mock convertFrom: simulate GCJ-02 offset
+    function mockConvertFrom(lnglat, type, callback) {
+        const [lon, lat] = lnglat
+        callback('complete', {
+            info: 'ok',
+            locations: [{ getLng: () => lon + 0.006, getLat: () => lat + 0.003 }],
+        })
+    }
+
     return {
-        AMap: { Marker: MockMarker, Pixel: MockPixel },
+        AMap: { Marker: MockMarker, Pixel: MockPixel, convertFrom: vi.fn(mockConvertFrom) },
         markerInstances,
     }
 }
@@ -55,6 +65,7 @@ describe('ViewpointMarker - Enter Animation', () => {
     let mockAMap, markerInstances, mockMap
 
     beforeEach(() => {
+        clearConvertCache()
         const mock = createMockAMap()
         mockAMap = mock.AMap
         markerInstances = mock.markerInstances
@@ -85,8 +96,9 @@ describe('ViewpointMarker - Enter Animation', () => {
         })
     }
 
-    it('calls gsap.fromTo with spring animation when marker is created', () => {
+    it('calls gsap.fromTo with spring animation when marker is created', async () => {
         mountMarker()
+        await flushPromises()
         expect(mockFromTo).toHaveBeenCalledTimes(1)
         const [target, fromVars, toVars] = mockFromTo.mock.calls[0]
         // Check from vars
@@ -105,30 +117,34 @@ describe('ViewpointMarker - Enter Animation', () => {
         })
     })
 
-    it('applies stagger delay based on enterDelay prop', () => {
+    it('applies stagger delay based on enterDelay prop', async () => {
         mountMarker({ enterDelay: 0.24 }) // 3rd marker: 0.08 * 3 = 0.24
+        await flushPromises()
         expect(mockFromTo).toHaveBeenCalledTimes(1)
         const [, , toVars] = mockFromTo.mock.calls[0]
         expect(toVars.delay).toBe(0.24)
     })
 
-    it('uses zero delay when enterDelay is not provided', () => {
+    it('uses zero delay when enterDelay is not provided', async () => {
         mountMarker()
+        await flushPromises()
         expect(mockFromTo).toHaveBeenCalledTimes(1)
         const [, , toVars] = mockFromTo.mock.calls[0]
         expect(toVars.delay).toBe(0)
     })
 
-    it('animates the content element returned by marker.getContentElement()', () => {
+    it('animates the content element returned by marker.getContentElement()', async () => {
         mountMarker()
+        await flushPromises()
         expect(mockFromTo).toHaveBeenCalledTimes(1)
         const [target] = mockFromTo.mock.calls[0]
         // Target should be a DOM element (from getContentElement)
         expect(target).toBeInstanceOf(HTMLElement)
     })
 
-    it('includes pulse-glow animation in selected marker content', () => {
+    it('includes pulse-glow animation in selected marker content', async () => {
         mountMarker({ selected: true, score: 75 })
+        await flushPromises()
         const content = markerInstances[0].content
         expect(content).toContain('pulse-glow')
     })

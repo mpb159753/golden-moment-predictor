@@ -1,5 +1,6 @@
 import AMapLoader from '@amap/amap-jsapi-loader'
 import { useScoreColor } from './useScoreColor'
+import { convertToGCJ02, batchConvertToGCJ02 } from './useCoordConvert'
 
 /**
  * 生成评分标记的 HTML 内容
@@ -74,9 +75,10 @@ export function useAMap(containerId) {
      * @param {number} lat - 纬度
      * @param {number} zoom - 缩放级别
      */
-    function flyTo(lon, lat, zoom = 12) {
+    async function flyTo(lon, lat, zoom = 12) {
         if (!map) return
-        map.setZoomAndCenter(zoom, [lon, lat], true, 800)
+        const [gcjLon, gcjLat] = await convertToGCJ02(AMap, lon, lat)
+        map.setZoomAndCenter(zoom, [gcjLon, gcjLat], true, 800)
     }
 
     /**
@@ -86,14 +88,18 @@ export function useAMap(containerId) {
      * @param {Function} onClick - 点击回调
      * @returns {AMap.Marker}
      */
-    function addMarker(viewpoint, score, onClick) {
+    async function addMarker(viewpoint, score, onClick) {
         if (!AMap || !map) return null
 
         const { getScoreColor } = useScoreColor()
         const colorInfo = getScoreColor(score)
 
+        const [gcjLon, gcjLat] = await convertToGCJ02(
+            AMap, viewpoint.location.lon, viewpoint.location.lat
+        )
+
         const marker = new AMap.Marker({
-            position: [viewpoint.location.lon, viewpoint.location.lat],
+            position: [gcjLon, gcjLat],
             content: createMarkerContent(score, colorInfo.gradient || colorInfo.color),
             offset: new AMap.Pixel(-20, -20),
             title: viewpoint.name,
@@ -112,10 +118,11 @@ export function useAMap(containerId) {
      * @param {Array<{location: {lat, lon}}>} stops - 线路站点数组
      * @returns {AMap.Polyline}
      */
-    function addRouteLine(stops) {
+    async function addRouteLine(stops) {
         if (!AMap || !map) return null
 
-        const path = stops.map(s => [s.location.lon, s.location.lat])
+        const locations = stops.map(s => s.location)
+        const path = await batchConvertToGCJ02(AMap, locations)
 
         const polyline = new AMap.Polyline({
             path,

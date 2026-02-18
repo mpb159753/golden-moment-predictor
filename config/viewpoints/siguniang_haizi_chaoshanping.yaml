@@ -1,8 +1,8 @@
 id: siguniang_haizi_chaoshanping
 name: 海子沟-朝山坪
 location:
-  lat: 31.073
-  lon: 102.918
+  lat: 30.996446
+  lon: 102.838233
   altitude: 3820
 
 capabilities:
@@ -12,8 +12,8 @@ capabilities:
 
 targets:
   - name: 幺妹峰
-    lat: 31.06
-    lon: 102.89
+    lat: 31.106
+    lon: 102.902
     altitude: 6247
     weight: primary
     applicable_events:

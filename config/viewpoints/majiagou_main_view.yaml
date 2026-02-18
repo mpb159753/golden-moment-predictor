@@ -1,8 +1,8 @@
 id: majiagou_main_view
 name: 主沟观景点
 location:
-  lat: 31.571
-  lon: 102.884
+  lat: 29.643257
+  lon: 102.125221
   altitude: 3320
 
 capabilities:
@@ -12,8 +12,8 @@ capabilities:
 
 targets:
   - name: 幺妹峰
-    lat: 31.06
-    lon: 102.89
+    lat: 31.106
+    lon: 102.902
     altitude: 6247
     weight: primary
     applicable_events:

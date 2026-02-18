@@ -1,8 +1,8 @@
 id: genie_nuda_camp
 name: 努达营地
 location:
-  lat: 29.998
-  lon: 99.793
+  lat: 29.857773
+  lon: 99.78883
   altitude: 4480
 
 capabilities:
@@ -11,8 +11,8 @@ capabilities:
 
 targets:
   - name: 格聂主峰
-    lat: 30.12
-    lon: 99.79
+    lat: 29.831
+    lon: 99.773
     altitude: 6204
     weight: primary
     applicable_events:

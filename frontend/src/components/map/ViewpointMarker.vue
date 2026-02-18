@@ -2,6 +2,7 @@
 import { watch, inject, onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
 import { useScoreColor } from '@/composables/useScoreColor'
+import { convertToGCJ02 } from '@/composables/useCoordConvert'
 
 /**
  * ViewpointMarker — 地图评分标记组件
@@ -145,14 +146,18 @@ export default {
       })
     }
 
-    function createMarker() {
+    async function createMarker() {
       if (!props.map || !props.viewpoint?.location) return
 
       const AMap = getAMap()
       if (!AMap) return
 
+      const [gcjLon, gcjLat] = await convertToGCJ02(
+        AMap, props.viewpoint.location.lon, props.viewpoint.location.lat
+      )
+
       marker = new AMap.Marker({
-        position: [props.viewpoint.location.lon, props.viewpoint.location.lat],
+        position: [gcjLon, gcjLat],
         content: createContent(),
         offset: new AMap.Pixel(-20, -20),
         title: props.viewpoint.name,

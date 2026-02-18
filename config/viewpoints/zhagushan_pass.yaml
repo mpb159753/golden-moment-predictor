@@ -1,8 +1,8 @@
 id: zhagushan_pass
 name: 鹧鸪山垭口机位
 location:
-  lat: 31.779
-  lon: 102.929
+  lat: 31.853109
+  lon: 102.672527
   altitude: 3780
 
 capabilities:

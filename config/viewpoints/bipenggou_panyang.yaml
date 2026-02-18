@@ -1,8 +1,8 @@
 id: bipenggou_panyang
 name: 磐羊湖
 location:
-  lat: 31.339
-  lon: 103.712
+  lat: 31.229248
+  lon: 102.870003
   altitude: 3676
 
 capabilities:
@@ -13,8 +13,8 @@ capabilities:
 
 targets:
   - name: 幺妹峰
-    lat: 31.06
-    lon: 102.89
+    lat: 31.106
+    lon: 102.902
     altitude: 6247
     weight: primary
     applicable_events:

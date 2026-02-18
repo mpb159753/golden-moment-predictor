@@ -1,8 +1,8 @@
 id: gongga_lenggacuo
 name: 冷嘎措
 location:
-  lat: 29.676
-  lon: 101.995
+  lat: 29.638151
+  lon: 101.69951
   altitude: 4520
 
 capabilities:
@@ -14,7 +14,7 @@ capabilities:
 
 targets:
   - name: 贡嘎主峰
-    lat: 29.58
+    lat: 29.596
     lon: 101.88
     altitude: 7556
     weight: primary

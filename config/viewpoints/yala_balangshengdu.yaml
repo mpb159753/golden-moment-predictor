@@ -1,8 +1,8 @@
 id: yala_balangshengdu
 name: 八郎生都
 location:
-  lat: 30.185
-  lon: 101.706
+  lat: 30.338197
+  lon: 101.42751
   altitude: 4200
 
 capabilities:
@@ -12,8 +12,8 @@ capabilities:
 
 targets:
   - name: 亚拉神山
-    lat: 30.15
-    lon: 101.75
+    lat: 30.380
+    lon: 101.560
     altitude: 5820
     weight: primary
     applicable_events:

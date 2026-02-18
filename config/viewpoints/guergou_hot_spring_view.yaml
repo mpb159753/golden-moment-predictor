@@ -1,8 +1,8 @@
 id: guergou_hot_spring_view
 name: 河谷温泉机位
 location:
-  lat: 31.575
-  lon: 103.389
+  lat: 32.595224
+  lon: 103.552897
   altitude: 1800
 
 capabilities:

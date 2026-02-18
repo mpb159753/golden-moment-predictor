@@ -1,5 +1,6 @@
 <script>
 import { watch, inject, onMounted, onUnmounted } from 'vue'
+import { batchConvertToGCJ02 } from '@/composables/useCoordConvert'
 
 /**
  * RouteLine — 线路连线组件
@@ -38,13 +39,14 @@ export default {
       }
     }
 
-    function createPolyline() {
+    async function createPolyline() {
       if (!props.map || props.stops.length < 2) return
 
       const AMap = getAMap()
       if (!AMap) return
 
-      const path = props.stops.map(s => [s.location.lon, s.location.lat])
+      const locations = props.stops.map(s => s.location)
+      const path = await batchConvertToGCJ02(AMap, locations)
       const style = getStyle()
 
       polyline = new AMap.Polyline({

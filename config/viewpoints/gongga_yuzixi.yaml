@@ -1,8 +1,8 @@
 id: gongga_yuzixi
 name: 鱼子西
 location:
-  lat: 30.067
-  lon: 101.675
+  lat: 30.210279
+  lon: 101.581788
   altitude: 4100
 
 capabilities:
@@ -13,7 +13,7 @@ capabilities:
 
 targets:
   - name: 贡嘎主峰
-    lat: 29.58
+    lat: 29.596
     lon: 101.88
     altitude: 7556
     weight: primary

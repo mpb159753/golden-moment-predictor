@@ -1,8 +1,8 @@
 id: yading_luorong_pasture
 name: 洛绒牛场
 location:
-  lat: 28.442
-  lon: 100.318
+  lat: 28.389973
+  lon: 100.381201
   altitude: 4180
 
 capabilities:
@@ -12,8 +12,8 @@ capabilities:
 
 targets:
   - name: 央迈勇
-    lat: 28.91
-    lon: 100.14
+    lat: 28.398
+    lon: 100.334
     altitude: 5958
     weight: primary
     applicable_events:

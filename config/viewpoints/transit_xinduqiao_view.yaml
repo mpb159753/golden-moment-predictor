@@ -1,8 +1,8 @@
 id: transit_xinduqiao_view
 name: 新都桥镇外机位
 location:
-  lat: 30.03
-  lon: 101.509
+  lat: 30.048217
+  lon: 101.491576
   altitude: 3400
 
 capabilities:
@@ -11,7 +11,7 @@ capabilities:
 
 targets:
   - name: 贡嘎主峰
-    lat: 29.58
+    lat: 29.596
     lon: 101.88
     altitude: 7556
     weight: primary

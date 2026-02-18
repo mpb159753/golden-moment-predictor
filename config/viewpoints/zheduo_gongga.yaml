@@ -1,8 +1,8 @@
 id: zheduo_gongga
 name: 折多山
 location:
-  lat: 30.05
-  lon: 101.72
+  lat: 30.07003
+  lon: 101.804206
   altitude: 4298
 
 # 该观景台支持的景观类型
@@ -17,7 +17,7 @@ capabilities:
 
 targets:
   - name: 贡嘎主峰
-    lat: 29.58
+    lat: 29.596
     lon: 101.88
     altitude: 7556
     weight: primary

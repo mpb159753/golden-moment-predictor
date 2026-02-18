@@ -1,8 +1,8 @@
 id: yading_milk_lake
 name: 牛奶海
 location:
-  lat: 28.438
-  lon: 100.327
+  lat: 28.374149
+  lon: 100.345963
   altitude: 4600
 
 capabilities:
@@ -11,8 +11,8 @@ capabilities:
 
 targets:
   - name: 央迈勇
-    lat: 28.91
-    lon: 100.14
+    lat: 28.398
+    lon: 100.334
     altitude: 5958
     weight: primary
     applicable_events:

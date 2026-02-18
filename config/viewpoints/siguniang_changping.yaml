@@ -1,8 +1,8 @@
 id: siguniang_changping
 name: 长坪沟
 location:
-  lat: 31.09
-  lon: 102.941
+  lat: 31.014731
+  lon: 102.857694
   altitude: 3400
 
 capabilities:
@@ -12,8 +12,8 @@ capabilities:
 
 targets:
   - name: 幺妹峰
-    lat: 31.06
-    lon: 102.89
+    lat: 31.106
+    lon: 102.902
     altitude: 6247
     weight: primary
     applicable_events:
