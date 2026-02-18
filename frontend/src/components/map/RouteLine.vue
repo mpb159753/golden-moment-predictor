@@ -1,11 +1,12 @@
 <script>
-import { watch, onMounted, onUnmounted } from 'vue'
+import { watch, inject, onMounted, onUnmounted } from 'vue'
 
 /**
  * RouteLine — 线路连线组件
  *
  * 使用 AMap Polyline API 连接线路站点。
  * 不渲染自身 DOM，通过 render function 返回 null。
+ * 依赖父组件通过 provide('AMapSDK') 注入 AMap 模块。
  *
  * 样式:
  * - 常态: 虚线、3px 宽度、蓝色
@@ -20,8 +21,14 @@ export default {
     highlighted: { type: Boolean, default: false },
     map: { type: Object, default: null },
   },
-  setup(props) {
+  emits: ['click'],
+  setup(props, { emit }) {
     let polyline = null
+    const AMapSDK = inject('AMapSDK', null)
+
+    function getAMap() {
+      return AMapSDK || window.AMap
+    }
 
     function getStyle() {
       return {
@@ -34,7 +41,7 @@ export default {
     function createPolyline() {
       if (!props.map || props.stops.length < 2) return
 
-      const AMap = window.AMap
+      const AMap = getAMap()
       if (!AMap) return
 
       const path = props.stops.map(s => [s.location.lon, s.location.lat])

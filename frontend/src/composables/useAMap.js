@@ -148,5 +148,5 @@ export function useAMap(containerId) {
         }
     }
 
-    return { init, flyTo, addMarker, addRouteLine, fitBounds, destroy, map: () => map }
+    return { init, flyTo, addMarker, addRouteLine, fitBounds, destroy, map: () => map, getAMapModule: () => AMap }
 }

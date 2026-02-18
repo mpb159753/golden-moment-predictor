@@ -1,5 +1,5 @@
 <script>
-import { watch, onMounted, onUnmounted, inject } from 'vue'
+import { watch, inject, onMounted, onUnmounted } from 'vue'
 import { useScoreColor } from '@/composables/useScoreColor'
 
 /**
@@ -7,7 +7,7 @@ import { useScoreColor } from '@/composables/useScoreColor'
  *
  * 使用 AMap Marker API 创建自定义 DOM 标记。
  * 不渲染自身 DOM，通过 render function 返回 null。
- * 依赖父组件通过 provide 注入 useAMap 实例。
+ * 依赖父组件通过 provide('AMapSDK') 注入 AMap 模块。
  *
  * 标记样式:
  * - 常态: 40x40px 圆形，背景色 = 评分颜色，白色数字
@@ -25,7 +25,7 @@ export default {
   emits: ['click'],
   setup(props, { emit }) {
     let marker = null
-    let AMapRef = null
+    const AMapSDK = inject('AMapSDK', null)
 
     const { getScoreColor } = useScoreColor()
 
@@ -65,14 +65,15 @@ export default {
       </div>`
     }
 
+    function getAMap() {
+      return AMapSDK || window.AMap
+    }
+
     function createMarker() {
       if (!props.map || !props.viewpoint?.location) return
 
-      // 获取 AMap 构造函数 — 通过 map 实例上下文
-      const AMap = window.AMap
+      const AMap = getAMap()
       if (!AMap) return
-
-      AMapRef = AMap
 
       marker = new AMap.Marker({
         position: [props.viewpoint.location.lon, props.viewpoint.location.lat],
@@ -86,7 +87,7 @@ export default {
     }
 
     function updateMarker() {
-      if (!marker || !AMapRef) return
+      if (!marker || !getAMap()) return
       marker.setContent(createContent())
     }
 

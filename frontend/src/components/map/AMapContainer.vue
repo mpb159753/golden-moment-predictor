@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, provide, onMounted, onUnmounted } from 'vue'
 import { useAMap } from '@/composables/useAMap'
 
 const props = defineProps({
@@ -24,11 +24,14 @@ const emit = defineEmits(['ready'])
 
 const containerId = `amap-${Date.now()}`
 const containerRef = ref(null)
-const { init, destroy, map } = useAMap(containerId)
+const { init, destroy, map, getAMapModule } = useAMap(containerId)
 
 onMounted(async () => {
-  await init(props.mapOptions)
-  emit('ready', map())
+  const result = await init(props.mapOptions)
+  if (result.success) {
+    provide('AMapSDK', getAMapModule())
+    emit('ready', map())
+  }
 })
 
 onUnmounted(() => {
