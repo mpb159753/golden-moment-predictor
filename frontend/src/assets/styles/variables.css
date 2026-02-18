@@ -1,0 +1,48 @@
+/* frontend/src/assets/styles/variables.css */
+
+:root {
+  /* 基础色调 */
+  --color-primary: #3B82F6;       /* 高山蓝 */
+  --color-primary-light: #93C5FD;
+  --color-accent: #F59E0B;        /* 日出金 */
+  --color-accent-warm: #EF4444;   /* 晚霞红 */
+
+  /* 评分色阶 */
+  --score-perfect: linear-gradient(135deg, #FFD700, #FF8C00);
+  --score-recommended: #10B981;
+  --score-possible: #F59E0B;
+  --score-not-recommended: #9CA3AF;
+
+  /* 评分纯色 (用于非渐变场景) */
+  --score-perfect-solid: #FFD700;
+  --score-recommended-solid: #10B981;
+  --score-possible-solid: #F59E0B;
+  --score-not-recommended-solid: #9CA3AF;
+
+  /* 背景 */
+  --bg-primary: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-overlay: rgba(255, 255, 255, 0.85);
+
+  /* 文字 */
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+
+  /* 圆角 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* 阴影 */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.12);
+
+  /* 动画 */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 200ms;
+  --duration-normal: 350ms;
+  --duration-slow: 600ms;
+}

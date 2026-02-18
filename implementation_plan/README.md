@@ -36,6 +36,16 @@
 | M13 | [Backtester 历史校准](./M13-backtester.md) | `gmp/backtest/backtester.py` | 使用历史数据验证评分模型 | M06, M12 |
 | M14 | [CLI 入口](./M14-cli-entry.md) | `gmp/main.py` | click CLI: predict / generate-all / backtest / list-* | M07, M11C, M12, M12B, M13 |
 | M15 | [E2E 验收测试](./M15-e2e-acceptance.md) | `tests/e2e/test_e2e_real_api.py` | 真实 API 端到端验收（无 Mock） | M14 |
+| M16 | [前端项目初始化](./M16-frontend-project-init.md) | `frontend/` 项目骨架 | Vite + Vue 3 创建、UnoCSS、样式系统、Router、AMap | — |
+| M17 | [前端数据层](./M17-frontend-data-layer.md) | `stores/`, `composables/useDataLoader.js` | useDataLoader + Pinia Stores (viewpoints/routes/app) | M16 |
+| M18 | [前端 Composables](./M18-frontend-composables.md) | `composables/` | useScoreColor, useComboTags, useAMap, useScreenshot | M16, M17 |
+| M19 | [评分可视化组件](./M19-frontend-score-components.md) | `components/score/` | ScoreRing, ScoreBar, StatusBadge | M16, M18 |
+| M20 | [事件展示组件](./M20-frontend-event-components.md) | `components/event/`, `assets/icons/` | EventIcon + SVG 图标集, EventCard, EventList | M16, M18, M19 |
+| M21 | [预测展示组件](./M21-frontend-forecast-components.md) | `components/forecast/` | DaySummary, WeekTrend (ECharts), HourlyTimeline, BreakdownTable | M16, M18-M20 |
+| M22 | [地图组件](./M22-frontend-map-components.md) | `components/map/` | AMapContainer, ViewpointMarker, RouteLine | M16, M18 |
+| M23 | [布局通用组件](./M23-frontend-layout-components.md) | `components/layout/` | DatePicker, FilterBar, UpdateBanner | M16, M17 |
+| M24 | [导出组件](./M24-frontend-export-components.md) | `components/export/` | ScreenshotBtn, ShareCard (小红书 1080×1440) | M16, M18 |
+| M25 | [共享详情页](./M25-frontend-detail-pages.md) | `views/` | ViewpointDetail, RouteDetail (三方案共用) | M17, M19-M24 |
 
 ## 模块依赖图
 

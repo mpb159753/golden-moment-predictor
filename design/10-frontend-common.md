@@ -213,7 +213,6 @@ export const useViewpointStore = defineStore('viewpoints', () => {
 │  │ 🏔️90 │ │ ☁️90 │ │ ⭐45 │ │
 │  │ 推荐  │ │ 推荐  │ │ 一般 │ │
 │  └──────┘ └──────┘          │
-│  信心度: 高                   │
 └──────────────────────────────┘
 ```
 
@@ -477,14 +476,13 @@ export function useScreenshot() {
 <meta name="description" content="川西景观预测 — 日照金山、云海、观星、雾凇 最佳时机一键查看">
 <meta property="og:title" content="川西景观预测引擎 GMP">
 <meta property="og:description" content="让每一次川西之行，都不错过自然的馈赠">
-<meta property="og:image" content="/og-image.jpg">
 ```
 
 ### 分享卡片
 
 `ShareCard.vue` 将当前预测信息合成为适合社交分享的图片：
 - 固定 1080×1440 尺寸 (小红书竖版)
-- 含品牌 Logo + 二维码
+- 含品牌 Logo
 - 自动优化排版密度
 
 ---
