@@ -404,7 +404,7 @@ class TestErrorHandling:
             response.raise_for_status = MagicMock()
             return response
 
-        with patch("httpx.get", side_effect=_mock_get):
+        with patch.object(fetcher._client, "get", side_effect=_mock_get):
             result = fetcher.fetch_hourly(29.75, 102.35, days=1)
             assert len(result) == 3
             assert call_count == 2
@@ -420,7 +420,7 @@ class TestErrorHandling:
             config={"retries": 2, "retry_delay": 0, "connect_timeout": 5, "read_timeout": 15},
         )
 
-        with patch("httpx.get", side_effect=httpx.TimeoutException("timeout")):
+        with patch.object(fetcher._client, "get", side_effect=httpx.TimeoutException("timeout")):
             with pytest.raises(APITimeoutError):
                 fetcher.fetch_hourly(29.75, 102.35, days=1)
 
@@ -548,3 +548,143 @@ class TestFetchMultiPoints:
 
         result = fetcher.fetch_multi_points([], days=1)
         assert result == {}
+
+
+# ========================================================================
+# 8. 频率限制测试
+# ========================================================================
+
+
+class TestRateLimiting:
+    """请求节流、HTTP 429 处理"""
+
+    def test_throttle_enforces_minimum_interval(self) -> None:
+        """两次 _call_api 之间间隔 ≥ min_request_interval"""
+        import httpx as _httpx
+
+        cache = MagicMock()
+        cache.get.return_value = None
+        fetcher = MeteoFetcher(
+            cache=cache,
+            config={"min_request_interval": 0.1, "retries": 0},
+        )
+
+        call_times: list[float] = []
+
+        def _mock_get(*args, **kwargs):
+            import time
+            call_times.append(time.monotonic())
+            response = MagicMock()
+            response.status_code = 200
+            response.json.return_value = SAMPLE_API_RESPONSE
+            response.raise_for_status = MagicMock()
+            return response
+
+        with patch.object(fetcher._client, "get", side_effect=_mock_get):
+            fetcher._call_api("http://test", {"a": 1})
+            fetcher._call_api("http://test", {"a": 2})
+
+        assert len(call_times) == 2
+        interval = call_times[1] - call_times[0]
+        assert interval >= 0.09  # 允许微小误差
+
+    def test_throttle_disabled_when_zero(self) -> None:
+        """min_request_interval=0 时不节流"""
+        cache = MagicMock()
+        cache.get.return_value = None
+        fetcher = MeteoFetcher(
+            cache=cache,
+            config={"min_request_interval": 0, "retries": 0},
+        )
+
+        call_times: list[float] = []
+
+        def _mock_get(*args, **kwargs):
+            import time
+            call_times.append(time.monotonic())
+            response = MagicMock()
+            response.status_code = 200
+            response.json.return_value = SAMPLE_API_RESPONSE
+            response.raise_for_status = MagicMock()
+            return response
+
+        with patch.object(fetcher._client, "get", side_effect=_mock_get):
+            fetcher._call_api("http://test", {"a": 1})
+            fetcher._call_api("http://test", {"a": 2})
+
+        # 不强制间隔，应近乎瞬时
+        interval = call_times[1] - call_times[0]
+        assert interval < 0.05
+
+    def test_http_429_triggers_retry(self) -> None:
+        """HTTP 429 → 自动退避重试，最终成功"""
+        import httpx as _httpx
+
+        cache = MagicMock()
+        cache.get.return_value = None
+        fetcher = MeteoFetcher(
+            cache=cache,
+            config={
+                "retries": 2,
+                "retry_delay": 0,
+                "min_request_interval": 0,
+            },
+        )
+
+        call_count = 0
+
+        def _mock_get(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                # 模拟 429
+                resp = _httpx.Response(
+                    429,
+                    headers={"Retry-After": "0"},
+                    request=_httpx.Request("GET", "http://test"),
+                )
+                raise _httpx.HTTPStatusError(
+                    "429 Too Many Requests",
+                    request=resp.request,
+                    response=resp,
+                )
+            response = MagicMock()
+            response.status_code = 200
+            response.json.return_value = SAMPLE_API_RESPONSE
+            response.raise_for_status = MagicMock()
+            return response
+
+        with patch.object(fetcher._client, "get", side_effect=_mock_get):
+            result = fetcher._call_api("http://test", {"a": 1})
+
+        assert call_count == 2
+        assert result == SAMPLE_API_RESPONSE
+
+    def test_client_session_is_reused(self) -> None:
+        """多次调用使用同一个 httpx.Client 实例"""
+        import httpx as _httpx
+
+        cache = MagicMock()
+        cache.get.return_value = None
+        fetcher = MeteoFetcher(
+            cache=cache,
+            config={"min_request_interval": 0, "retries": 0},
+        )
+
+        assert isinstance(fetcher._client, _httpx.Client)
+
+        # 两次调用后还是同一个 client
+        client_ref = fetcher._client
+
+        def _mock_get(*args, **kwargs):
+            response = MagicMock()
+            response.status_code = 200
+            response.json.return_value = SAMPLE_API_RESPONSE
+            response.raise_for_status = MagicMock()
+            return response
+
+        with patch.object(fetcher._client, "get", side_effect=_mock_get):
+            fetcher._call_api("http://test", {"a": 1})
+            fetcher._call_api("http://test", {"a": 2})
+
+        assert fetcher._client is client_ref

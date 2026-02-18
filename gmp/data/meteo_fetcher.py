@@ -79,6 +79,7 @@ class MeteoFetcher:
                 - read_timeout: 读取超时秒数
                 - retries: 重试次数
                 - retry_delay: 重试间隔秒数
+                - min_request_interval: 最小请求间隔秒数 (防频率限制)
         """
         cfg = config or {}
         self._cache = cache
@@ -93,6 +94,18 @@ class MeteoFetcher:
         self._read_timeout = cfg.get("read_timeout", 15)
         self._retries = cfg.get("retries", 2)
         self._retry_delay = cfg.get("retry_delay", 1)
+        # 频率限制：默认 0.12s 间隔 ≈ 500 req/min，低于 Open-Meteo 免费层 600/min
+        self._min_request_interval = cfg.get("min_request_interval", 0.12)
+        self._last_request_time: float = 0.0
+        # 连接池复用
+        self._client = httpx.Client(
+            timeout=httpx.Timeout(
+                connect=self._connect_timeout,
+                read=self._read_timeout,
+                write=5.0,
+                pool=5.0,
+            ),
+        )
 
     # ------------------------------------------------------------------
     # Public API
@@ -211,23 +224,44 @@ class MeteoFetcher:
     # Internal
     # ------------------------------------------------------------------
 
+    def _throttle(self) -> None:
+        """请求节流 — 确保两次 API 调用间隔 ≥ min_request_interval"""
+        if self._min_request_interval <= 0:
+            return
+        now = time.monotonic()
+        elapsed = now - self._last_request_time
+        if elapsed < self._min_request_interval:
+            sleep_time = self._min_request_interval - elapsed
+            logger.debug("meteo_fetcher.throttle", sleep_seconds=round(sleep_time, 3))
+            time.sleep(sleep_time)
+
     def _call_api(self, url: str, params: dict[str, Any]) -> dict:
-        """HTTP GET 调用 + 重试 + 超时处理"""
-        timeout = httpx.Timeout(
-            connect=self._connect_timeout,
-            read=self._read_timeout,
-            write=5.0,
-            pool=5.0,
-        )
+        """HTTP GET 调用 + 节流 + 重试 + 超时 + 429 处理"""
         last_exc: Exception | None = None
 
         for attempt in range(1 + self._retries):
+            self._throttle()
             try:
-                response = httpx.get(url, params=params, timeout=timeout)
+                response = self._client.get(url, params=params)
+                self._last_request_time = time.monotonic()
                 response.raise_for_status()
                 return response.json()
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 429:
+                    retry_after = int(
+                        exc.response.headers.get("Retry-After", self._retry_delay * 2)
+                    )
+                    logger.warning(
+                        "meteo_fetcher.rate_limited",
+                        retry_after=retry_after,
+                        attempt=attempt + 1,
+                    )
+                    time.sleep(retry_after)
+                    continue
+                raise
             except httpx.TimeoutException as exc:
                 last_exc = exc
+                self._last_request_time = time.monotonic()
                 logger.warning(
                     "meteo_fetcher.timeout",
                     url=url,

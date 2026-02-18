@@ -21,6 +21,11 @@
 | [07-code-interface.md](./07-code-interface.md) | 代码接口定义 (Protocol)、目录结构 | dataclass, Protocol, 项目结构 |
 | [08-operations.md](./08-operations.md) | 错误处理、日志、运维配置 | 降级策略, structlog, 定时任务 |
 | [09-testing-config.md](./09-testing-config.md) | 测试策略、配置数据、附录 | 测试金字塔, YAML, 依赖 |
+| [10-frontend.md](./10-frontend.md) | 前端展示总体需求、三方案并行策略 | Vue 3, 高德地图, 静态托管 |
+| [10-frontend-common.md](./10-frontend-common.md) | 前端公共组件、数据加载、配色、路由 | Pinia, ECharts, UnoCSS, 截图 |
+| [10-frontend-A-immersive-map.md](./10-frontend-A-immersive-map.md) | 方案A: 沉浸地图、Bottom Sheet、Marker | 全屏地图, flyTo, 懒加载 |
+| [10-frontend-B-split-list.md](./10-frontend-B-split-list.md) | 方案B: 分屏浏览、列表地图联动、手风琴 | Split View, 排序筛选, 拖拽 |
+| [10-frontend-C-card-flow.md](./10-frontend-C-card-flow.md) | 方案C: 卡片流、3D翻转、Swiper | 大卡片, 背景地图, 分享图 |
 
 ## 版本变更记录
 
