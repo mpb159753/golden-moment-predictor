@@ -111,6 +111,9 @@ def _build_batch_generator(
     vps = viewpoints or [_make_viewpoint("vp_a"), _make_viewpoint("vp_b")]
     viewpoint_config = MagicMock(spec=ViewpointConfig)
     viewpoint_config.list_all.return_value = vps
+    viewpoint_config.get.side_effect = lambda vid: next(
+        (v for v in vps if v.id == vid), None
+    )
 
     # RouteConfig mock
     rts = routes or [_make_route("route_a")]
@@ -197,7 +200,7 @@ class TestHappyPath:
         assert json_writer.write_route.call_count == 1
 
     def test_writes_index_json(self):
-        """生成 index.json"""
+        """生成 index.json — 富对象格式"""
         bg, _, _, _, json_writer = _build_batch_generator()
 
         bg.generate_all(days=7)
@@ -208,6 +211,21 @@ class TestHappyPath:
         routes_list = index_args.args[1] if len(index_args.args) > 1 else index_args.kwargs.get("routes")
         assert len(viewpoints_list) == 2
         assert len(routes_list) == 1
+        # 验证富对象格式
+        vp = viewpoints_list[0]
+        assert isinstance(vp, dict)
+        assert "id" in vp
+        assert "name" in vp
+        assert "location" in vp
+        assert "capabilities" in vp
+        assert "forecast_url" in vp
+        assert vp["location"]["lat"] == 29.75
+        rt = routes_list[0]
+        assert isinstance(rt, dict)
+        assert "id" in rt
+        assert "name" in rt
+        assert "stops" in rt
+        assert "forecast_url" in rt
 
     def test_writes_meta_json(self):
         """生成 meta.json 包含 generated_at, viewpoints_count, routes_count"""
@@ -377,7 +395,7 @@ class TestOutputStats:
     """输出统计"""
 
     def test_index_contains_successful_viewpoints_only(self):
-        """index.json 只包含成功处理的 viewpoint"""
+        """index.json 只包含成功处理的 viewpoint（富对象格式）"""
 
         def run_side_effect(vp_id, **kwargs):
             if vp_id == "vp_b":
@@ -395,6 +413,7 @@ class TestOutputStats:
         call_args = json_writer.write_index.call_args.args
         viewpoints_list = call_kwargs.get("viewpoints") or call_args[0]
         assert len(viewpoints_list) == 1  # 只有 vp_a 成功
+        assert viewpoints_list[0]["id"] == "vp_a"
 
     def test_result_output_dir(self):
         """返回结果包含 output_dir"""

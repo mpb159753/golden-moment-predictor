@@ -86,10 +86,43 @@ class BatchGenerator:
             else:
                 failed_routes.append(route.id)
 
-        # 3. 生成 index.json
+        # 3. 生成 index.json (富对象格式，含 name/location/capabilities)
+        vp_index = []
+        for vp_id in successful_viewpoints:
+            vp = self._viewpoint_config.get(vp_id)
+            vp_index.append({
+                "id": vp.id,
+                "name": vp.name,
+                "location": {
+                    "lat": vp.location.lat,
+                    "lon": vp.location.lon,
+                    "altitude": vp.location.altitude,
+                },
+                "capabilities": vp.capabilities,
+                "forecast_url": f"viewpoints/{vp.id}/forecast.json",
+            })
+
+        route_index = []
+        for route_id in successful_routes:
+            route = self._route_config.get(route_id)
+            stops = []
+            for s in route.stops:
+                try:
+                    stop_vp = self._viewpoint_config.get(s.viewpoint_id)
+                    stop_name = stop_vp.name
+                except Exception:
+                    stop_name = s.viewpoint_id
+                stops.append({"viewpoint_id": s.viewpoint_id, "name": stop_name})
+            route_index.append({
+                "id": route.id,
+                "name": route.name,
+                "stops": stops,
+                "forecast_url": f"routes/{route.id}/forecast.json",
+            })
+
         self._json_writer.write_index(
-            viewpoints=successful_viewpoints,
-            routes=successful_routes,
+            viewpoints=vp_index,
+            routes=route_index,
         )
 
         # 4. 生成 meta.json

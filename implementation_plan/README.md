@@ -46,6 +46,17 @@
 | M23 | [布局通用组件](./M23-frontend-layout-components.md) | `components/layout/` | DatePicker, FilterBar, UpdateBanner | M16, M17 |
 | M24 | [导出组件](./M24-frontend-export-components.md) | `components/export/` | ScreenshotBtn, ShareCard (小红书 1080×1440) | M16, M18 |
 | M25 | [共享详情页](./M25-frontend-detail-pages.md) | `views/` | ViewpointDetail, RouteDetail (三方案共用) | M17, M19-M24 |
+| MA1 | [A方案 首页布局](./MA1-frontend-immersive-map-layout.md) | `views/HomeView.vue`, `components/scheme-a/MapTopBar.vue` | 全屏地图 + 毛玻璃搜索栏 + Marker 三状态 | M16-M22 |
+| MA2 | [A方案 BottomSheet](./MA2-frontend-bottom-sheet.md) | `components/scheme-a/BottomSheet.vue` | 三级高度面板，手势拖拽，GSAP 弹性动画 | M16, GSAP |
+| MA3 | [A方案 推荐+线路+截图](./MA3-frontend-recommend-route-screenshot.md) | `components/scheme-a/BestRecommendList.vue`, `RoutePanel.vue` | 今日最佳推荐、线路模式面板、截图场景 | MA1, MA2, M19-M22 |
+| MA4 | [A方案 动画与优化](./MA4-frontend-animation-optimization.md) | `components/map/`, `views/HomeView.vue` | Marker 入场/脉冲动画、评分 CountUp、懒加载策略 | MA1, MA2, GSAP |
+| MB1 | [B方案 分屏首页布局](./MB1-frontend-split-container-layout.md) | `components/scheme-b/SplitContainer.vue`, `DragBar.vue`, `ListTopBar.vue`, `MapPanel.vue` | 分割容器 + 拖拽条 + 搜索/筛选/排序栏 + 首页组装 | M16-M22 |
+| MB2 | [B方案 手风琴卡片](./MB2-frontend-accordion-card-sync.md) | `components/scheme-b/ViewpointListItem.vue`, `composables/useListMapSync.js` | 可展开卡片 + Intersection Observer 列表↔地图联动 | MB1, M19-M21 |
+| MB3 | [B方案 线路+截图+动画](./MB3-frontend-route-screenshot-animation.md) | `components/scheme-b/RouteListItem.vue`, `RankingScreenshot.vue` | 线路卡片、排行榜截图、入场/FLIP/CountUp 动画 | MB1, MB2, M24, GSAP |
+| MC1 | [C方案 卡片流首页布局](./MC1-frontend-card-flow-layout.md) | `views/HomeView.vue`, `components/scheme-c/CardTopBar.vue`, `BackgroundMap.vue` | 暗色模糊地图 + 日期标签栏 + 三层首页结构 | M16-M22 |
+| MC2 | [C方案 核心卡片](./MC2-frontend-card-swiper.md) | `components/scheme-c/CardSwiper.vue`, `PredictionCard.vue` | Swiper 卡片容器、可翻转预测卡片 (正面概览+背面详情) | MC1, M19-M21 |
+| MC3 | [C方案 全屏地图+截图](./MC3-frontend-fullscreen-map-screenshot.md) | `components/scheme-c/FullscreenMap.vue`, `CompareGrid.vue` | 全屏地图模态、预测卡片截图、对比组图 | MC1, MC2, M22, M24 |
+| MC4 | [C方案 动画与优化](./MC4-frontend-animation-optimization.md) | `components/scheme-c/` | 卡片入场/粒子/发光动画、顶栏颜色过渡、懒加载策略 | MC1, MC2, GSAP |
 
 ## 模块依赖图
 

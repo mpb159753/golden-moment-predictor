@@ -644,63 +644,44 @@ git commit -m "feat(frontend): add AMap loader dependency and env config"
 
 ---
 
-## Task 7: 创建模拟 JSON 数据
+## Task 7: 链接真实 JSON 数据
 
 **Files:**
-- Create: `frontend/public/data/index.json`
-- Create: `frontend/public/data/meta.json`
-- Create: `frontend/public/data/viewpoints/niubei_gongga/forecast.json`
-- Create: `frontend/public/data/viewpoints/niubei_gongga/timeline_2026-02-12.json`
+- Create: `frontend/public/data` → 符号链接到 `../../public/data/`
 
 > [!IMPORTANT]
-> 这些是开发阶段的模拟数据，数据结构严格遵循 [05-api.md §5.2](file:///Users/mpb/WorkSpace/golden-moment-predictor/design/05-api.md)。
-> 生产环境中由后端 `generate-all` 命令生成真实数据替换。
+> 前端直接使用后端 `generate-all` 命令预生成的真实 JSON 数据，不使用模拟数据。
+> `frontend/public/data` 通过符号链接指向项目根目录的 `public/data/`，确保数据一致性。
 
-**Step 1: 创建 index.json**
+**Step 1: 创建符号链接**
 
-```json
-{
-  "viewpoints": [
-    {
-      "id": "niubei_gongga",
-      "name": "牛背山",
-      "location": {"lat": 29.75, "lon": 102.35, "altitude": 3660},
-      "capabilities": ["sunrise", "cloud_sea", "stargazing", "frost"],
-      "forecast_url": "viewpoints/niubei_gongga/forecast.json"
-    },
-    {
-      "id": "zheduo_gongga",
-      "name": "折多山",
-      "location": {"lat": 30.05, "lon": 101.75, "altitude": 4298},
-      "capabilities": ["sunrise", "cloud_sea", "frost", "snow_tree"],
-      "forecast_url": "viewpoints/zheduo_gongga/forecast.json"
-    }
-  ],
-  "routes": [
-    {
-      "id": "lixiao",
-      "name": "理小路",
-      "stops": [
-        {"viewpoint_id": "zheduo_gongga", "name": "折多山"},
-        {"viewpoint_id": "niubei_gongga", "name": "牛背山"}
-      ],
-      "forecast_url": "routes/lixiao/forecast.json"
-    }
-  ]
-}
+```bash
+cd /Users/mpb/WorkSpace/golden-moment-predictor/frontend/public
+ln -s ../../public/data data
 ```
 
-**Step 2: 创建模拟 forecast.json 和 timeline.json**
+**Step 2: 确保真实数据已生成**
 
-forecast.json 和 timeline.json 结构参考 [05-api.md §5.2](file:///Users/mpb/WorkSpace/golden-moment-predictor/design/05-api.md)。
+```bash
+cd /Users/mpb/WorkSpace/golden-moment-predictor
+source venv/bin/activate
+python -m gmp.main generate-all --days 7 --no-archive
+```
 
-包含 7 天完整数据，各 event_type 评分在 30-98 范围内分布，确保覆盖所有 4 个 status 等级 (Perfect / Recommended / Possible / Not Recommended)。
+生成完毕后 `public/data/` 下应包含:
+- `index.json` — 观景台/线路索引（含 name, location, capabilities）
+- `meta.json` — 生成元数据
+- `viewpoints/{id}/forecast.json` — 各观景台 7 天预测
+- `viewpoints/{id}/timeline_YYYY-MM-DD.json` — 逐时数据
+- `routes/{id}/forecast.json` — 线路聚合预测
+
+数据结构严格遵循 [05-api.md §5.2](file:///Users/mpb/WorkSpace/golden-moment-predictor/design/05-api.md)。
 
 **Step 3: 提交**
 
 ```bash
-git add frontend/public/data/
-git commit -m "feat(frontend): add mock JSON data for development"
+git add frontend/public/data
+git commit -m "feat(frontend): symlink public/data to real JSON output"
 ```
 
 ---

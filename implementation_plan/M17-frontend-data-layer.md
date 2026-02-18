@@ -128,11 +128,11 @@ export function useDataLoader() {
 
 ### 应测试的内容
 
-使用 Vitest + msw (Mock Service Worker) 测试:
+使用 Vitest 测试 (直接读取 `public/data/` 下的真实 JSON 数据，通过 Vite dev server 提供):
 
 - `loadIndex()` → 同时请求 `index.json` + `meta.json`，返回解析后的对象
 - `loadForecast('niubei_gongga')` → 请求正确 URL，返回 JSON
-- `loadTimeline('niubei_gongga', '2026-02-12')` → 请求正确 URL
+- `loadTimeline('niubei_gongga', '2026-02-18')` → 请求正确 URL（使用当天日期）
 - 缓存: 同一 URL 多次调用只有 1 次网络请求
 - 错误: 404 → 抛出异常，`error.value` 有值
 - `loading.value` 在加载期间为 true
