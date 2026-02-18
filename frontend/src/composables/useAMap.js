@@ -2,6 +2,23 @@ import AMapLoader from '@amap/amap-jsapi-loader'
 import { useScoreColor } from './useScoreColor'
 
 /**
+ * 生成评分标记的 HTML 内容
+ * @param {number} score - 评分值
+ * @param {string} background - CSS background 值 (颜色或渐变)
+ * @returns {string} HTML 字符串
+ */
+function createMarkerContent(score, background) {
+    return `<div style="
+        width: 40px; height: 40px; border-radius: 50%;
+        background: ${background};
+        color: white; display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        cursor: pointer;
+    ">${score}</div>`
+}
+
+/**
  * 高德地图封装 composable。
  *
  * 初始化参数 (来自设计文档 10-frontend-common.md §10.0.5):
@@ -19,27 +36,36 @@ export function useAMap(containerId) {
     /**
      * 初始化地图
      * @param {Object} options - 覆盖默认选项
-     * @returns {Promise<void>}
+     * @returns {Promise<{ success: boolean, error?: Error }>}
      */
     async function init(options = {}) {
-        AMap = await AMapLoader.load({
-            key: import.meta.env.VITE_AMAP_KEY,
-            version: '2.0',
-            plugins: ['AMap.Scale', 'AMap.ToolBar'],
-        })
+        try {
+            // 安全配置必须在 SDK 加载之前设置
+            window._AMapSecurityConfig = {
+                securityJsCode: import.meta.env.VITE_AMAP_SECURITY_CODE,
+            }
 
-        // 安全配置
-        window._AMapSecurityConfig = {
-            securityJsCode: import.meta.env.VITE_AMAP_SECURITY_CODE,
+            AMap = await AMapLoader.load({
+                key: import.meta.env.VITE_AMAP_KEY,
+                version: '2.0',
+                plugins: ['AMap.Scale', 'AMap.ToolBar'],
+            })
+
+            map = new AMap.Map(containerId, {
+                zoom: 8,
+                center: [102.0, 30.5],
+                mapStyle: 'amap://styles/light',
+                zooms: [6, 15],
+                ...options,
+            })
+
+            return { success: true }
+        } catch (error) {
+            console.error('[useAMap] 地图初始化失败:', error)
+            AMap = null
+            map = null
+            return { success: false, error }
         }
-
-        map = new AMap.Map(containerId, {
-            zoom: 8,
-            center: [102.0, 30.5],
-            mapStyle: 'amap://styles/light',
-            zooms: [6, 15],
-            ...options,
-        })
     }
 
     /**
@@ -68,16 +94,7 @@ export function useAMap(containerId) {
 
         const marker = new AMap.Marker({
             position: [viewpoint.location.lon, viewpoint.location.lat],
-            content: `
-        <div style="
-          width: 40px; height: 40px; border-radius: 50%;
-          background: ${colorInfo.gradient || colorInfo.color};
-          color: white; display: flex; align-items: center; justify-content: center;
-          font-weight: 700; font-size: 14px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-          cursor: pointer;
-        ">${score}</div>
-      `,
+            content: createMarkerContent(score, colorInfo.gradient || colorInfo.color),
             offset: new AMap.Pixel(-20, -20),
             title: viewpoint.name,
         })
