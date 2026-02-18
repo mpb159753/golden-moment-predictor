@@ -47,9 +47,18 @@ export const useRouteStore = defineStore('routes', () => {
         }
     }
 
+    /**
+     * 确保线路索引已加载（幂等别名）
+     * 若已加载则跳过
+     */
+    async function ensureIndex() {
+        if (index.value.length > 0) return
+        await init()
+    }
+
     return {
         index, forecasts, selectedId, loading, error,
         currentRoute, currentForecast,
-        init, selectRoute,
+        init, selectRoute, ensureIndex,
     }
 })

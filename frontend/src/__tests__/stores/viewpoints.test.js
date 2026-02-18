@@ -112,4 +112,72 @@ describe('useViewpointStore', () => {
         expect(store.currentTimeline).toBeDefined()
         expect(store.currentTimeline.hourly).toHaveLength(1)
     })
+
+    it('ensureForecast() loads forecast without changing selectedId', async () => {
+        const store = useViewpointStore()
+        await store.init()
+        // selectedId 初始为 null
+        expect(store.selectedId).toBeNull()
+
+        await store.ensureForecast('niubei_gongga')
+
+        // forecast 已加载
+        expect(store.forecasts['niubei_gongga']).toBeDefined()
+        expect(store.forecasts['niubei_gongga'].viewpoint_id).toBe('niubei_gongga')
+        // selectedId 未被修改
+        expect(store.selectedId).toBeNull()
+    })
+
+    it('ensureForecast() skips if already cached', async () => {
+        const store = useViewpointStore()
+        await store.init()
+        await store.ensureForecast('niubei_gongga')
+
+        // 再次调用，不应触发额外操作
+        const before = store.forecasts['niubei_gongga']
+        await store.ensureForecast('niubei_gongga')
+        expect(store.forecasts['niubei_gongga']).toBe(before)
+    })
+
+    it('clearSelection() resets selectedId to null', async () => {
+        const store = useViewpointStore()
+        await store.init()
+        await store.selectViewpoint('niubei_gongga')
+        expect(store.selectedId).toBe('niubei_gongga')
+
+        store.clearSelection()
+
+        expect(store.selectedId).toBeNull()
+        expect(store.currentViewpoint).toBeUndefined()
+        expect(store.currentForecast).toBeNull()
+    })
+
+    it('currentDay returns full day object for selected date', async () => {
+        const store = useViewpointStore()
+        await store.init()
+        await store.selectViewpoint('niubei_gongga')
+        store.selectedDate = '2026-02-18'
+
+        expect(store.currentDay).toBeDefined()
+        expect(store.currentDay.date).toBe('2026-02-18')
+        expect(store.currentDay.events).toHaveLength(2)
+    })
+
+    it('currentDay falls back to first day if selectedDate not found', async () => {
+        const store = useViewpointStore()
+        await store.init()
+        await store.selectViewpoint('niubei_gongga')
+        store.selectedDate = '9999-12-31'  // 不存在的日期
+
+        // fallback 到第一天
+        expect(store.currentDay).toBeDefined()
+        expect(store.currentDay.date).toBe('2026-02-18')
+    })
+
+    it('currentDay returns null when no forecast loaded', async () => {
+        const store = useViewpointStore()
+        await store.init()
+        // 未选择任何观景台
+        expect(store.currentDay).toBeNull()
+    })
 })

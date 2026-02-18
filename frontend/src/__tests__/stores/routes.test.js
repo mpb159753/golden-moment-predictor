@@ -87,4 +87,24 @@ describe('useRouteStore', () => {
         expect(store.currentForecast.route_id).toBe('lixiao')
         expect(store.currentForecast.stops).toHaveLength(2)
     })
+
+    it('ensureIndex() loads routes if not already loaded', async () => {
+        const store = useRouteStore()
+        expect(store.index).toHaveLength(0)
+
+        await store.ensureIndex()
+
+        expect(store.index).toHaveLength(1)
+        expect(store.index[0].id).toBe('lixiao')
+    })
+
+    it('ensureIndex() skips if already loaded', async () => {
+        const store = useRouteStore()
+        await store.init()
+        expect(store.index).toHaveLength(1)
+
+        // 再次调用
+        await store.ensureIndex()
+        expect(store.index).toHaveLength(1)
+    })
 })

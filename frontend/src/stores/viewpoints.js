@@ -41,6 +41,16 @@ export const useViewpointStore = defineStore('viewpoints', () => {
         return timelines.value[key] ?? null
     })
 
+    /** 当前选中日期的完整 day 对象 (含 date/summary/best_event/events) */
+    const currentDay = computed(() => {
+        const forecast = currentForecast.value
+        if (!forecast?.daily) return null
+        if (selectedDate.value) {
+            return forecast.daily.find(d => d.date === selectedDate.value) ?? forecast.daily[0] ?? null
+        }
+        return forecast.daily[0] ?? null
+    })
+
     // --- Actions ---
 
     /** 初始化: 加载索引 + 元数据 */
@@ -77,6 +87,28 @@ export const useViewpointStore = defineStore('viewpoints', () => {
         }
     }
 
+    /**
+     * 预加载观景台预测数据（不修改 selectedId）
+     * 幂等：已缓存则跳过请求
+     * @param {string} id - 观景台 ID
+     */
+    async function ensureForecast(id) {
+        if (forecasts.value[id]) return
+        loading.value = true
+        try {
+            forecasts.value[id] = await loadForecast(id)
+        } catch (e) {
+            error.value = e.message
+        } finally {
+            loading.value = false
+        }
+    }
+
+    /** 清除选中状态 (重置 selectedId 为 null) */
+    function clearSelection() {
+        selectedId.value = null
+    }
+
     /** 选择日期 → 自动加载逐时数据 */
     async function selectDate(date) {
         selectedDate.value = date
@@ -97,8 +129,8 @@ export const useViewpointStore = defineStore('viewpoints', () => {
         // State
         index, meta, forecasts, timelines, selectedId, selectedDate, loading, error,
         // Getters
-        currentViewpoint, currentForecast, currentDayEvents, currentTimeline,
+        currentViewpoint, currentForecast, currentDayEvents, currentTimeline, currentDay,
         // Actions
-        init, selectViewpoint, selectDate,
+        init, selectViewpoint, ensureForecast, clearSelection, selectDate,
     }
 })
