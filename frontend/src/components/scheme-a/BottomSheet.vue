@@ -18,22 +18,20 @@
 
     <!-- 内容区域 (可滚动) -->
     <div ref="contentRef" class="sheet-content">
-      <transition name="fade" mode="out-in">
-        <!-- 收起态 -->
-        <div v-if="currentState === 'collapsed'" key="collapsed">
-          <slot name="collapsed" />
-        </div>
+      <!-- 收起态 -->
+      <div v-show="currentState === 'collapsed'">
+        <slot name="collapsed" />
+      </div>
 
-        <!-- 半展态 -->
-        <div v-else-if="currentState === 'half'" key="half">
-          <slot name="half" />
-        </div>
+      <!-- 半展态 -->
+      <div v-show="currentState === 'half'">
+        <slot name="half" />
+      </div>
 
-        <!-- 全展态 -->
-        <div v-else key="full" class="full-scroll">
-          <slot name="full" />
-        </div>
-      </transition>
+      <!-- 全展态 -->
+      <div v-show="currentState === 'full'" class="full-scroll">
+        <slot name="full" />
+      </div>
     </div>
   </div>
 </template>
@@ -258,16 +256,5 @@ onUnmounted(() => {
   .bottom-sheet {
     padding-bottom: env(safe-area-inset-bottom);
   }
-}
-
-/* 过渡动画 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity var(--duration-fast, 200ms) ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 </style>

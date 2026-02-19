@@ -78,23 +78,23 @@ describe('BottomSheet', () => {
     // --- Slots ---
     it('shows collapsed slot content when state is collapsed', () => {
         const wrapper = mountSheet({ state: 'collapsed' })
-        expect(wrapper.find('.slot-collapsed').exists()).toBe(true)
-        expect(wrapper.find('.slot-half').exists()).toBe(false)
-        expect(wrapper.find('.slot-full').exists()).toBe(false)
+        expect(wrapper.find('.slot-collapsed').isVisible()).toBe(true)
+        expect(wrapper.find('.slot-half').isVisible()).toBe(false)
+        expect(wrapper.find('.slot-full').isVisible()).toBe(false)
     })
 
     it('shows half slot content when state is half', () => {
         const wrapper = mountSheet({ state: 'half' })
-        expect(wrapper.find('.slot-collapsed').exists()).toBe(false)
-        expect(wrapper.find('.slot-half').exists()).toBe(true)
-        expect(wrapper.find('.slot-full').exists()).toBe(false)
+        expect(wrapper.find('.slot-collapsed').isVisible()).toBe(false)
+        expect(wrapper.find('.slot-half').isVisible()).toBe(true)
+        expect(wrapper.find('.slot-full').isVisible()).toBe(false)
     })
 
     it('shows full slot content when state is full', () => {
         const wrapper = mountSheet({ state: 'full' })
-        expect(wrapper.find('.slot-collapsed').exists()).toBe(false)
-        expect(wrapper.find('.slot-half').exists()).toBe(false)
-        expect(wrapper.find('.slot-full').exists()).toBe(true)
+        expect(wrapper.find('.slot-collapsed').isVisible()).toBe(false)
+        expect(wrapper.find('.slot-half').isVisible()).toBe(false)
+        expect(wrapper.find('.slot-full').isVisible()).toBe(true)
     })
 
     // --- State prop sync ---
