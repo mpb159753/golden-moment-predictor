@@ -103,6 +103,7 @@ class SnowTreePlugin:
             event_type="snow_tree",
             total_score=total,
             status=score_to_status(total),
+            time_window="06:00 - 16:00",
             breakdown={
                 "snow_signal": {
                     "score": score_snow,

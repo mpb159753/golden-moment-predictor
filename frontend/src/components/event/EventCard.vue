@@ -63,9 +63,33 @@ const confidenceMap = {
 
 // 已知评分维度的中文映射；未匹配的 key 将直接显示英文原值作为 fallback
 const breakdownLabelMap = {
+  // GoldenMountain (日照金山)
   light_path: '光路通畅',
   target_visible: '目标可见',
   local_clear: '本地晴朗',
+  // Frost (雾凇)
+  temperature: '温度',
+  moisture: '湿度',
+  wind: '风力',
+  cloud: '云量',
+  // Stargazing (观星)
+  base: '基础条件',
+  // CloudSea (云海)
+  gap: '海拔落差',
+  density: '云层密度',
+  mid_structure: '中层结构',
+  // ClearSky (晴空)
+  cloud_cover: '云覆盖率',
+  precipitation: '降水',
+  visibility: '能见度',
+  // SnowTree (雾凇树挂)
+  snow_signal: '积雪信号',
+  clear_weather: '天气晴好',
+  stability: '稳定性',
+  // IceIcicle (冰挂)
+  water_input: '水源输入',
+  freeze_strength: '冻结强度',
+  view_quality: '观赏质量',
 }
 
 const confidenceLabel = computed(() => confidenceMap[props.event.confidence] ?? props.event.confidence)

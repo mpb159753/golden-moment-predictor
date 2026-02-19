@@ -61,7 +61,7 @@ const globalConfig = {
         ViewpointMarker: {
             name: 'ViewpointMarker',
             template: '<div class="viewpoint-marker-stub" />',
-            props: ['viewpoint', 'score', 'selected', 'zoom'],
+            props: ['viewpoint', 'score', 'bestEvent', 'selected', 'zoom'],
             emits: ['click'],
         },
         RouteLine: {
@@ -118,6 +118,17 @@ const globalConfig = {
             template: '<div class="route-panel-stub" />',
             props: ['route', 'selectedStopId'],
             emits: ['close', 'select-stop'],
+        },
+        TimePeriodBar: {
+            name: 'TimePeriodBar',
+            template: '<div class="time-period-bar-stub" />',
+            props: ['periods'],
+        },
+        MiniTrend: {
+            name: 'MiniTrend',
+            template: '<div class="mini-trend-stub" />',
+            props: ['daily', 'selectedDate'],
+            emits: ['select'],
         },
     },
 }
@@ -252,11 +263,12 @@ describe('HomeView', () => {
         mockVpState.currentDay = {
             date: '2026-02-12',
             summary: '日照金山',
+            best_event: { event_type: 'golden_mountain', score: 90 },
             events: [{ event_type: 'golden_mountain', score: 90 }],
         }
         const wrapper = mountHome()
         expect(wrapper.find('.half-content').exists()).toBe(true)
-        expect(wrapper.find('.day-summary-stub').exists()).toBe(true)
+        expect(wrapper.find('.half-title-row').exists()).toBe(true)
     })
 
     it('shows full content with WeekTrend when forecast exists', async () => {
@@ -335,6 +347,119 @@ describe('HomeView', () => {
         const wrapper = mountHome()
         expect(wrapper.find('.map-watermark').exists()).toBe(true)
         expect(wrapper.find('.map-watermark').text()).toContain('GMP')
+    })
+
+    // --- bestEvent prop 传递 ---
+    it('passes bestEvent to ViewpointMarker when forecast has best_event', async () => {
+        mockVpState.forecasts = {
+            niubei: {
+                daily: [{
+                    date: '2026-02-12',
+                    best_event: { event_type: 'cloud_sea', score: 92 },
+                    events: [{ event_type: 'cloud_sea', score: 92 }],
+                }],
+            },
+        }
+        const wrapper = await mountHomeWithMap()
+        const markers = wrapper.findAllComponents({ name: 'ViewpointMarker' })
+        const niubeiMarker = markers.find(m => m.props('viewpoint').id === 'niubei')
+        expect(niubeiMarker.props('bestEvent')).toBe('cloud_sea')
+    })
+
+    it('passes null bestEvent when forecast has no best_event', async () => {
+        mockVpState.forecasts = {
+            niubei: {
+                daily: [{
+                    date: '2026-02-12',
+                    events: [{ event_type: 'clear_sky', score: 50 }],
+                }],
+            },
+        }
+        const wrapper = await mountHomeWithMap()
+        const markers = wrapper.findAllComponents({ name: 'ViewpointMarker' })
+        const niubeiMarker = markers.find(m => m.props('viewpoint').id === 'niubei')
+        expect(niubeiMarker.props('bestEvent')).toBeNull()
+    })
+
+    // --- BottomSheet 半展态重构 ---
+    it('half-state shows viewpoint name and best score in title row', () => {
+        mockVpState.currentViewpoint = { id: 'niubei', name: '牛背山' }
+        mockVpState.currentDay = {
+            date: '2026-02-12',
+            best_event: { event_type: 'cloud_sea', score: 92 },
+            events: [{ event_type: 'cloud_sea', score: 92 }],
+        }
+        const wrapper = mountHome()
+        const halfContent = wrapper.find('.half-content')
+        expect(halfContent.exists()).toBe(true)
+        expect(halfContent.text()).toContain('牛背山')
+        expect(halfContent.text()).toContain('92')
+    })
+
+    it('half-state shows reject reasons for zero-score events', () => {
+        mockVpState.currentViewpoint = { id: 'niubei', name: '牛背山' }
+        mockVpState.currentDay = {
+            date: '2026-02-12',
+            best_event: { event_type: 'clear_sky', score: 75 },
+            events: [
+                { event_type: 'clear_sky', score: 75 },
+                { event_type: 'stargazing', score: 0, reject_reason: '月相不佳' },
+                { event_type: 'sunrise_golden_mountain', score: 0, reject_reason: '山顶云量过高' },
+            ],
+        }
+        const wrapper = mountHome()
+        const halfContent = wrapper.find('.half-content')
+        expect(halfContent.text()).toContain('月相不佳')
+        expect(halfContent.text()).toContain('山顶云量过高')
+    })
+
+    it('half-state shows TimePeriodBar when timeline data exists', () => {
+        mockVpState.currentViewpoint = { id: 'niubei', name: '牛背山' }
+        mockVpState.currentDay = {
+            date: '2026-02-12',
+            best_event: { event_type: 'clear_sky', score: 75 },
+            events: [],
+        }
+        mockVpState.currentTimeline = {
+            hourly: [
+                { hour: 6, events_active: [{ event_type: 'clear_sky', score: 70, status: 'Active' }] },
+                { hour: 10, events_active: [{ event_type: 'clear_sky', score: 80, status: 'Active' }] },
+            ],
+        }
+        const wrapper = mountHome()
+        expect(wrapper.find('.time-period-bar-stub').exists()).toBe(true)
+    })
+
+    it('half-state shows MiniTrend when forecast daily data exists', () => {
+        mockVpState.currentViewpoint = { id: 'niubei', name: '牛背山' }
+        mockVpState.currentDay = {
+            date: '2026-02-12',
+            best_event: { event_type: 'clear_sky', score: 75 },
+            events: [],
+        }
+        mockVpState.currentForecast = {
+            daily: [
+                { date: '2026-02-12', best_event: { event_type: 'clear_sky', score: 75 } },
+                { date: '2026-02-13', best_event: { event_type: 'cloud_sea', score: 90 } },
+            ],
+        }
+        const wrapper = mountHome()
+        expect(wrapper.find('.mini-trend-stub').exists()).toBe(true)
+    })
+
+    it('MiniTrend select event changes selectedDate', async () => {
+        mockVpState.currentViewpoint = { id: 'niubei', name: '牛背山' }
+        mockVpState.currentDay = { date: '2026-02-12', events: [], best_event: { score: 75, event_type: 'clear_sky' } }
+        mockVpState.currentForecast = {
+            daily: [
+                { date: '2026-02-12', best_event: { event_type: 'clear_sky', score: 75 } },
+                { date: '2026-02-13', best_event: { event_type: 'cloud_sea', score: 90 } },
+            ],
+        }
+        const wrapper = mountHome()
+        const miniTrend = wrapper.findComponent({ name: 'MiniTrend' })
+        await miniTrend.vm.$emit('select', '2026-02-13')
+        expect(mockSelectDate).toHaveBeenCalledWith('2026-02-13')
     })
 })
 

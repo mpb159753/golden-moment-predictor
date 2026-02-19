@@ -3,6 +3,7 @@ import { watch, inject, onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
 import { useScoreColor } from '@/composables/useScoreColor'
 import { convertToGCJ02 } from '@/composables/useCoordConvert'
+import { getEventSvgBadge } from '@/constants/eventSvgBadge'
 
 /**
  * ViewpointMarker — 地图评分标记组件
@@ -21,6 +22,7 @@ export default {
   props: {
     viewpoint: { type: Object, required: true },
     score: { type: Number, default: 0 },
+    bestEvent: { type: String, default: null },
     selected: { type: Boolean, default: false },
     zoom: { type: Number, default: 10 },
     enterDelay: { type: Number, default: 0 },
@@ -33,6 +35,11 @@ export default {
     const AMapSDK = inject('AMapSDK', null)
 
     const { getScoreColor } = useScoreColor()
+
+    function getSvgBadge() {
+      if (!props.bestEvent) return ''
+      return getEventSvgBadge(props.bestEvent, 16, 'white')
+    }
 
     function createContent() {
       const colorInfo = getScoreColor(props.score)
@@ -113,7 +120,7 @@ export default {
           box-shadow: 0 2px 8px rgba(0,0,0,0.2);
           cursor: pointer;
           transition: box-shadow 0.3s ease, transform 0.3s ease;
-        ">${props.score}</div>
+        ">${getSvgBadge()}${props.score}</div>
         <div style="
           width: 0; height: 0;
           border-left: 5px solid transparent;
@@ -188,8 +195,8 @@ export default {
       }
     })
 
-    // 监听 score / selected / zoom 变化更新样式
-    watch(() => [props.score, props.selected, props.zoom], () => {
+    // 监听 score / selected / zoom / bestEvent 变化更新样式
+    watch(() => [props.score, props.selected, props.zoom, props.bestEvent], () => {
       updateMarker()
     })
 

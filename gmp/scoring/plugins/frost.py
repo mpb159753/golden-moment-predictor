@@ -117,6 +117,7 @@ class FrostPlugin:
             event_type="frost",
             total_score=total,
             status=score_to_status(total),
+            time_window="06:00 - 12:00",
             breakdown=breakdown,
         )
 

@@ -3,7 +3,7 @@
     ref="sheetRef"
     class="bottom-sheet"
     :class="[`state-${currentState}`, { 'desktop-mode': desktopMode }]"
-    :style="{ height: isDragging ? `${dragHeight}px` : undefined }"
+    :style="sheetStyle"
   >
     <!-- 拖拽手柄 -->
     <div
@@ -19,12 +19,12 @@
     <!-- 内容区域 (可滚动) -->
     <div ref="contentRef" class="sheet-content">
       <!-- 收起态 -->
-      <div v-show="currentState === 'collapsed'">
+      <div v-show="currentState === 'collapsed'" ref="collapsedSlotRef">
         <slot name="collapsed" />
       </div>
 
       <!-- 半展态 -->
-      <div v-show="currentState === 'half'">
+      <div v-show="currentState === 'half'" ref="halfSlotRef">
         <slot name="half" />
       </div>
 
@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import gsap from 'gsap'
 
 const props = defineProps({
@@ -49,17 +49,96 @@ const emit = defineEmits(['state-change'])
 
 const sheetRef = ref(null)
 const contentRef = ref(null)
+const collapsedSlotRef = ref(null)
+const halfSlotRef = ref(null)
 
 // 状态管理
 const currentState = ref(props.state)
 watch(() => props.state, (val) => { currentState.value = val })
 
-// 高度映射
-const stateHeights = {
-  collapsed: 0.20,  // 20% 视窗高度
-  half: 0.45,       // 45%
+// 动态高度常量
+const HANDLE_HEIGHT = 32 // handle 区域高度（含 padding）
+const MAX_RATIOS = {
+  collapsed: 0.40,  // 最大不超过 40vh（容纳5个推荐项）
+  half: 0.55,       // 最大不超过 55vh
   full: 0.90,       // 90%
 }
+
+// 记录测量到的内容高度
+const measuredHeights = ref({ collapsed: 0, half: 0, full: 0 })
+
+function getViewportHeight() {
+  return window.innerHeight
+}
+
+// 测量某个状态的 slot 内容实际高度
+function measureSlotHeight(state) {
+  let slotEl = null
+  if (state === 'collapsed') slotEl = collapsedSlotRef.value
+  else if (state === 'half') slotEl = halfSlotRef.value
+  if (!slotEl) return 0
+  return slotEl.scrollHeight
+}
+
+// 获取某个状态的目标高度
+function getTargetHeight(state) {
+  if (state === 'full') {
+    return MAX_RATIOS.full * getViewportHeight()
+  }
+  const contentH = measuredHeights.value[state] + HANDLE_HEIGHT
+  const maxH = MAX_RATIOS[state] * getViewportHeight()
+  return Math.min(contentH, maxH)
+}
+
+// 暴露给父组件的当前高度
+const currentHeight = computed(() => getTargetHeight(currentState.value))
+
+// 测量并更新高度
+async function remeasure() {
+  await nextTick()
+  measuredHeights.value = {
+    collapsed: measureSlotHeight('collapsed'),
+    half: measureSlotHeight('half'),
+    full: MAX_RATIOS.full * getViewportHeight(),
+  }
+}
+
+// 当 state 变化时重新测量
+watch(currentState, () => {
+  remeasure()
+})
+
+// 初始测量
+let observer = null
+onMounted(() => {
+  remeasure()
+
+  // 监听 slot 内容 DOM 变化，自动重新测量高度
+  // 解决异步数据加载后内容变化但高度不更新的问题
+  if (contentRef.value) {
+    observer = new MutationObserver(() => {
+      remeasure()
+    })
+    observer.observe(contentRef.value, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    })
+  }
+})
+
+// 计算样式
+const sheetStyle = computed(() => {
+  if (isDragging.value) {
+    return { height: `${dragHeight.value}px` }
+  }
+  // full 状态使用 CSS class 控制
+  if (currentState.value === 'full') {
+    return {}
+  }
+  const h = getTargetHeight(currentState.value)
+  return { height: `${h}px` }
+})
 
 // 拖拽状态
 const isDragging = ref(false)
@@ -67,12 +146,8 @@ const dragHeight = ref(0)
 let startY = 0
 let startHeight = 0
 
-function getViewportHeight() {
-  return window.innerHeight
-}
-
 function getCurrentHeight() {
-  return stateHeights[currentState.value] * getViewportHeight()
+  return getTargetHeight(currentState.value)
 }
 
 // Touch 事件
@@ -153,7 +228,7 @@ function endDrag() {
 function animateToState(targetState) {
   if (!sheetRef.value) return
 
-  const targetHeight = stateHeights[targetState] * getViewportHeight()
+  const targetHeight = getTargetHeight(targetState)
 
   gsap.to(sheetRef.value, {
     height: targetHeight,
@@ -161,7 +236,7 @@ function animateToState(targetState) {
     ease: 'elastic.out(1, 0.75)',
     onComplete: () => {
       // 动画完成后清除 GSAP 设置的 inline height，
-      // 让 CSS class 接管高度控制
+      // 让 computed style 接管高度控制
       if (sheetRef.value) {
         sheetRef.value.style.height = ''
       }
@@ -171,8 +246,15 @@ function animateToState(targetState) {
   })
 }
 
+// 为父组件提供重新测量的方法（当 slot 内容变化时调用）
+defineExpose({ currentHeight, remeasure })
+
 // 清理
 onUnmounted(() => {
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
   document.removeEventListener('mousemove', onMouseMove)
   document.removeEventListener('mouseup', onMouseUp)
 })
@@ -188,15 +270,14 @@ onUnmounted(() => {
   background: var(--bg-card, #fff);
   border-radius: var(--radius-lg, 20px) var(--radius-lg, 20px) 0 0;
   box-shadow: var(--shadow-float, 0 16px 48px rgba(0, 0, 0, 0.12));
-  /* height transition handled by GSAP */
   overflow: hidden;
   will-change: height;
+  /* 默认过渡（非拖拽时的 state 切换） */
+  transition: height 0.3s ease;
 }
 
-/* 三级高度 */
-.state-collapsed { height: 20vh; }
-.state-half      { height: 45vh; }
-.state-full      { height: 90vh; }
+/* full 状态使用固定高度 */
+.state-full { height: 90vh; }
 
 /* 拖拽手柄 */
 .sheet-handle {

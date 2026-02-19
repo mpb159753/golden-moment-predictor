@@ -13,7 +13,7 @@
               'hourly-timeline__hour-tick--current': h.hour === cachedCurrentHour,
             }"
           >
-            {{ h.time }}
+            {{ h.hour }}
           </div>
         </div>
 
@@ -195,6 +195,15 @@ const weatherSummary = computed(() => {
   text-align: center;
   font-size: var(--text-xs);
   color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* 移动端：每隔一个显示时间刻度文字，避免水平重叠 */
+@media (max-width: 640px) {
+  .hourly-timeline__hour-tick:nth-child(odd) {
+    font-size: 0;           /* 隐藏奇数刻度文字 */
+  }
 }
 
 .hourly-timeline__hour-tick--unsafe {

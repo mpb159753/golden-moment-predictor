@@ -84,6 +84,7 @@ class CloudSeaPlugin:
             event_type="cloud_sea",
             total_score=total,
             status=score_to_status(total),
+            time_window="05:00 - 10:00",
             breakdown={
                 "gap": {
                     "score": score_gap,

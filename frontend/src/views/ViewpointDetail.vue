@@ -17,14 +17,28 @@
     <main v-else>
       <UpdateBanner :meta="store.meta" />
 
-      <DatePicker
-        v-model="selectedDate"
-        :dates="availableDates"
+      <TrendChart
+        :daily="forecast?.daily ?? []"
+        :selectedDate="selectedDate"
+        @select="onDateSelect"
       />
 
       <!-- 当日摘要 -->
       <section v-if="currentDay">
         <DaySummary :day="currentDay" :clickable="false" />
+      </section>
+
+      <!-- 0 分事件拒绝原因 -->
+      <div v-if="zeroScoreReasons.length" class="reject-reasons">
+        <div v-for="(evt, idx) in zeroScoreReasons" :key="idx" class="reject-reason">
+          <EventIcon :event-type="evt.event_type" :size="16" />
+          <span>{{ evt.reject_reason }}</span>
+        </div>
+      </div>
+
+      <!-- 时段评分 -->
+      <section v-if="timeline">
+        <TimePeriodBar :periods="periodScores" />
       </section>
 
       <!-- 事件列表 -->
@@ -33,16 +47,9 @@
         <EventList :events="currentDay?.events ?? []" showBreakdown />
       </section>
 
-      <!-- 逐时时间线 -->
+      <!-- 逐时天气表 -->
       <section v-if="timeline">
-        <h2>逐时详情</h2>
-        <HourlyTimeline :hourly="timeline.hourly" />
-      </section>
-
-      <!-- 七日趋势 -->
-      <section v-if="forecast">
-        <h2>七日趋势</h2>
-        <WeekTrend :daily="forecast.daily" @select="onDateSelect" />
+        <HourlyWeatherTable :hourly="timeline.hourly" />
       </section>
 
       <!-- 底部操作 -->
@@ -66,12 +73,14 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useViewpointStore } from '@/stores/viewpoints'
 import { useScreenshot } from '@/composables/useScreenshot'
+import { useTimePeriod } from '@/composables/useTimePeriod'
 import UpdateBanner from '@/components/layout/UpdateBanner.vue'
-import DatePicker from '@/components/layout/DatePicker.vue'
+import TrendChart from '@/components/forecast/TrendChart.vue'
 import DaySummary from '@/components/forecast/DaySummary.vue'
 import EventList from '@/components/event/EventList.vue'
-import HourlyTimeline from '@/components/forecast/HourlyTimeline.vue'
-import WeekTrend from '@/components/forecast/WeekTrend.vue'
+import EventIcon from '@/components/event/EventIcon.vue'
+import TimePeriodBar from '@/components/forecast/TimePeriodBar.vue'
+import HourlyWeatherTable from '@/components/forecast/HourlyWeatherTable.vue'
 import ScreenshotBtn from '@/components/export/ScreenshotBtn.vue'
 import ShareCard from '@/components/export/ShareCard.vue'
 
@@ -84,6 +93,7 @@ const store = useViewpointStore()
 const screenshotArea = ref(null)
 const showShareCard = ref(false)
 const { capture } = useScreenshot()
+const { getPeriodScores } = useTimePeriod()
 
 async function handleHeaderScreenshot() {
   const el = screenshotArea.value
@@ -102,13 +112,22 @@ const selectedDate = computed({
   set: (val) => store.selectDate(val),
 })
 
-const availableDates = computed(() =>
-  forecast.value?.daily?.map(d => d.date) ?? []
-)
-
 const currentDay = computed(() =>
   forecast.value?.daily?.find(d => d.date === selectedDate.value)
 )
+
+// 0 分事件拒绝原因
+const zeroScoreReasons = computed(() =>
+  (currentDay.value?.events ?? [])
+    .filter(e => e.score === 0 && e.reject_reason)
+    .slice(0, 3)
+)
+
+// 时段评分
+const periodScores = computed(() => {
+  if (!timeline.value?.hourly) return []
+  return getPeriodScores(timeline.value.hourly)
+})
 
 // 初始化
 onMounted(async () => {
@@ -178,6 +197,19 @@ section h2 {
   font-weight: 600;
   margin-bottom: 12px;
   color: var(--text-primary);
+}
+
+.reject-reasons {
+  margin-bottom: 16px;
+}
+
+.reject-reason {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary, #9CA3AF);
 }
 
 .detail-actions {

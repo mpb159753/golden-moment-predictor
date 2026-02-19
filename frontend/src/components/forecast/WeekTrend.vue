@@ -10,13 +10,13 @@ import {
   TitleComponent, TooltipComponent, GridComponent, LegendComponent
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { EVENT_COLORS } from '@/constants/eventMeta'
+import { EVENT_COLORS, EVENT_NAMES } from '@/constants/eventMeta'
 
 echarts.use([LineChart, TitleComponent, TooltipComponent, GridComponent, LegendComponent, CanvasRenderer])
 
 const props = defineProps({
   daily: { type: Array, default: () => [] },
-  height: { type: Number, default: 280 },
+  height: { type: Number, default: 320 },
 })
 
 const emit = defineEmits(['select'])
@@ -44,7 +44,7 @@ function buildOption() {
   const dates = props.daily.map(d => formatDateLabel(d.date))
 
   const series = [...eventTypes].map(type => ({
-    name: type,
+    name: EVENT_NAMES[type] || type,
     type: 'line',
     smooth: true,
     areaStyle: { opacity: 0.1 },
@@ -57,9 +57,21 @@ function buildOption() {
 
   return {
     tooltip: { trigger: 'axis' },
-    legend: { bottom: 0 },
-    grid: { top: 10, right: 20, bottom: 40, left: 40 },
-    xAxis: { type: 'category', data: dates },
+    legend: {
+      bottom: 0,
+      type: 'scroll',        // 可滚动图例，避免多行重叠
+      textStyle: { fontSize: 11 },
+    },
+    grid: { top: 10, right: 20, bottom: 70, left: 40 },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLabel: {
+        rotate: 35,           // 倾斜标签避免移动端重叠
+        fontSize: 11,
+        interval: 0,          // 显示所有标签
+      },
+    },
     yAxis: { type: 'value', min: 0, max: 100 },
     series,
   }

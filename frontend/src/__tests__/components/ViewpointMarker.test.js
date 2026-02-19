@@ -198,4 +198,33 @@ describe('ViewpointMarker', () => {
         wrapper.unmount()
         expect(mockMap.remove).toHaveBeenCalled()
     })
+
+    // --- SVG 图标徽章 ---
+    it('shows SVG badge when bestEvent is provided', async () => {
+        mountMarker({ score: 92, bestEvent: 'cloud_sea' })
+        await flushPromises()
+        const content = markerInstances[0].content
+        // 应包含 SVG 元素而非 emoji
+        expect(content).toContain('<svg')
+        expect(content).toContain('云')
+        expect(content).toContain('92')
+    })
+
+    it('shows no SVG badge when bestEvent is null', async () => {
+        mountMarker({ score: 75, bestEvent: null })
+        await flushPromises()
+        const content = markerInstances[0].content
+        // 不应包含 SVG 图标
+        expect(content).not.toContain('<svg')
+        expect(content).toContain('75')
+    })
+
+    it('shows no SVG badge when bestEvent is unknown type', async () => {
+        mountMarker({ score: 60, bestEvent: 'unknown_event' })
+        await flushPromises()
+        const content = markerInstances[0].content
+        // 未知类型不应显示 SVG 图标
+        expect(content).not.toContain('<svg')
+        expect(content).toContain('60')
+    })
 })

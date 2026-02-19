@@ -122,6 +122,49 @@ describe('BottomSheet', () => {
         expect(wrapper.find('.sheet-handle').exists()).toBe(true)
     })
 
+    // --- 动态高度 ---
+    describe('dynamic height', () => {
+        it('exposes currentHeight via defineExpose', () => {
+            const wrapper = mountSheet()
+            expect(wrapper.vm.currentHeight).toBeDefined()
+            expect(typeof wrapper.vm.currentHeight).toBe('number')
+        })
+
+        it('exposes remeasure function via defineExpose', () => {
+            const wrapper = mountSheet()
+            expect(typeof wrapper.vm.remeasure).toBe('function')
+        })
+
+        it('sets inline height style for collapsed and half states', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 1000, writable: true })
+            const wrapper = mountSheet({ state: 'collapsed' })
+            const sheet = wrapper.find('.bottom-sheet')
+            // Should have inline height based on content measurement
+            expect(sheet.element.style.height).toBeTruthy()
+        })
+
+        it('does not set inline height for full state', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 1000, writable: true })
+            const wrapper = mountSheet({ state: 'full' })
+            const sheet = wrapper.find('.bottom-sheet')
+            // Full state uses CSS class only
+            expect(sheet.element.style.height).toBe('')
+        })
+
+        it('currentHeight does not exceed max ratio for collapsed (40vh)', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 1000, writable: true })
+            const wrapper = mountSheet({ state: 'collapsed' })
+            // Even with large content, should not exceed 400px (40% of 1000)
+            expect(wrapper.vm.currentHeight).toBeLessThanOrEqual(400)
+        })
+
+        it('currentHeight does not exceed max ratio for half (55vh)', () => {
+            Object.defineProperty(window, 'innerHeight', { value: 1000, writable: true })
+            const wrapper = mountSheet({ state: 'half' })
+            expect(wrapper.vm.currentHeight).toBeLessThanOrEqual(550)
+        })
+    })
+
     // --- 手势拖拽 ---
     describe('touch drag gesture', () => {
         it('starts drag on touchstart', async () => {
@@ -198,13 +241,14 @@ describe('BottomSheet', () => {
             const wrapper = mountSheet({ state: 'half' })
             const handle = wrapper.find('.sheet-handle')
 
+            // Start drag from low position
             await handle.trigger('touchstart', {
-                touches: [{ clientY: 550 }],
+                touches: [{ clientY: 900 }],
             })
 
-            // Drag up so height ~ 750px = 75% → full
+            // Drag far up so height > 650px = 65% → full
             await handle.trigger('touchmove', {
-                touches: [{ clientY: 250 }],
+                touches: [{ clientY: 200 }],
             })
 
             await handle.trigger('touchend')
@@ -278,7 +322,7 @@ describe('BottomSheet', () => {
             expect(options.duration).toBe(0.5)
         })
 
-        it('animates to correct target height for half state', async () => {
+        it('animates to a height within expected bounds for half state', async () => {
             Object.defineProperty(window, 'innerHeight', { value: 1000, writable: true })
 
             const wrapper = mountSheet({ state: 'collapsed' })
@@ -287,14 +331,16 @@ describe('BottomSheet', () => {
             await handle.trigger('touchstart', {
                 touches: [{ clientY: 800 }],
             })
-            // Drag to ~500px height → snaps to half (45% = 450px)
+            // Drag to ~500px height → snaps to half
             await handle.trigger('touchmove', {
                 touches: [{ clientY: 500 }],
             })
             await handle.trigger('touchend')
 
             const [, options] = mockGsapTo.mock.calls[0]
-            expect(options.height).toBe(450) // 45% of 1000
+            // Dynamic height: should be content-based but max 55% of 1000 = 550
+            expect(options.height).toBeLessThanOrEqual(550)
+            expect(options.height).toBeGreaterThan(0)
         })
 
         it('calls onComplete to emit state-change after animation', async () => {
@@ -323,4 +369,3 @@ describe('BottomSheet', () => {
         })
     })
 })
-

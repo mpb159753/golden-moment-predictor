@@ -116,10 +116,17 @@ class GoldenMountainPlugin:
         if target_cloud > 50:
             warnings.append(f"目标云量偏高 ({target_cloud:.0f}%)")
 
+        # time_window 根据日出/日落类型设置
+        if "sunrise" in self._event_type:
+            time_window = "05:00 - 08:00"
+        else:
+            time_window = "16:00 - 19:00"
+
         return ScoreResult(
             event_type=self._event_type,
             total_score=total,
             status=score_to_status(total),
+            time_window=time_window,
             breakdown={
                 "light_path": {
                     "score": s_light,

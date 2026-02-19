@@ -96,6 +96,7 @@ class IceIciclePlugin:
             event_type="ice_icicle",
             total_score=total,
             status=score_to_status(total),
+            time_window="06:00 - 16:00",
             breakdown={
                 "water_input": {
                     "score": score_water,

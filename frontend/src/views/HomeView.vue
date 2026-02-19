@@ -15,6 +15,7 @@
         :key="vp.id"
         :viewpoint="vp"
         :score="getBestScore(vp.id)"
+        :best-event="getBestEvent(vp.id)"
         :selected="selectedId === vp.id"
         :zoom="currentZoom"
         :map="mapInstance"
@@ -66,9 +67,44 @@
           @close="routeMode = false; sheetState = 'collapsed'"
           @select-stop="onRouteStopClick"
         />
-        <div v-else-if="currentViewpoint" class="half-content">
-          <DaySummary :day="currentDay" @click="expandSheet" />
-          <EventList :events="currentDay?.events ?? []" />
+        <div v-else-if="currentViewpoint" class="half-content" @click="expandSheet">
+          <!-- ① 标题行: 景点名 + 最高分 + 图标 -->
+          <div class="half-title-row">
+            <span class="half-vp-name">{{ currentViewpoint.name }}</span>
+            <span class="half-best-score">
+              <EventIcon v-if="currentDay?.best_event?.event_type" :event-type="currentDay.best_event.event_type" :size="18" />
+              {{ currentDay?.best_event?.score ?? 0 }}
+            </span>
+          </div>
+          <!-- ② 0分事件拒绝原因 (去重) -->
+          <div v-if="zeroScoreReasons.length" class="half-reject-reasons">
+            <span
+              v-for="(reason, idx) in zeroScoreReasons"
+              :key="idx"
+              class="reject-tag"
+            >❌ {{ reason }}</span>
+          </div>
+          <!-- ③ 四段时段评分 -->
+          <TimePeriodBar
+            v-if="periodScores.length"
+            :periods="periodScores"
+          />
+          <!-- ④ 七日迷你趋势 -->
+          <MiniTrend
+            v-if="currentForecast?.daily"
+            :daily="currentForecast.daily"
+            :selected-date="selectedDate"
+            @select="onTrendDateSelect"
+          />
+          <!-- ⑤ 当日事件摘要 + 上拉提示 -->
+          <div v-if="currentDay?.events?.length" class="half-events-summary">
+            <div v-for="evt in activeEvents" :key="evt.event_type" class="half-event-chip">
+              <EventIcon :event-type="evt.event_type" :size="16" />
+              <span class="chip-name">{{ evt.display_name || evt.event_type }}</span>
+              <span class="chip-score">{{ evt.score }}</span>
+            </div>
+          </div>
+          <div class="half-expand-hint">↑ 上拉查看完整报告</div>
         </div>
       </template>
 
@@ -117,7 +153,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onActivated } from 'vue'
+import { ref, computed, onMounted, watch, onActivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useViewpointStore } from '@/stores/viewpoints'
 import { useRouteStore } from '@/stores/routes'
@@ -133,7 +169,12 @@ import DaySummary from '@/components/forecast/DaySummary.vue'
 import EventList from '@/components/event/EventList.vue'
 import WeekTrend from '@/components/forecast/WeekTrend.vue'
 import HourlyTimeline from '@/components/forecast/HourlyTimeline.vue'
+import TimePeriodBar from '@/components/forecast/TimePeriodBar.vue'
+import MiniTrend from '@/components/forecast/MiniTrend.vue'
 import ScreenshotBtn from '@/components/export/ScreenshotBtn.vue'
+import EventIcon from '@/components/event/EventIcon.vue'
+import { useTimePeriod } from '@/composables/useTimePeriod'
+
 
 const router = useRouter()
 const vpStore = useViewpointStore()
@@ -167,6 +208,52 @@ const currentViewpoint = computed(() => vpStore.currentViewpoint)
 const currentForecast = computed(() => vpStore.currentForecast)
 const currentDay = computed(() => vpStore.currentDay)
 const currentTimeline = computed(() => vpStore.currentTimeline)
+
+// 四段时段评分
+const { getPeriodScores } = useTimePeriod()
+
+// reject_reason 英译中映射
+const REASON_ZH_MAP = {
+  'cloud': '云量',
+  'avg_cloud': '平均云量',
+  'cloud_base': '云底',
+  'temp': '温度',
+  'precip': '降水',
+  'wind': '风速',
+  'visibility': '能见度',
+}
+
+function translateReason(raw) {
+  // 将 "cloud=68%" 转为 "云量=68%"
+  return raw.replace(/^(\w+)=/, (_, key) => {
+    return (REASON_ZH_MAP[key] || key) + '='
+  })
+}
+
+// 0 分事件拒绝原因 (去重 + 中文化，最多 3 个)
+const zeroScoreReasons = computed(() => {
+  const reasons = (currentDay.value?.events ?? [])
+    .filter(e => e.score === 0 && e.reject_reason)
+    .map(e => e.reject_reason)
+  // 去重
+  const unique = [...new Set(reasons)]
+  return unique.slice(0, 3).map(translateReason)
+})
+
+// 时段评分 (依赖 timeline)
+const periodScores = computed(() => {
+  if (!currentTimeline.value?.hourly) return []
+  return getPeriodScores(currentTimeline.value.hourly)
+})
+
+// 当日活跃事件 (分数 > 0，供半展态摘要)
+const activeEvents = computed(() =>
+  (currentDay.value?.events ?? [])
+    .filter(e => e.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+)
+
 
 const availableDates = computed(() => {
   // 优先用当前选中观景台的预测日期，否则用任一已加载的 forecast
@@ -206,7 +293,7 @@ const bestRecommendations = computed(() => {
   }
   return results
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
+    .slice(0, 5)
 })
 
 // 获取某个观景台在选中日期的最佳评分
@@ -218,6 +305,15 @@ function getBestScore(vpId) {
   return day?.best_event?.score ?? day?.events?.[0]?.score ?? 0
 }
 
+// 获取某个观景台在选中日期的最佳事件类型
+function getBestEvent(vpId) {
+  const forecast = vpStore.forecasts[vpId]
+  if (!forecast) return null
+  const day = forecast.daily?.find(d => d.date === selectedDate.value)
+    ?? forecast.daily?.[0]
+  return day?.best_event?.event_type ?? null
+}
+
 // === 事件处理 ===
 
 function onMapReady(map) {
@@ -227,13 +323,41 @@ function onMapReady(map) {
 async function onMarkerClick(vp) {
   // 选中观景台 → 地图飞行 → Bottom Sheet 弹至半展
   await vpStore.selectViewpoint(vp.id)
+  // 自动加载当前日期的 timeline 数据
+  if (vpStore.selectedDate) {
+    await vpStore.selectDate(vpStore.selectedDate)
+  }
+
+  // 先切换到半展态，让 BottomSheet 测量内容高度
+  sheetState.value = 'half'
+
+  // 等待 nextTick 让 BottomSheet 完成高度测量
+  await nextTick()
+
   const map = mapRef.value?.getMap?.()
   if (map) {
     const AMap = window.AMap
     const [gcjLon, gcjLat] = await convertToGCJ02(AMap, vp.location.lon, vp.location.lat)
-    map.setZoomAndCenter(12, [gcjLon, gcjLat], true, 800)
+    const vh = window.innerHeight
+    // 获取 header 实际高度
+    const headerEl = document.querySelector('.map-top-bar')
+    const headerHeight = headerEl?.offsetHeight ?? 56
+    // 获取 sheet 实际高度（半展态，通过 expose 获取）
+    const sheetHeight = sheetRef.value?.currentHeight ?? vh * 0.35
+    // 可见地图区域 = 视口 - header - sheet
+    const visibleHeight = vh - headerHeight - sheetHeight
+    // 标记应在可见区域的垂直中心
+    // 可见区域中心相对于视口中心的偏移
+    const visibleCenterY = headerHeight + visibleHeight / 2
+    const viewportCenterY = vh / 2
+    const offsetPixels = viewportCenterY - visibleCenterY
+    // 在目标缩放级别下计算经纬度偏移
+    const targetZoom = 12
+    // 高德地图在 zoom 级别下每像素对应的纬度近似值
+    const latPerPixel = 360 / (256 * Math.pow(2, targetZoom))
+    const latOffset = offsetPixels * latPerPixel
+    map.setZoomAndCenter(targetZoom, [gcjLon, gcjLat - latOffset], true, 800)
   }
-  sheetState.value = 'half'
 }
 
 function onRecommendSelect(rec) {
@@ -369,6 +493,43 @@ watch(mapInstance, (map) => {
   padding: 16px;
 }
 
+.half-content {
+  cursor: pointer;
+}
+
+.half-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.half-vp-name {
+  font-weight: 700;
+  font-size: var(--text-base, 16px);
+  color: var(--color-text-dark, #374151);
+}
+
+.half-best-score {
+  font-weight: 700;
+  font-size: var(--text-lg, 18px);
+}
+
+.half-reject-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.reject-tag {
+  font-size: var(--text-xs, 12px);
+  color: var(--color-text-secondary, #9CA3AF);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
 .full-report-btn {
   width: 100%;
   padding: 12px;
@@ -400,6 +561,40 @@ watch(mapInstance, (map) => {
 .full-actions .full-report-btn {
   flex: 1;
   margin-top: 0;
+}
+
+.half-events-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.half-event-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: var(--text-xs, 12px);
+}
+
+.chip-name {
+  color: var(--text-primary, #E5E7EB);
+}
+
+.chip-score {
+  font-weight: 700;
+  color: var(--color-primary, #3B82F6);
+}
+
+.half-expand-hint {
+  text-align: center;
+  margin-top: 16px;
+  font-size: var(--text-xs, 12px);
+  color: var(--text-muted, #94A3B8);
+  opacity: 0.6;
 }
 
 .map-watermark {

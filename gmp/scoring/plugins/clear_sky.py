@@ -92,6 +92,7 @@ class ClearSkyPlugin:
             event_type="clear_sky",
             total_score=total,
             status=score_to_status(total),
+            time_window="06:00 - 18:00",
             breakdown=breakdown,
         )
 
