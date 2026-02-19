@@ -268,3 +268,79 @@ class TestForecastReporterGenerateRoute:
         assert "viewpoint_id" in stop_forecast
         assert "daily" in stop_forecast
 
+
+# ── reject_reason 测试 ──
+
+
+class TestForecastReporterRejectReason:
+    """_generate_reject_reason() 与 _format_event() 中的 reject_reason 字段"""
+
+    def test_score_zero_event_has_nonempty_reject_reason(self) -> None:
+        """score=0 的事件包含非空 reject_reason 字符串"""
+        e = ScoreResult(
+            event_type="cloud_sea",
+            total_score=0,
+            status="Not Recommended",
+            breakdown={
+                "cloud_cover": {"score": 0, "max": 40, "detail": "云量不足 5%"},
+                "humidity": {"score": 10, "max": 30, "detail": "湿度适中"},
+            },
+        )
+        day = ForecastDay(
+            date="2026-02-12",
+            summary="",
+            best_event=e,
+            events=[e],
+            confidence="High",
+        )
+        result = ForecastReporter().generate(
+            _make_pipeline_result(days=[day])
+        )
+        event_out = result["daily"][0]["events"][0]
+        assert "reject_reason" in event_out
+        assert event_out["reject_reason"] is not None
+        assert len(event_out["reject_reason"]) > 0
+
+    def test_score_positive_event_reject_reason_is_none(self) -> None:
+        """score>0 的事件 reject_reason 为 None"""
+        e = _make_event("cloud_sea", 85, "Recommended")
+        day = ForecastDay(
+            date="2026-02-12",
+            summary="",
+            best_event=e,
+            events=[e],
+            confidence="High",
+        )
+        result = ForecastReporter().generate(
+            _make_pipeline_result(days=[day])
+        )
+        event_out = result["daily"][0]["events"][0]
+        assert "reject_reason" in event_out
+        assert event_out["reject_reason"] is None
+
+    def test_reject_reason_extracts_worst_dimension_detail(self) -> None:
+        """reject_reason 提取最差维度（得分比例最低）的 detail 信息"""
+        e = ScoreResult(
+            event_type="sunrise_golden_mountain",
+            total_score=0,
+            status="Not Recommended",
+            breakdown={
+                "cloud_cover": {"score": 15, "max": 40, "detail": "多云"},
+                "visibility": {"score": 0, "max": 30, "detail": "能见度极差"},
+                "humidity": {"score": 20, "max": 30, "detail": "湿度正常"},
+            },
+        )
+        day = ForecastDay(
+            date="2026-02-12",
+            summary="",
+            best_event=e,
+            events=[e],
+            confidence="High",
+        )
+        result = ForecastReporter().generate(
+            _make_pipeline_result(days=[day])
+        )
+        event_out = result["daily"][0]["events"][0]
+        # 最差维度是 visibility (0/30 = 0.0)，detail 是 "能见度极差"
+        assert "能见度极差" in event_out["reject_reason"]
+

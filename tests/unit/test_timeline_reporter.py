@@ -44,20 +44,16 @@ def _make_viewpoint() -> Viewpoint:
     )
 
 
-def _make_hourly_weather() -> dict[int, dict]:
-    """生成 24 小时天气数据 (hour → weather dict)"""
-    weather: dict[int, dict] = {}
+def _make_hourly_weather() -> dict[str, dict[int, dict]]:
+    """生成 24 小时天气数据 — 与 _extract_hourly_weather 输出一致的格式"""
+    day_data: dict[int, dict] = {}
     for h in range(24):
-        weather[h] = {
-            "temperature_2m": -3.2 + h * 0.5,
-            "cloud_cover_total": 25,
-            "cloud_cover_low": 40,
-            "precipitation_probability": 0,
-            "weather_code": 1,
-            "visibility": 35000,
-            "wind_speed_10m": 8.5,
+        day_data[h] = {
+            "temperature": -3.2 + h * 0.5,
+            "cloud_cover": 25,
+            "weather_icon": "partly_cloudy",
         }
-    return weather
+    return {"2026-02-12": day_data}
 
 
 def _make_safety_hours() -> dict[int, bool]:
@@ -67,7 +63,7 @@ def _make_safety_hours() -> dict[int, bool]:
 
 def _make_pipeline_result(
     events: list[ScoreResult] | None = None,
-    hourly_weather: dict[int, dict] | None = None,
+    hourly_weather: dict[str, dict[int, dict]] | None = None,
     safety_hours: dict[int, bool] | None = None,
 ) -> PipelineResult:
     if events is None:
@@ -79,12 +75,13 @@ def _make_pipeline_result(
         events=events,
         confidence="High",
     )
+    hw = hourly_weather if hourly_weather is not None else _make_hourly_weather()
     return PipelineResult(
         viewpoint=_make_viewpoint(),
         forecast_days=[day],
         meta={
             "generated_at": "2026-02-12T05:00:00+08:00",
-            "hourly_weather": hourly_weather or _make_hourly_weather(),
+            "hourly_weather": hw,
             "safety_hours": safety_hours or _make_safety_hours(),
         },
     )
@@ -238,9 +235,9 @@ class TestTimelineReporterTags:
         assert "cloud_sea" in tags_6
 
     def test_clear_sky_tag(self) -> None:
-        """cloud_cover_total < 30 时生成 clear_sky tag"""
+        """cloud_cover < 30 时生成 clear_sky tag"""
         weather = _make_hourly_weather()
-        weather[10] = {**weather[10], "cloud_cover_total": 20}
+        weather["2026-02-12"][10] = {**weather["2026-02-12"][10], "cloud_cover": 20}
         reporter = TimelineReporter()
         result = reporter.generate(
             _make_pipeline_result(events=[], hourly_weather=weather),
@@ -249,9 +246,9 @@ class TestTimelineReporterTags:
         assert "clear_sky" in result["hourly"][10]["tags"]
 
     def test_no_clear_sky_tag_when_cloudy(self) -> None:
-        """cloud_cover_total >= 30 时不生成 clear_sky tag"""
+        """cloud_cover >= 30 时不生成 clear_sky tag"""
         weather = _make_hourly_weather()
-        weather[10] = {**weather[10], "cloud_cover_total": 30}
+        weather["2026-02-12"][10] = {**weather["2026-02-12"][10], "cloud_cover": 30}
         reporter = TimelineReporter()
         result = reporter.generate(
             _make_pipeline_result(events=[], hourly_weather=weather),
@@ -280,7 +277,7 @@ class TestTimelineReporterTags:
     def test_partial_data_tag(self) -> None:
         """weather 为空 dict 时生成 partial_data tag"""
         weather = _make_hourly_weather()
-        weather[5] = {}
+        weather["2026-02-12"][5] = {}
         reporter = TimelineReporter()
         result = reporter.generate(
             _make_pipeline_result(events=[], hourly_weather=weather),
@@ -292,7 +289,7 @@ class TestTimelineReporterTags:
         """无事件的时段 tags 为空列表（weather 有完整数据且 cloud_cover >= 30）"""
         weather = _make_hourly_weather()
         # 确保 hour 15 cloud_cover >= 30 以不触发 clear_sky
-        weather[15] = {**weather[15], "cloud_cover_total": 50}
+        weather["2026-02-12"][15] = {**weather["2026-02-12"][15], "cloud_cover": 50}
         event = _make_event("cloud_sea", 90, "Recommended", "06:00 - 09:00")
         reporter = TimelineReporter()
         result = reporter.generate(
@@ -386,3 +383,88 @@ class TestTimelineReporterTopLevel:
             _make_pipeline_result(), date(2026, 2, 12)
         )
         assert result["date"] == "2026-02-12"
+
+
+# ── 天气字段验证 (MG3A Task 2) ──
+
+
+def _make_hourly_weather_new_format(
+    target_date: str = "2026-02-12",
+) -> dict[str, dict[int, dict]]:
+    """生成新格式天气数据 {date_str: {hour: weather_dict}}"""
+    day_data: dict[int, dict] = {}
+    for h in range(24):
+        day_data[h] = {
+            "temperature": -3.2 + h * 0.5,
+            "cloud_cover": 25,
+            "weather_icon": "partly_cloudy",
+        }
+    return {target_date: day_data}
+
+
+def _make_pipeline_result_new_format(
+    events: list[ScoreResult] | None = None,
+    hourly_weather: dict | None = None,
+    safety_hours: dict[int, bool] | None = None,
+) -> PipelineResult:
+    if events is None:
+        events = [_make_event()]
+    day = ForecastDay(
+        date="2026-02-12",
+        summary="推荐观景 — 云海",
+        best_event=events[0] if events else None,
+        events=events,
+        confidence="High",
+    )
+    hw = hourly_weather if hourly_weather is not None else _make_hourly_weather_new_format()
+    return PipelineResult(
+        viewpoint=_make_viewpoint(),
+        forecast_days=[day],
+        meta={
+            "generated_at": "2026-02-12T05:00:00+08:00",
+            "hourly_weather": hw,
+            "safety_hours": safety_hours or _make_safety_hours(),
+        },
+    )
+
+
+class TestTimelineReporterWeatherFields:
+    """MG3A Task 2 — weather 包含 temperature/cloud_cover/weather_icon"""
+
+    def test_weather_contains_temperature(self) -> None:
+        """每小时 weather 包含 temperature 字段"""
+        reporter = TimelineReporter()
+        result = reporter.generate(
+            _make_pipeline_result_new_format(), date(2026, 2, 12)
+        )
+        weather_6 = result["hourly"][6]["weather"]
+        assert "temperature" in weather_6
+
+    def test_weather_contains_cloud_cover(self) -> None:
+        """每小时 weather 包含 cloud_cover 字段"""
+        reporter = TimelineReporter()
+        result = reporter.generate(
+            _make_pipeline_result_new_format(), date(2026, 2, 12)
+        )
+        weather_6 = result["hourly"][6]["weather"]
+        assert "cloud_cover" in weather_6
+
+    def test_weather_contains_weather_icon(self) -> None:
+        """每小时 weather 包含 weather_icon 字段"""
+        reporter = TimelineReporter()
+        result = reporter.generate(
+            _make_pipeline_result_new_format(), date(2026, 2, 12)
+        )
+        weather_6 = result["hourly"][6]["weather"]
+        assert "weather_icon" in weather_6
+
+    def test_no_weather_data_returns_empty_dict(self) -> None:
+        """无天气数据时 weather 为空 dict"""
+        reporter = TimelineReporter()
+        result = reporter.generate(
+            _make_pipeline_result_new_format(hourly_weather={}),
+            date(2026, 2, 12),
+        )
+        for entry in result["hourly"]:
+            assert entry["weather"] == {}
+

@@ -24,7 +24,10 @@ class TimelineReporter:
             "hourly": [{...}, ...]
         }
         """
-        hourly_weather = result.meta.get("hourly_weather", {})
+        raw_weather = result.meta.get("hourly_weather", {})
+        date_str = target_date.isoformat()
+        # 新格式: {date_str: {hour: dict}}
+        hourly_weather = raw_weather.get(date_str, {})
         safety_hours = result.meta.get("safety_hours", {})
 
         # 找到对应日期的 ForecastDay
@@ -112,7 +115,7 @@ class TimelineReporter:
         # 天气相关 tags
         if not weather:
             tags.append("partial_data")
-        elif weather.get("cloud_cover_total", 100) < 30:
+        elif weather.get("cloud_cover", weather.get("cloud_cover_total", 100)) < 30:
             tags.append("clear_sky")
 
         return tags

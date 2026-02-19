@@ -127,10 +127,40 @@ class ForecastReporter:
             "score": event.total_score,
             "status": event.status,
             "confidence": event.confidence,
+            "reject_reason": ForecastReporter._generate_reject_reason(event),
             "tags": ForecastReporter._generate_tags(event),
             "conditions": event.highlights,
             "score_breakdown": event.breakdown,
         }
+
+    @staticmethod
+    def _generate_reject_reason(event: ScoreResult) -> str | None:
+        """为 0 分事件生成精简拒绝原因
+
+        逻辑: 从 breakdown 中找到得分比例最低的维度，用其 detail 生成一句话。
+        Returns: None (score > 0) 或 str (score == 0)
+        """
+        if event.total_score > 0:
+            return None
+
+        if not event.breakdown:
+            return None
+
+        worst_dim = None
+        worst_ratio = float("inf")
+        for dim, info in event.breakdown.items():
+            max_score = info.get("max", 0)
+            if max_score <= 0:
+                continue
+            ratio = info.get("score", 0) / max_score
+            if ratio < worst_ratio:
+                worst_ratio = ratio
+                worst_dim = info
+
+        if worst_dim and worst_dim.get("detail"):
+            return worst_dim["detail"]
+
+        return None
 
     @staticmethod
     def _generate_tags(event: ScoreResult) -> list[str]:

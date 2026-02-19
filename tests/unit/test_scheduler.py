@@ -648,3 +648,153 @@ class TestRunWithData:
             for event in day.events:
                 assert event.event_type == "cloud_sea"
 
+
+# ══════════════════════════════════════════════════════
+# Task 4: _extract_hourly_weather 逐时天气提取
+# ══════════════════════════════════════════════════════
+
+
+class TestExtractHourlyWeather:
+    """_extract_hourly_weather 提取逐时天气数据到 meta"""
+
+    def test_run_meta_contains_hourly_weather(self):
+        """run() 返回的 meta 包含 hourly_weather 字段"""
+        plugin = _make_l1_plugin("cloud_sea")
+        scheduler, *_ = _build_scheduler(
+            plugins=[plugin],
+            fetch_hourly_return=_make_clear_weather(days=1),
+        )
+
+        result = scheduler.run("test_vp", days=1)
+
+        assert "hourly_weather" in result.meta
+
+    def test_hourly_weather_format_date_hour_dict(self):
+        """hourly_weather 格式为 {date_str: {hour_int: {temperature, cloud_cover, weather_icon}}}"""
+        plugin = _make_l1_plugin("cloud_sea")
+        scheduler, *_ = _build_scheduler(
+            plugins=[plugin],
+            fetch_hourly_return=_make_clear_weather(days=1),
+        )
+
+        result = scheduler.run("test_vp", days=1)
+
+        hw = result.meta["hourly_weather"]
+        today_str = date.today().isoformat()
+        assert today_str in hw
+        day_data = hw[today_str]
+        # 应有 24 小时
+        assert len(day_data) == 24
+        # 每个小时包含三个字段
+        hour_0 = day_data[0]
+        assert "temperature" in hour_0
+        assert "cloud_cover" in hour_0
+        assert "weather_icon" in hour_0
+
+    def test_weather_icon_clear(self):
+        """cloud_cover < 20% → weather_icon = 'clear'"""
+        weather_df = _make_clear_weather(days=1)
+        # 设置 cloud_cover_total 为 10（< 20）
+        weather_df["cloud_cover_total"] = 10
+
+        plugin = _make_l1_plugin("cloud_sea")
+        scheduler, *_ = _build_scheduler(
+            plugins=[plugin],
+            fetch_hourly_return=weather_df,
+        )
+
+        result = scheduler.run("test_vp", days=1)
+
+        hw = result.meta["hourly_weather"]
+        today_str = date.today().isoformat()
+        assert hw[today_str][0]["weather_icon"] == "clear"
+
+    def test_weather_icon_cloudy(self):
+        """cloud_cover = 60%（>= 20, < 80, precip_prob < 50）→ weather_icon = 'cloudy'"""
+        weather_df = _make_clear_weather(days=1)
+        weather_df["cloud_cover_total"] = 60
+        weather_df["precipitation_probability"] = 10
+
+        plugin = _make_l1_plugin("cloud_sea")
+        scheduler, *_ = _build_scheduler(
+            plugins=[plugin],
+            fetch_hourly_return=weather_df,
+        )
+
+        result = scheduler.run("test_vp", days=1)
+
+        hw = result.meta["hourly_weather"]
+        today_str = date.today().isoformat()
+        assert hw[today_str][0]["weather_icon"] == "cloudy"
+
+    def test_weather_icon_partly_cloudy(self):
+        """cloud_cover 在 20-50 之间 → weather_icon = 'partly_cloudy'"""
+        weather_df = _make_clear_weather(days=1)
+        weather_df["cloud_cover_total"] = 30
+
+        plugin = _make_l1_plugin("cloud_sea")
+        scheduler, *_ = _build_scheduler(
+            plugins=[plugin],
+            fetch_hourly_return=weather_df,
+        )
+
+        result = scheduler.run("test_vp", days=1)
+
+        hw = result.meta["hourly_weather"]
+        today_str = date.today().isoformat()
+        assert hw[today_str][0]["weather_icon"] == "partly_cloudy"
+
+    def test_weather_icon_rain(self):
+        """cloud_cover < 80 且 precip_prob >= 50 且 temp > 0 → 'rain'"""
+        weather_df = _make_clear_weather(days=1)
+        weather_df["cloud_cover_total"] = 60
+        weather_df["precipitation_probability"] = 60
+        weather_df["temperature_2m"] = 5.0
+
+        plugin = _make_l1_plugin("cloud_sea")
+        scheduler, *_ = _build_scheduler(
+            plugins=[plugin],
+            fetch_hourly_return=weather_df,
+        )
+
+        result = scheduler.run("test_vp", days=1)
+
+        hw = result.meta["hourly_weather"]
+        today_str = date.today().isoformat()
+        assert hw[today_str][0]["weather_icon"] == "rain"
+
+    def test_weather_icon_snow(self):
+        """cloud_cover < 80 且 precip_prob >= 50 且 temp < 0 → 'snow'"""
+        weather_df = _make_clear_weather(days=1)
+        weather_df["cloud_cover_total"] = 60
+        weather_df["precipitation_probability"] = 60
+        weather_df["temperature_2m"] = -5.0
+
+        plugin = _make_l1_plugin("cloud_sea")
+        scheduler, *_ = _build_scheduler(
+            plugins=[plugin],
+            fetch_hourly_return=weather_df,
+        )
+
+        result = scheduler.run("test_vp", days=1)
+
+        hw = result.meta["hourly_weather"]
+        today_str = date.today().isoformat()
+        assert hw[today_str][0]["weather_icon"] == "snow"
+
+    def test_empty_dataframe_returns_empty_dict(self):
+        """空 DataFrame → hourly_weather 为空 dict"""
+        weather_df = pd.DataFrame()
+
+        plugin = _make_l1_plugin("cloud_sea")
+        scheduler, *_ = _build_scheduler(
+            plugins=[plugin],
+            fetch_hourly_return=weather_df,
+        )
+
+        # 空 DataFrame → 无活跃 plugin 返回空结果
+        result = scheduler.run("test_vp", days=1)
+
+        hw = result.meta.get("hourly_weather", {})
+        assert hw == {}
+

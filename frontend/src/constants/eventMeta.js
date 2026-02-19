@@ -8,6 +8,7 @@
 
 /** 事件颜色映射 (与 EventIcon 主色一致) */
 export const EVENT_COLORS = {
+    clear_sky: '#FFB300',
     sunrise_golden_mountain: '#FF8C00',
     sunset_golden_mountain: '#FF4500',
     cloud_sea: '#87CEEB',
@@ -19,6 +20,7 @@ export const EVENT_COLORS = {
 
 /** 事件中文名称映射 */
 export const EVENT_NAMES = {
+    clear_sky: '晴天',
     sunrise_golden_mountain: '日出金山',
     sunset_golden_mountain: '日落金山',
     cloud_sea: '云海',

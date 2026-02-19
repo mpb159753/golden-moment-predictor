@@ -27,14 +27,14 @@ from gmp.output.summary_generator import SummaryGenerator
 from gmp.scoring.models import DataContext, DataRequirement
 
 if TYPE_CHECKING:
-    import pandas as pd
-
     from gmp.core.config_loader import ConfigManager, RouteConfig, ViewpointConfig
     from gmp.core.models import Viewpoint
     from gmp.data.astro_utils import AstroUtils
     from gmp.data.geo_utils import GeoUtils
     from gmp.data.meteo_fetcher import MeteoFetcher
     from gmp.scoring.engine import ScoreEngine
+
+import pandas as pd
 
 logger = structlog.get_logger()
 
@@ -172,6 +172,7 @@ class GMPScheduler:
         meta = {
             "generated_at": datetime.now(_CST).isoformat(),
             "data_freshness": data_freshness,
+            "hourly_weather": self._extract_hourly_weather(local_weather),
         }
 
         return PipelineResult(
@@ -452,6 +453,52 @@ class GMPScheduler:
                 )
 
         return all_path_weather if all_path_weather else None
+
+    def _extract_hourly_weather(
+        self, local_weather: pd.DataFrame
+    ) -> dict[str, dict[int, dict]]:
+        """从 DataFrame 提取逐时天气 → {date: {hour: {temperature, cloud_cover, weather_icon}}}
+
+        weather_icon 映射规则:
+        - cloud_cover < 20% → "clear"
+        - cloud_cover < 50% → "partly_cloudy"
+        - cloud_cover < 80% 且 precip_prob >= 50% 且 temp < 0 → "snow"
+        - cloud_cover < 80% 且 precip_prob >= 50% → "rain"
+        - 其他 → "cloudy"
+        """
+        if local_weather.empty:
+            return {}
+
+        import numpy as np
+
+        cc = local_weather.get("cloud_cover_total", pd.Series(0, index=local_weather.index))
+        temp = local_weather.get("temperature_2m", pd.Series(0, index=local_weather.index))
+        pp = local_weather.get("precipitation_probability", pd.Series(0, index=local_weather.index))
+
+        # 向量化 weather_icon 映射
+        conditions = [
+            cc < 20,
+            cc < 50,
+            (pp >= 50) & (temp < 0),
+            pp >= 50,
+        ]
+        choices = ["clear", "partly_cloudy", "snow", "rain"]
+        icons = np.select(conditions, choices, default="cloudy")
+
+        result: dict[str, dict[int, dict]] = {}
+        for i, (date_str, hour) in enumerate(
+            zip(local_weather["forecast_date"], local_weather["forecast_hour"])
+        ):
+            hour_int = int(hour)
+            if date_str not in result:
+                result[date_str] = {}
+            result[date_str][hour_int] = {
+                "temperature": float(temp.iloc[i]),
+                "cloud_cover": float(cc.iloc[i]),
+                "weather_icon": str(icons[i]),
+            }
+
+        return result
 
     def _empty_result(
         self,
