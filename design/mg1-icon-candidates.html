@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MG1 Icon Design Candidates</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 2rem;
+            background: #f9fafb;
+        }
+
+        h1 {
+            margin-bottom: 2rem;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+            color: #111827;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+        }
+
+        .card.selected {
+            border-color: #2563eb;
+            background: #eff6ff;
+            ring: 2px solid #2563eb;
+        }
+
+        .icon-box {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #374151;
+        }
+
+        .label {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        /* Icon specific colors for demo */
+        .color-clear-sky {
+            color: #f59e0b;
+        }
+
+        .color-golden {
+            color: #ea580c;
+        }
+
+        .color-cloud {
+            color: #0ea5e9;
+        }
+
+        .color-star {
+            color: #7c3aed;
+        }
+
+        .color-frost {
+            color: #06b6d4;
+        }
+
+        svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            stroke: currentColor;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>MG1 Icon Design Candidates (Round 2)</h1>
+    <p>Based on your feedback: "Clear Sky" is selected (Option 1). Round 2 designs for the other 4 categories focus on
+        the "Golden Moment" business context.</p>
+
+    <!-- 1. CLEAR SKY (SELECTED) -->
+    <div class="section">
+        <h2>1. Clear Sky (Sunny) <span style="font-size:0.8em; font-weight:bold; color:#059669">SELECTED: Option
+                1</span></h2>
+        <div class="grid" id="group-clear-sky">
+            <div class="card selected" style="cursor:default">
+                <div class="icon-box color-clear-sky">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="5" />
+                        <path
+                            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                </div>
+                <span class="label">Option 1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. GOLDEN MOUNTAIN -->
+    <div class="section">
+        <h2>2. Golden Mountain (Round 2) <span style="font-size:0.8em; font-weight:normal; color:#666">Event:
+                sunrise/sunset_golden_mountain</span></h2>
+        <p style="color:#666; font-size:0.9em; margin-bottom:1rem">Focus: The specific moment light hits the peak.
+            Majestic, high contrast.</p>
+        <div class="grid" id="group-golden">
+            <!-- Var R2-1: The Crown -->
+            <div class="card" onclick="select(this, 'golden')">
+                <div class="icon-box color-golden">
+                    <!-- Mountain with a "crown" of light rays just on the tip -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3l-1.5 3h3L12 3z" />
+                        <path d="M2.6 21L12 6l9.4 15H2.6z" />
+                        <path d="M12 2v2" />
+                        <path d="M9 3l1 1" />
+                        <path d="M15 3l-1 1" />
+                    </svg>
+                </div>
+                <span class="label">Option 6 (The Crown)</span>
+            </div>
+            <!-- Var R2-2: The Split Light -->
+            <div class="card" onclick="select(this, 'golden')">
+                <div class="icon-box color-golden">
+                    <!-- Mountain split in half: Top is light, bottom is dark/hashed -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3L2 21h20L12 3z" />
+                        <path d="M12 3L7 12h10L12 3z" />
+                        <line x1="12" y1="12" x2="12" y2="21" />
+                        <line x1="12" y1="15" x2="17" y2="21" />
+                        <line x1="7" y1="21" x2="12" y2="15" />
+                    </svg>
+                </div>
+                <span class="label">Option 7 (Light/Shadow)</span>
+            </div>
+            <!-- Var R2-3: The Shine -->
+            <div class="card" onclick="select(this, 'golden')">
+                <div class="icon-box color-golden">
+                    <!-- Star-like glint on one side of the mountain peak -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 21h18L12 5 3 21z" />
+                        <path d="M15 8l1-2 1 2-2-1 2 1-2 1-1-2z" />
+                    </svg>
+                </div>
+                <span class="label">Option 8 (The Glint)</span>
+            </div>
+            <!-- Var R2-4: The Horizon Moment -->
+            <div class="card" onclick="select(this, 'golden')">
+                <div class="icon-box color-golden">
+                    <!-- Sun appearing right behind/between peaks -->
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="15" r="4" />
+                        <path d="M22 21H2L8 11l4 5 5-8 5 13z" />
+                    </svg>
+                </div>
+                <span class="label">Option 9 (Horizon)</span>
+            </div>
+            <!-- Var R2-5: The Beam -->
+            <div class="card" onclick="select(this, 'golden')">
+                <div class="icon-box color-golden">
+                    <!-- A beam of light hitting the mountain from the side -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M20 3L14 9" />
+                        <path d="M3 21h18L12 5 3 21z" />
+                        <path d="M22 2L16 8" />
+                    </svg>
+                </div>
+                <span class="label">Option 10 (The Beam)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. CLOUD SEA -->
+    <div class="section">
+        <h2>3. Cloud Sea (Round 2) <span style="font-size:0.8em; font-weight:normal; color:#666">Event: cloud_sea</span>
+        </h2>
+        <p style="color:#666; font-size:0.9em; margin-bottom:1rem">Focus: Altitude, vastness. You are ABOVE them.</p>
+        <div class="grid" id="group-cloud">
+            <!-- Var R2-1: The Island -->
+            <div class="card" onclick="select(this, 'cloud')">
+                <div class="icon-box color-cloud">
+                    <!-- Peak isolated by a ring of clouds -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 4l4 7H8l4-7z" />
+                        <path d="M12 11c-5 0-8 3-8 6 0 3 3 4 8 4s8-1 8-4c0-3-3-6-8-6z" />
+                    </svg>
+                </div>
+                <span class="label">Option 6 (Island)</span>
+            </div>
+            <!-- Var R2-2: Layered Waves -->
+            <div class="card" onclick="select(this, 'cloud')">
+                <div class="icon-box color-cloud">
+                    <!-- Multiple horizontal cloud layers with a peak peeking out -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2l4 6H8l4-6z" />
+                        <path d="M3 12c2 0 3-1 6-1s4 1 6 1 4-1 6-1" />
+                        <path d="M3 16c2 0 3-1 6-1s4 1 6 1 4-1 6-1" />
+                        <path d="M3 20c2 0 3-1 6-1s4 1 6 1 4-1 6-1" />
+                    </svg>
+                </div>
+                <span class="label">Option 7 (Layers)</span>
+            </div>
+            <!-- Var R2-3: The Rolling Sea -->
+            <div class="card" onclick="select(this, 'cloud')">
+                <div class="icon-box color-cloud">
+                    <!-- Big rolling spiral clouds -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 4l3 5H9l3-5z" />
+                        <path d="M4 15c0-2.5 4-3 6-3s6 0.5 6 3-2 4-6 4-6-1.5-6-4z" />
+                        <path d="M14 15c0 1.5 1.5 2 3 2s3-1 3-2" />
+                    </svg>
+                </div>
+                <span class="label">Option 8 (Rolling)</span>
+            </div>
+            <!-- Var R2-4: Immersion -->
+            <div class="card" onclick="select(this, 'cloud')">
+                <div class="icon-box color-cloud">
+                    <!-- Camera frame looking down at clouds -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 21h18v-2c0-3-3-5-9-5s-9 2-9 5v2z" />
+                        <path d="M12 4L9 9h6l-3-5z" />
+                        <path d="M7 10l-2 3" />
+                        <path d="M17 10l2 3" />
+                    </svg>
+                </div>
+                <span class="label">Option 9 (Above)</span>
+            </div>
+            <!-- Var R2-5: Minimal Horizon -->
+            <div class="card" onclick="select(this, 'cloud')">
+                <div class="icon-box color-cloud">
+                    <svg viewBox="0 0 24 24">
+                        <line x1="2" y1="12" x2="22" y2="12" />
+                        <path d="M12 5l4 7H8l4-7z" />
+                        <path d="M5 16q3-3 7 0t7 0" />
+                    </svg>
+                </div>
+                <span class="label">Option 10 (Minimal)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. STARGAZING -->
+    <div class="section">
+        <h2>4. Stargazing (Round 2) <span style="font-size:0.8em; font-weight:normal; color:#666">Event:
+                stargazing</span></h2>
+        <p style="color:#666; font-size:0.9em; margin-bottom:1rem">Focus: Vast sky, high altitude clarity,
+            constellations.</p>
+        <div class="grid" id="group-star">
+            <!-- Var R2-1: The Big Dipper -->
+            <div class="card" onclick="select(this, 'star')">
+                <div class="icon-box color-star">
+                    <!-- Recognizable constellation shape -->
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="4" cy="10" r="1" />
+                        <circle cx="8" cy="11" r="1" />
+                        <circle cx="12" cy="13" r="1" />
+                        <circle cx="15" cy="17" r="1" />
+                        <circle cx="19" cy="17" r="1" />
+                        <circle cx="21" cy="14" r="1" />
+                        <circle cx="20" cy="11" r="1" />
+                        <path d="M4 10l4 1 4 2 3 4 4 0 2-3-1-3" fill="none" />
+                    </svg>
+                </div>
+                <span class="label">Option 6 (Constellation)</span>
+            </div>
+            <!-- Var R2-2: Milky Way -->
+            <div class="card" onclick="select(this, 'star')">
+                <div class="icon-box color-star">
+                    <!-- A diagonal band of stars -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M21 3L3 21" stroke-dasharray="2 4" />
+                        <circle cx="15" cy="6" r="1" />
+                        <circle cx="10" cy="9" r="1.5" />
+                        <circle cx="6" cy="15" r="1" />
+                        <circle cx="18" cy="18" r="1" />
+                        <circle cx="9" cy="14" r="1.5" />
+                    </svg>
+                </div>
+                <span class="label">Option 7 (Milky Way)</span>
+            </div>
+            <!-- Var R2-3: Starry Dome -->
+            <div class="card" onclick="select(this, 'star')">
+                <div class="icon-box color-star">
+                    <!-- Semi-circle dome with stars inside -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M2 20a10 10 0 0 1 20 0" />
+                        <circle cx="12" cy="9" r="1.5" />
+                        <circle cx="7" cy="14" r="1" />
+                        <circle cx="17" cy="14" r="1" />
+                        <path d="M2 20h20" />
+                    </svg>
+                </div>
+                <span class="label">Option 8 (The Dome)</span>
+            </div>
+            <!-- Var R2-4: The Shooting Star -->
+            <div class="card" onclick="select(this, 'star')">
+                <div class="icon-box color-star">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2l2 4 4 2-4 2-2 4-2-4-4-2 4-2 2-4z" />
+                        <path d="M15 9l6-6" />
+                        <path d="M17 11l4-1" />
+                    </svg>
+                </div>
+                <span class="label">Option 9 (Shooting)</span>
+            </div>
+            <!-- Var R2-5: Pure Stars (Sharp) -->
+            <div class="card" onclick="select(this, 'star')">
+                <div class="icon-box color-star">
+                    <!-- 3 distinct 4-point stars -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2l1 4 4 1-4 1-1 4-1-4-4-1 4-1 1-4z" />
+                        <path d="M4 13l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" />
+                        <path d="M19 12l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" />
+                    </svg>
+                </div>
+                <span class="label">Option 10 (Sharp)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. FROST / ICE -->
+    <div class="section">
+        <h2>5. Frost/Ice (Round 2) <span style="font-size:0.8em; font-weight:normal; color:#666">Event:
+                frost/snow_tree/ice_icicle</span></h2>
+        <p style="color:#666; font-size:0.9em; margin-bottom:1rem">Focus: Crystalline structure, rime, nature's
+            sculpture.</p>
+        <div class="grid" id="group-frost">
+            <!-- Var R2-1: Fern Frost -->
+            <div class="card" onclick="select(this, 'frost')">
+                <div class="icon-box color-frost">
+                    <!-- Fern-like fractal pattern -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 22V2" />
+                        <path d="M12 18l-4-2" />
+                        <path d="M12 14l-6-3" />
+                        <path d="M12 10l-5-4" />
+                        <path d="M12 18l4-2" />
+                        <path d="M12 14l6-3" />
+                        <path d="M12 10l5-4" />
+                    </svg>
+                </div>
+                <span class="label">Option 6 (Fern)</span>
+            </div>
+            <!-- Var R2-2: Crystal Shard -->
+            <div class="card" onclick="select(this, 'frost')">
+                <div class="icon-box color-frost">
+                    <!-- Sharp jagged crystal shards rising from ground -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M6 21L8 8l4 13" />
+                        <path d="M10 21l4-16 4 16" />
+                        <path d="M2 21h20" />
+                    </svg>
+                </div>
+                <span class="label">Option 7 (Shards)</span>
+            </div>
+            <!-- Var R2-3: Rime Branch -->
+            <div class="card" onclick="select(this, 'frost')">
+                <div class="icon-box color-frost">
+                    <!-- Branch with thick outlines/spikes -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M21 3L3 21" />
+                        <path d="M16 8l-4 4" />
+                        <path d="M11 13l-4 4" />
+                        <circle cx="12" cy="12" r="1" />
+                        <circle cx="7" cy="17" r="1" />
+                    </svg>
+                </div>
+                <span class="label">Option 8 (Rime)</span>
+            </div>
+            <!-- Var R2-4: Molecular -->
+            <div class="card" onclick="select(this, 'frost')">
+                <div class="icon-box color-frost">
+                    <!-- Connected dots/structure -->
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="2" />
+                        <circle cx="6" cy="12" r="2" />
+                        <circle cx="18" cy="12" r="2" />
+                        <circle cx="12" cy="6" r="2" />
+                        <circle cx="12" cy="18" r="2" />
+                        <line x1="12" y1="12" x2="6" y2="12" />
+                        <line x1="12" y1="12" x2="18" y2="12" />
+                        <line x1="12" y1="12" x2="12" y2="6" />
+                        <line x1="12" y1="12" x2="12" y2="18" />
+                    </svg>
+                </div>
+                <span class="label">Option 9 (Structure)</span>
+            </div>
+            <!-- Var R2-5: Sharp Starburst -->
+            <div class="card" onclick="select(this, 'frost')">
+                <div class="icon-box color-frost">
+                    <!-- 8 point very sharp star -->
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2v20" />
+                        <path d="M2 12h20" />
+                        <path d="M4.93 4.93l14.14 14.14" />
+                        <path d="M19.07 4.93L4.93 19.07" />
+                    </svg>
+                </div>
+                <span class="label">Option 10 (Burst)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function select(card, group) {
+            const container = document.getElementById('group-' + group);
+            const cards = container.getElementsByClassName('card');
+            for (let c of cards) {
+                c.classList.remove('selected');
+            }
+            card.classList.add('selected');
+        }
+    </script>
+</body>
+
+</html>

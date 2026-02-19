@@ -240,3 +240,127 @@ class GoldenMountainPlugin:
             if value <= t:
                 return s
         return scores[-1]
+
+    # ==================== 调试方法 ====================
+
+    def debug_score(self, context: DataContext) -> dict:
+        """诊断日照金山评分 — 返回完整决策链（不影响生产评分逻辑）
+
+        返回 dict 包含:
+        - event_type: 事件类型
+        - decision: "rejected" | "vetoed" | "scored"
+        - reason: 决策原因（中文）
+        - total_score: 最终分数（仅 scored/vetoed 时存在）
+        - steps: 每个决策点的详细信息列表
+        """
+        debug: dict = {
+            "event_type": self._event_type,
+            "decision": "unknown",
+            "steps": [],
+        }
+
+        # 1. 天文数据检查
+        if context.sun_events is None:
+            debug["decision"] = "rejected"
+            debug["reason"] = "sun_events 为 None（天文数据缺失）"
+            debug["steps"].append({"step": "astro_check", "passed": False})
+            return debug
+
+        sun_azimuth = self._get_sun_azimuth(context)
+        debug["sun_azimuth"] = round(sun_azimuth, 1)
+        debug["steps"].append({
+            "step": "astro_check",
+            "passed": True,
+            "sun_azimuth": round(sun_azimuth, 1),
+        })
+
+        # 2. 云量触发判定
+        avg_cloud = float(context.local_weather["cloud_cover_total"].mean())
+        max_cloud = self._trigger["max_cloud_cover"]
+        passed = avg_cloud < max_cloud
+        debug["steps"].append({
+            "step": "cloud_trigger",
+            "avg_cloud": round(avg_cloud, 1),
+            "threshold": max_cloud,
+            "passed": passed,
+        })
+        if not passed:
+            debug["decision"] = "rejected"
+            debug["reason"] = f"总云量 {avg_cloud:.0f}% ≥ 阈值 {max_cloud}%"
+            return debug
+
+        # 3. Target 方位角匹配
+        target_details = []
+        applicable: list[Target] = []
+        for t in context.viewpoint.targets:
+            match = self._is_target_applicable(t, sun_azimuth, context)
+            vp = context.viewpoint.location
+            bearing = GeoUtils.calculate_bearing(vp.lat, vp.lon, t.lat, t.lon)
+            detail = {
+                "name": t.name,
+                "bearing": round(bearing, 1),
+                "applicable_events": t.applicable_events,
+                "matched": match,
+            }
+            target_details.append(detail)
+            if match:
+                applicable.append(t)
+
+        debug["steps"].append({
+            "step": "target_match",
+            "targets": target_details,
+            "matched_count": len(applicable),
+            "passed": len(applicable) > 0,
+        })
+        if not applicable:
+            debug["decision"] = "rejected"
+            debug["reason"] = "无适用 Target（方位角不匹配或 applicable_events 不含对应事件）"
+            return debug
+
+        # 4. 计算三维度云量 + 阶梯评分
+        light_path_cloud = self._calc_light_path_cloud(context)
+        target_cloud = self._calc_target_cloud(applicable, context)
+        local_cloud = avg_cloud
+
+        s_light = self._score_light_path(light_path_cloud)
+        s_target = self._score_target(target_cloud)
+        s_local = self._score_local(local_cloud)
+
+        vetoed = (
+            s_light <= self._veto_threshold
+            or s_target <= self._veto_threshold
+            or s_local <= self._veto_threshold
+        )
+        total = 0 if vetoed else s_light + s_target + s_local
+        total = max(0, min(100, total))
+
+        veto_dims = []
+        if s_light <= self._veto_threshold:
+            veto_dims.append(f"光路({s_light})")
+        if s_target <= self._veto_threshold:
+            veto_dims.append(f"目标({s_target})")
+        if s_local <= self._veto_threshold:
+            veto_dims.append(f"本地({s_local})")
+
+        debug["steps"].append({
+            "step": "scoring",
+            "light_path_cloud": round(light_path_cloud, 1),
+            "target_cloud": round(target_cloud, 1),
+            "local_cloud": round(local_cloud, 1),
+            "s_light": s_light,
+            "s_target": s_target,
+            "s_local": s_local,
+            "vetoed": vetoed,
+            "veto_dims": veto_dims,
+            "total": total,
+        })
+
+        debug["total_score"] = total
+        if vetoed:
+            debug["decision"] = "vetoed"
+            debug["reason"] = f"一票否决 ({', '.join(veto_dims)})"
+        else:
+            debug["decision"] = "scored"
+            debug["reason"] = f"总分 {total}"
+
+        return debug

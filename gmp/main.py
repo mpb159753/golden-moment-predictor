@@ -510,5 +510,228 @@ def list_routes(output_format: str, config: str) -> None:
             )
 
 
+@cli.command()
+@click.argument("viewpoint_id")
+@click.option("--days", default=10, type=click.IntRange(1, 16), help="预测天数 (1-16)")
+@click.option(
+    "--output",
+    "output_format",
+    default="table",
+    type=click.Choice(["json", "table"]),
+    help="输出格式",
+)
+@click.option("--config", default="config/engine_config.yaml", help="配置文件路径")
+def debug(
+    viewpoint_id: str,
+    days: int,
+    output_format: str,
+    config: str,
+) -> None:
+    """诊断日照金山评分 — 逐天输出每个决策点的判断依据"""
+    from datetime import timedelta
+
+    from gmp.data.astro_utils import AstroUtils
+    from gmp.scoring.plugins.golden_mountain import GoldenMountainPlugin
+
+    try:
+        scheduler, viewpoint_config, _, config_manager, _, _ = (
+            _create_core_components(config)
+        )
+        viewpoint = viewpoint_config.get(viewpoint_id)
+
+        # 创建 sunrise/sunset 两个 GoldenMountain Plugin 实例
+        gm_cfg = config_manager.get_plugin_config("golden_mountain")
+        plugins = [
+            GoldenMountainPlugin("sunrise_golden_mountain", gm_cfg),
+            GoldenMountainPlugin("sunset_golden_mountain", gm_cfg),
+        ]
+
+        # 仅保留 viewpoint 实际配置了的 capability
+        from gmp.scoring.engine import _CAPABILITY_EVENT_MAP
+        allowed_events: set[str] = set()
+        for cap in viewpoint.capabilities:
+            mapped = _CAPABILITY_EVENT_MAP.get(cap, [cap])
+            allowed_events.update(mapped)
+        plugins = [p for p in plugins if p.event_type in allowed_events]
+
+        if not plugins:
+            click.echo(f"⚠️  观景台 {viewpoint_id} 没有配置 sunrise/sunset capability")
+            return
+
+        # 获取天气数据（复用 scheduler 内部逻辑）
+        result = scheduler.run(viewpoint_id, days=days)
+
+        # 然后对每天用 debug_score 重新诊断
+        astro = AstroUtils()
+        today = _DateTime.now(
+            tz=__import__("datetime").timezone(timedelta(hours=8))
+        ).date()
+
+        all_debug: list[dict] = []
+        for day_offset in range(days):
+            target_date = today + timedelta(days=day_offset)
+            target_date_str = target_date.isoformat()
+
+            # 取当天本地天气
+            local_weather = scheduler._fetcher.fetch_hourly(
+                lat=viewpoint.location.lat,
+                lon=viewpoint.location.lon,
+                days=days,
+            )
+            day_weather = local_weather[
+                local_weather["forecast_date"] == target_date_str
+            ].copy()
+
+            if day_weather.empty:
+                all_debug.append({
+                    "date": target_date_str,
+                    "events": [{"event_type": p.event_type, "decision": "rejected",
+                                "reason": "无天气数据"} for p in plugins],
+                })
+                continue
+
+            # 天文数据
+            sun_events = astro.get_sun_events(
+                viewpoint.location.lat,
+                viewpoint.location.lon,
+                target_date,
+            )
+
+            # 目标天气
+            target_weather: dict[str, __import__("pandas").DataFrame] = {}
+            if viewpoint.targets:
+                import pandas as pd
+                fetcher = scheduler._fetcher
+                for target in viewpoint.targets:
+                    try:
+                        tw = fetcher.fetch_hourly(
+                            lat=target.lat, lon=target.lon, days=days,
+                        )
+                        day_tw = tw[tw["forecast_date"] == target_date_str].copy()
+                        if not day_tw.empty:
+                            target_weather[target.name] = day_tw
+                    except Exception:
+                        pass
+
+            # 光路天气 (简化: 使用 None，debug_score 会跳过)
+            from gmp.scoring.models import DataContext
+            ctx = DataContext(
+                date=target_date,
+                viewpoint=viewpoint,
+                local_weather=day_weather,
+                sun_events=sun_events,
+                target_weather=target_weather if target_weather else None,
+                light_path_weather=None,
+            )
+
+            day_results = []
+            for plugin in plugins:
+                diag = plugin.debug_score(ctx)
+                diag["date"] = target_date_str
+                day_results.append(diag)
+
+            all_debug.append({
+                "date": target_date_str,
+                "days_ahead": day_offset + 1,
+                "events": day_results,
+            })
+
+        if output_format == "json":
+            import json as _json
+            output = {
+                "viewpoint_id": viewpoint_id,
+                "viewpoint_name": viewpoint.name,
+                "diagnostics": all_debug,
+            }
+            click.echo(_json.dumps(output, ensure_ascii=False, indent=2))
+        else:
+            _format_debug_table(viewpoint, all_debug)
+
+    except ViewpointNotFoundError as e:
+        click.echo(f"错误: {e}", err=True)
+        raise SystemExit(1)
+    except GMPError as e:
+        click.echo(f"GMP 错误: {e}", err=True)
+        raise SystemExit(3)
+
+
+def _format_debug_table(viewpoint: object, all_debug: list[dict]) -> None:
+    """格式化调试诊断表格输出"""
+    click.echo(f"🔍 日照金山诊断: {viewpoint.name} ({viewpoint.id})")
+    click.echo("=" * 60)
+
+    for day_data in all_debug:
+        days_ahead = day_data.get("days_ahead", "?")
+        click.echo(f"\n📅 {day_data['date']} (T+{days_ahead})")
+
+        for event in day_data["events"]:
+            et = event["event_type"]
+            icon = "🌅" if "sunrise" in et else "🌇"
+            click.echo(f"  {icon} {et}:")
+
+            steps = event.get("steps", [])
+            for step in steps:
+                name = step["step"]
+                passed = step.get("passed", False)
+                mark = "✅" if passed else "❌"
+
+                if name == "astro_check":
+                    if passed:
+                        click.echo(
+                            f"    {mark} 天文数据: "
+                            f"sun_azimuth={step['sun_azimuth']}°"
+                        )
+                    else:
+                        click.echo(f"    {mark} 天文数据: 缺失")
+
+                elif name == "cloud_trigger":
+                    click.echo(
+                        f"    {mark} 云量触发: "
+                        f"平均云量 {step['avg_cloud']}% "
+                        f"{'<' if passed else '≥'} "
+                        f"阈值 {step['threshold']}%"
+                    )
+
+                elif name == "target_match":
+                    targets = step.get("targets", [])
+                    matched = step["matched_count"]
+                    click.echo(
+                        f"    {mark} Target 匹配: "
+                        f"{matched}/{len(targets)} 个匹配"
+                    )
+                    for t in targets:
+                        t_mark = "✓" if t["matched"] else "✗"
+                        ae = t.get("applicable_events")
+                        ae_str = (
+                            f"显式={ae}" if ae else "自动计算"
+                        )
+                        click.echo(
+                            f"      {t_mark} {t['name']} "
+                            f"(bearing={t['bearing']}°, {ae_str})"
+                        )
+
+                elif name == "scoring":
+                    click.echo(
+                        f"    📊 评分: "
+                        f"光路={step['s_light']}({step['light_path_cloud']}%), "
+                        f"目标={step['s_target']}({step['target_cloud']}%), "
+                        f"本地={step['s_local']}({step['local_cloud']}%)"
+                    )
+                    if step["vetoed"]:
+                        dims = ", ".join(step.get("veto_dims", []))
+                        click.echo(
+                            f"    ❌ 一票否决: {dims} → 总分 0"
+                        )
+                    else:
+                        click.echo(
+                            f"    ✅ 总分: {step['total']}"
+                        )
+
+            # 如果没有 steps（如无天气数据），显示 reason
+            if not steps:
+                reason = event.get("reason", "未知")
+                click.echo(f"    ❌ {reason}")
+
+
 if __name__ == "__main__":
     cli()
