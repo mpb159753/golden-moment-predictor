@@ -10,6 +10,7 @@ vi.mock('@/assets/icons/stargazing.svg', () => ({ default: { template: '<svg dat
 vi.mock('@/assets/icons/frost.svg', () => ({ default: { template: '<svg data-testid="svg-icon"></svg>' } }))
 vi.mock('@/assets/icons/snow-tree.svg', () => ({ default: { template: '<svg data-testid="svg-icon"></svg>' } }))
 vi.mock('@/assets/icons/ice-icicle.svg', () => ({ default: { template: '<svg data-testid="svg-icon"></svg>' } }))
+vi.mock('@/assets/icons/clear-sky.svg', () => ({ default: { template: '<svg data-testid="svg-icon"></svg>' } }))
 
 import EventIcon from '@/components/event/EventIcon.vue'
 
@@ -67,6 +68,7 @@ describe('EventIcon', () => {
             frost: '#B0E0E6',
             snow_tree: '#E0E8EF',
             ice_icicle: '#ADD8E6',
+            clear_sky: '#FFB300',
         }
         for (const [eventType, expectedColor] of Object.entries(colorMap)) {
             const wrapper = mount(EventIcon, {

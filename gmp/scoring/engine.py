@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 # capability → event_type 映射表
 _CAPABILITY_EVENT_MAP: dict[str, list[str]] = {
+    "clear_sky": ["clear_sky"],
     "sunrise": ["sunrise_golden_mountain"],
     "sunset": ["sunset_golden_mountain"],
     "stargazing": ["stargazing"],
@@ -25,6 +26,15 @@ _CAPABILITY_EVENT_MAP: dict[str, list[str]] = {
     "snow_tree": ["snow_tree"],
     "ice_icicle": ["ice_icicle"],
 }
+
+# 通用能力 — 所有观景台自动注入，无需手动配置
+_UNIVERSAL_CAPABILITIES: list[str] = [
+    "clear_sky",    # 晴天（基底）
+    "stargazing",   # 观星（基底）
+    "frost",        # 雾凇（通用）
+    "snow_tree",    # 雪挂树（通用）
+    "ice_icicle",   # 冰挂（通用）
+]
 
 
 @runtime_checkable
@@ -58,6 +68,13 @@ class ScoreEngine:
     def all_plugins(self) -> list[ScorerPlugin]:
         """返回所有已注册 Plugin"""
         return list(self._plugins.values())
+
+    @property
+    def display_names(self) -> dict[str, str]:
+        """返回 event_type → 中文显示名称 的映射 (由 Plugin.display_name 驱动)"""
+        return {
+            et: plugin.display_name for et, plugin in self._plugins.items()
+        }
 
     def get(self, event_type: str) -> ScorerPlugin | None:
         """按 event_type 获取 Plugin"""
@@ -95,9 +112,10 @@ class ScoreEngine:
         3. 应用 events_filter
         4. 按 season_months 过滤
         """
-        # 展开 capabilities → event_types
+        # 合并通用能力后展开 capabilities → event_types
+        all_caps = list(set(capabilities + _UNIVERSAL_CAPABILITIES))
         allowed: set[str] = set()
-        for cap in capabilities:
+        for cap in all_caps:
             mapped = _CAPABILITY_EVENT_MAP.get(cap, [cap])
             allowed.update(mapped)
 

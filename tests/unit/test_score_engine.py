@@ -135,13 +135,18 @@ class TestFilterActivePlugins:
         )
 
     def test_capabilities_filter(self):
-        """capabilities=[sunrise, cloud_sea] → 仅对应 event_type 的 Plugin"""
+        """capabilities=[sunrise, cloud_sea] → 对应 Plugin + 通用 Plugin"""
         active = self.engine.filter_active_plugins(
             capabilities=["sunrise", "cloud_sea"],
             target_date=date(2026, 1, 15),
         )
         types = {p.event_type for p in active}
-        assert types == {"sunrise_golden_mountain", "cloud_sea"}
+        # 手动配置的
+        assert "sunrise_golden_mountain" in types
+        assert "cloud_sea" in types
+        # setup_method 里注册了 frost 和 snow_tree（通用能力），也会被注入
+        assert "frost" in types
+        assert "snow_tree" in types
 
     def test_events_filter(self):
         """events_filter 进一步限定"""
@@ -179,3 +184,82 @@ class TestFilterActivePlugins:
         )
         types = {p.event_type for p in active}
         assert "frost" in types
+
+
+# ==================== 通用能力自动注入 ====================
+
+
+class TestUniversalCapabilityInjection:
+    """通用 capabilities 自动注入到所有 viewpoint"""
+
+    def setup_method(self):
+        from gmp.scoring.engine import ScoreEngine
+
+        self.engine = ScoreEngine()
+        # 注册所有已知 Plugin
+        self.engine.register(StubPlugin("sunrise_golden_mountain"))
+        self.engine.register(StubPlugin("sunset_golden_mountain"))
+        self.engine.register(StubPlugin("cloud_sea"))
+        self.engine.register(StubPlugin("clear_sky"))
+        self.engine.register(StubPlugin("stargazing"))
+        self.engine.register(StubPlugin("frost"))
+        self.engine.register(
+            StubPlugin(
+                "snow_tree",
+                requirement=DataRequirement(season_months=[10, 11, 12, 1, 2]),
+            )
+        )
+        self.engine.register(
+            StubPlugin(
+                "ice_icicle",
+                requirement=DataRequirement(season_months=[11, 12, 1, 2]),
+            )
+        )
+
+    def test_sunset_only_viewpoint_gets_universal_plugins(self):
+        """仅配置 sunset 的 viewpoint → 自动包含 clear_sky, stargazing, frost 等通用 Plugin"""
+        active = self.engine.filter_active_plugins(
+            capabilities=["sunset"],
+            target_date=date(2026, 1, 15),
+        )
+        types = {p.event_type for p in active}
+        # 手动配置的
+        assert "sunset_golden_mountain" in types
+        # 自动注入的通用能力
+        assert "clear_sky" in types
+        assert "stargazing" in types
+        assert "frost" in types
+        assert "snow_tree" in types
+        assert "ice_icicle" in types
+        # 不应自动注入地形层
+        assert "sunrise_golden_mountain" not in types
+        assert "cloud_sea" not in types
+
+    def test_events_filter_overrides_universal_injection(self):
+        """events_filter 可以过滤掉自动注入的通用事件"""
+        active = self.engine.filter_active_plugins(
+            capabilities=["sunset"],
+            target_date=date(2026, 1, 15),
+            events_filter=["sunset_golden_mountain"],
+        )
+        types = {p.event_type for p in active}
+        assert types == {"sunset_golden_mountain"}
+
+    def test_full_capabilities_no_duplicates(self):
+        """已有完整 capabilities 的 viewpoint → 结果不变（无重复）"""
+        active = self.engine.filter_active_plugins(
+            capabilities=[
+                "sunrise", "sunset", "cloud_sea",
+                "clear_sky", "stargazing", "frost", "snow_tree", "ice_icicle",
+            ],
+            target_date=date(2026, 1, 15),
+        )
+        types = [p.event_type for p in active]
+        # 确认无重复
+        assert len(types) == len(set(types))
+        # 所有 Plugin 都在
+        assert set(types) == {
+            "sunrise_golden_mountain", "sunset_golden_mountain",
+            "cloud_sea", "clear_sky", "stargazing",
+            "frost", "snow_tree", "ice_icicle",
+        }

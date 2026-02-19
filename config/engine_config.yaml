@@ -85,6 +85,21 @@ scoring:
         clear: {range: [0, 30], score: 5}
         heavy: {range: [60, 100], score: 3}
 
+  clear_sky:
+    trigger:
+      max_cloud_cover: 80
+    weights:
+      cloud_cover: 50
+      precipitation: 25
+      visibility: 25
+    thresholds:
+      cloud_pct: [10, 30, 50, 70]
+      cloud_scores: [50, 40, 25, 10, 0]
+      precip_pct: [10, 30, 50]
+      precip_scores: [25, 20, 10, 0]
+      visibility_km: [30, 15, 5]
+      visibility_scores: [25, 20, 10, 5]
+
   stargazing:
     trigger:
       max_night_cloud_cover: 70

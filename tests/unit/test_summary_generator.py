@@ -8,6 +8,19 @@ from gmp.core.models import ScoreResult
 from gmp.output.summary_generator import SummaryGenerator
 
 
+# 测试用显示名称映射（模拟 Plugin.display_name 提供的翻译）
+_DISPLAY_NAMES: dict[str, str] = {
+    "sunrise_golden_mountain": "日出金山",
+    "sunset_golden_mountain": "日落金山",
+    "cloud_sea": "云海",
+    "stargazing": "观星",
+    "frost": "雾凇",
+    "clear_sky": "晴天",
+    "snow_tree": "树挂积雪",
+    "ice_icicle": "冰挂",
+}
+
+
 def _make_event(
     event_type: str = "cloud_sea",
     score: int = 85,
@@ -35,7 +48,7 @@ class TestSummaryGeneratorPerfectEvent:
     """有 Perfect 事件 → 完美观景日"""
 
     def test_single_perfect_event_contains_event_name(self) -> None:
-        gen = SummaryGenerator()
+        gen = SummaryGenerator(display_names=_DISPLAY_NAMES)
         events = [_make_event("sunrise_golden_mountain", 96, "Perfect")]
         result = gen.generate(events)
         assert "完美" in result
@@ -46,7 +59,7 @@ class TestSummaryGeneratorRecommended:
     """多个 Recommended → 列出 top 事件"""
 
     def test_multiple_recommended_lists_top_events(self) -> None:
-        gen = SummaryGenerator()
+        gen = SummaryGenerator(display_names=_DISPLAY_NAMES)
         events = [
             _make_event("cloud_sea", 90, "Recommended"),
             _make_event("sunrise_golden_mountain", 85, "Recommended"),

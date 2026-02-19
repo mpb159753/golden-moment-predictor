@@ -62,7 +62,8 @@ class GMPScheduler:
         self._astro = astro
         self._geo = geo
         self._summary_gen = SummaryGenerator(
-            mode=getattr(config.config, "summary_mode", "rule")
+            mode=getattr(config.config, "summary_mode", "rule"),
+            display_names=score_engine.display_names,
         )
 
     # ------------------------------------------------------------------

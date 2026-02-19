@@ -10,6 +10,9 @@ from typing import TYPE_CHECKING
 
 import structlog
 
+from gmp.scoring.engine import _UNIVERSAL_CAPABILITIES
+
+
 if TYPE_CHECKING:
     from gmp.core.config_loader import RouteConfig, ViewpointConfig
     from gmp.core.models import PipelineResult
@@ -98,7 +101,7 @@ class BatchGenerator:
                     "lon": vp.location.lon,
                     "altitude": vp.location.altitude,
                 },
-                "capabilities": vp.capabilities,
+                "capabilities": list(set(vp.capabilities + _UNIVERSAL_CAPABILITIES)),
                 "forecast_url": f"viewpoints/{vp.id}/forecast.json",
             })
 

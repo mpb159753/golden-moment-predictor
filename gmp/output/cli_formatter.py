@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 from gmp.core.models import PipelineResult, ScoreResult
-from gmp.output.summary_generator import EVENT_DISPLAY_NAMES
 
 
 # ANSI 颜色码
@@ -22,8 +21,13 @@ _RESET = "\033[0m"
 class CLIFormatter:
     """终端格式化输出"""
 
-    def __init__(self, color_enabled: bool = True) -> None:
+    def __init__(
+        self,
+        color_enabled: bool = True,
+        display_names: dict[str, str] | None = None,
+    ) -> None:
         self._color = color_enabled
+        self._display_names = display_names or {}
 
     def format_forecast(self, result: PipelineResult) -> str:
         """生成终端表格输出"""
@@ -44,7 +48,7 @@ class CLIFormatter:
                 day.events, key=lambda e: e.total_score, reverse=True
             )
             for event in sorted_events:
-                display = EVENT_DISPLAY_NAMES.get(
+                display = self._display_names.get(
                     event.event_type, event.event_type
                 )
                 status = self._colorize_status(event.status)
@@ -71,7 +75,7 @@ class CLIFormatter:
                 day.events, key=lambda e: e.total_score, reverse=True
             )
             for event in sorted_events:
-                display = EVENT_DISPLAY_NAMES.get(
+                display = self._display_names.get(
                     event.event_type, event.event_type
                 )
                 status = self._colorize_status(event.status)

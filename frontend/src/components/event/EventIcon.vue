@@ -22,6 +22,7 @@ import Stargazing from '@/assets/icons/stargazing.svg'
 import Frost from '@/assets/icons/frost.svg'
 import SnowTree from '@/assets/icons/snow-tree.svg'
 import IceIcicle from '@/assets/icons/ice-icicle.svg'
+import ClearSky from '@/assets/icons/clear-sky.svg'
 
 const props = defineProps({
   eventType: { type: String, required: true },
@@ -40,6 +41,7 @@ const EVENT_CONFIG = {
   frost:                   { color: '#B0E0E6', name: '雾凇',     icon: Frost },
   snow_tree:               { color: '#E0E8EF', name: '树挂积雪', icon: SnowTree },
   ice_icicle:              { color: '#ADD8E6', name: '冰挂',     icon: IceIcicle },
+  clear_sky:               { color: '#FFB300', name: '晴天',     icon: ClearSky },
 }
 
 const config = computed(() => EVENT_CONFIG[props.eventType] ?? { color: '#9CA3AF', name: props.eventType, icon: null })

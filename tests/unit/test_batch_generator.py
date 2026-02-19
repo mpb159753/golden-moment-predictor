@@ -219,6 +219,7 @@ class TestHappyPath:
         assert "location" in vp
         assert "capabilities" in vp
         assert "forecast_url" in vp
+        assert vp["forecast_url"] == f"viewpoints/{vp['id']}/forecast.json"
         assert vp["location"]["lat"] == 29.75
         rt = routes_list[0]
         assert isinstance(rt, dict)
@@ -226,6 +227,22 @@ class TestHappyPath:
         assert "name" in rt
         assert "stops" in rt
         assert "forecast_url" in rt
+
+    def test_index_json_capabilities_include_universal(self):
+        """index.json 中每个 viewpoint 的 capabilities 合并通用能力"""
+        bg, _, _, _, json_writer = _build_batch_generator()
+
+        bg.generate_all(days=7)
+
+        json_writer.write_index.assert_called_once()
+        index_args = json_writer.write_index.call_args
+        viewpoints_list = index_args.kwargs.get("viewpoints") or index_args.args[0]
+        # _make_viewpoint 仅配了 ["cloud_sea"]，但 index.json 里应合并通用
+        for vp in viewpoints_list:
+            assert "clear_sky" in vp["capabilities"]
+            assert "stargazing" in vp["capabilities"]
+            assert "frost" in vp["capabilities"]
+            assert "cloud_sea" in vp["capabilities"]  # 原始手动配的
 
     def test_writes_meta_json(self):
         """生成 meta.json 包含 generated_at, viewpoints_count, routes_count"""

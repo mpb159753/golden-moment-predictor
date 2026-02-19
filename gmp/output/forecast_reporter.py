@@ -13,14 +13,21 @@ from gmp.core.models import (
     Route,
     ScoreResult,
 )
-from gmp.output.summary_generator import SummaryGenerator, EVENT_DISPLAY_NAMES
+from gmp.output.summary_generator import SummaryGenerator
 
 
 class ForecastReporter:
     """预测报告生成器"""
 
-    def __init__(self, summary_gen: SummaryGenerator | None = None) -> None:
-        self._summary_gen = summary_gen or SummaryGenerator()
+    def __init__(
+        self,
+        summary_gen: SummaryGenerator | None = None,
+        display_names: dict[str, str] | None = None,
+    ) -> None:
+        self._display_names = display_names or {}
+        self._summary_gen = summary_gen or SummaryGenerator(
+            display_names=self._display_names,
+        )
 
     def generate(self, result: PipelineResult) -> dict:
         """将 PipelineResult → forecast.json 格式的 dict"""
@@ -109,12 +116,11 @@ class ForecastReporter:
             "stops": stops,
         }
 
-    @staticmethod
-    def _format_event(event: ScoreResult) -> dict:
+    def _format_event(self, event: ScoreResult) -> dict:
         """格式化单个事件为完整输出格式"""
         return {
             "event_type": event.event_type,
-            "display_name": EVENT_DISPLAY_NAMES.get(
+            "display_name": self._display_names.get(
                 event.event_type, event.event_type
             ),
             "time_window": event.time_window,

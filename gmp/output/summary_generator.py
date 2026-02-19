@@ -7,23 +7,17 @@ from __future__ import annotations
 
 from gmp.core.models import ScoreResult
 
-# event_type → 中文显示名称
-EVENT_DISPLAY_NAMES: dict[str, str] = {
-    "sunrise_golden_mountain": "日出金山",
-    "sunset_golden_mountain": "日落金山",
-    "cloud_sea": "云海",
-    "stargazing": "观星",
-    "frost": "雾凇",
-    "snow_tree": "树挂积雪",
-    "ice_icicle": "冰挂",
-}
-
 
 class SummaryGenerator:
     """基于规则的文字摘要生成器"""
 
-    def __init__(self, mode: str = "rule") -> None:
+    def __init__(
+        self,
+        mode: str = "rule",
+        display_names: dict[str, str] | None = None,
+    ) -> None:
         self._mode = mode
+        self._display_names = display_names or {}
 
     def generate(self, events: list[ScoreResult]) -> str:
         """基于事件列表生成单日文字摘要
@@ -64,6 +58,6 @@ class SummaryGenerator:
         """取前 N 个事件的显示名称，用 + 连接"""
         names: list[str] = []
         for event in sorted_events[:max_count]:
-            name = EVENT_DISPLAY_NAMES.get(event.event_type, event.event_type)
+            name = self._display_names.get(event.event_type, event.event_type)
             names.append(name)
         return "+".join(names)

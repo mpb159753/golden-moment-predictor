@@ -33,6 +33,7 @@ from gmp.output.forecast_reporter import ForecastReporter
 from gmp.output.json_file_writer import JSONFileWriter
 from gmp.output.timeline_reporter import TimelineReporter
 from gmp.scoring.engine import ScoreEngine
+from gmp.scoring.plugins.clear_sky import ClearSkyPlugin
 from gmp.scoring.plugins.cloud_sea import CloudSeaPlugin
 from gmp.scoring.plugins.frost import FrostPlugin
 from gmp.scoring.plugins.golden_mountain import GoldenMountainPlugin
@@ -71,6 +72,7 @@ def _register_plugins(engine: ScoreEngine, config: ConfigManager) -> None:
         config.get_safety_config(),
     ))
     engine.register(FrostPlugin(config.get_plugin_config("frost")))
+    engine.register(ClearSkyPlugin(config.get_plugin_config("clear_sky")))
     engine.register(SnowTreePlugin(config.get_plugin_config("snow_tree")))
     engine.register(IceIciclePlugin(config.get_plugin_config("ice_icicle")))
 
@@ -79,13 +81,13 @@ def _create_core_components(
     config_path: str = "config/engine_config.yaml",
 ) -> tuple[
     GMPScheduler, ViewpointConfig, RouteConfig, ConfigManager,
-    CacheRepository, MeteoFetcher,
+    CacheRepository, MeteoFetcher, ScoreEngine,
 ]:
     """创建核心依赖组件栈
 
     Returns:
         (scheduler, viewpoint_config, route_config, config_manager,
-         cache_repo, fetcher)
+         cache_repo, fetcher, engine)
     """
     viewpoint_config, route_config, config_manager = _load_configs(config_path)
 
@@ -111,7 +113,7 @@ def _create_core_components(
         geo=geo,
     )
 
-    return scheduler, viewpoint_config, route_config, config_manager, repo, fetcher
+    return scheduler, viewpoint_config, route_config, config_manager, repo, fetcher, engine
 
 
 def create_scheduler(
@@ -129,11 +131,12 @@ def create_batch_generator(
     config: ConfigManager,
     output_dir: str = "public/data",
     archive_dir: str = "archive",
+    display_names: dict[str, str] | None = None,
 ) -> BatchGenerator:
     """创建 BatchGenerator 及输出层组件"""
     from gmp.core.batch_generator import BatchGenerator
 
-    forecast_reporter = ForecastReporter()
+    forecast_reporter = ForecastReporter(display_names=display_names)
     timeline_reporter = TimelineReporter()
     json_writer = JSONFileWriter(output_dir=output_dir, archive_dir=archive_dir)
 
@@ -154,7 +157,7 @@ def create_backtester(
     """创建 Backtester 及其依赖"""
     from gmp.backtest.backtester import Backtester
 
-    scheduler, viewpoint_config, _, config_manager, repo, fetcher = (
+    scheduler, viewpoint_config, _, config_manager, repo, fetcher, _engine = (
         _create_core_components(config_path)
     )
 
@@ -228,12 +231,13 @@ def predict(
 ) -> None:
     """对指定观景台生成预测"""
     try:
-        scheduler = create_scheduler(config)
+        scheduler, _, _, _, _, _, engine = _create_core_components(config)
+        dn = engine.display_names
         events_list = _parse_events(events)
         result = scheduler.run(viewpoint_id, days=days, events=events_list)
 
         if output_format == "json":
-            forecast = ForecastReporter().generate(result)
+            forecast = ForecastReporter(display_names=dn).generate(result)
             json_output = json.dumps(forecast, ensure_ascii=False, indent=2)
             if output_file:
                 Path(output_file).write_text(json_output, encoding="utf-8")
@@ -241,7 +245,7 @@ def predict(
             else:
                 click.echo(json_output)
         else:
-            formatter = CLIFormatter()
+            formatter = CLIFormatter(display_names=dn)
             if detail:
                 click.echo(formatter.format_detail(result))
             else:
@@ -278,16 +282,17 @@ def predict_route(
 ) -> None:
     """对指定线路生成预测"""
     try:
-        scheduler, _, route_config, *_ = _create_core_components(config)
+        scheduler, _, route_config, _, _, _, engine = _create_core_components(config)
+        dn = engine.display_names
         events_list = _parse_events(events)
         results = scheduler.run_route(route_id, days=days, events=events_list)
 
         if output_format == "json":
             route = route_config.get(route_id)
-            forecast = ForecastReporter().generate_route(results, route)
+            forecast = ForecastReporter(display_names=dn).generate_route(results, route)
             click.echo(json.dumps(forecast, ensure_ascii=False, indent=2))
         else:
-            formatter = CLIFormatter()
+            formatter = CLIFormatter(display_names=dn)
             route = route_config.get(route_id)
             # 线路头信息
             lines: list[str] = [
@@ -340,12 +345,13 @@ def generate_all(
 ) -> None:
     """批量生成所有观景台和线路的预测 JSON 文件"""
     try:
-        scheduler, viewpoint_config, route_config, config_manager, *_ = (
+        scheduler, viewpoint_config, route_config, config_manager, _, _, engine = (
             _create_core_components(config)
         )
         batch_gen = create_batch_generator(
             scheduler, viewpoint_config, route_config, config_manager,
             output_dir=output_dir, archive_dir=archive_dir,
+            display_names=engine.display_names,
         )
 
         events_list = _parse_events(events)
@@ -428,6 +434,7 @@ def backtest(
 def list_viewpoints(output_format: str, config: str) -> None:
     """列出所有可用观景台"""
     capability_zh: dict[str, str] = {
+        "clear_sky": "晴天",
         "sunrise": "日出",
         "sunset": "日落",
         "cloud_sea": "云海",
