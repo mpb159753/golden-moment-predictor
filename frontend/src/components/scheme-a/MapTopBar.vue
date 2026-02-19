@@ -152,9 +152,9 @@ function onDateSelect(date) {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  /* 防止子元素超出视口 */
+  /* 防止子元素超出视口宽度，但允许纵向溢出（日期选择器下拉） */
   max-width: 100vw;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .search-box {

@@ -210,3 +210,6 @@ __marimo__/
 data/gmp.db
 public/
 archive/
+
+# Cloudflare Wrangler
+.wrangler/
