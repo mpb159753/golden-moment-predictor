@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date, datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
@@ -53,6 +54,7 @@ class BatchGenerator:
         events: list[str] | None = None,
         fail_fast: bool = False,
         no_archive: bool = False,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> dict:
         """批量生成所有观景台+线路的预测
 
@@ -71,23 +73,48 @@ class BatchGenerator:
         successful_viewpoints: list[str] = []
         successful_routes: list[str] = []
 
+        all_viewpoints = self._viewpoint_config.list_all()
+        all_routes = self._route_config.list_all()
+        total = len(all_viewpoints) + len(all_routes)
+        current = 0
+
+        _report = progress_callback or (lambda _msg: None)
+        _report(
+            f"🚀 开始批量生成: {len(all_viewpoints)} 个观景台, "
+            f"{len(all_routes)} 条线路, 预测 {days} 天"
+        )
+
         # 1. 遍历所有 viewpoints
-        for vp in self._viewpoint_config.list_all():
+        for vp in all_viewpoints:
+            current += 1
             result = self._process_viewpoint(vp.id, days, events, fail_fast)
             if result is not None:
                 successful_viewpoints.append(vp.id)
+                _report(
+                    f"📊 [{current}/{total}] ✅ 观景台 {vp.id} ({vp.name})"
+                )
             else:
                 failed_viewpoints.append(vp.id)
+                _report(
+                    f"📊 [{current}/{total}] ❌ 观景台 {vp.id} ({vp.name}) — 失败"
+                )
 
         # 2. 遍历所有 routes
-        for route in self._route_config.list_all():
+        for route in all_routes:
+            current += 1
             route_result = self._process_route(
                 route.id, days, events, fail_fast
             )
             if route_result is not None:
                 successful_routes.append(route.id)
+                _report(
+                    f"📊 [{current}/{total}] ✅ 线路 {route.id} ({route.name})"
+                )
             else:
                 failed_routes.append(route.id)
+                _report(
+                    f"📊 [{current}/{total}] ❌ 线路 {route.id} ({route.name}) — 失败"
+                )
 
         # 3. 生成 index.json (富对象格式，含 name/location/capabilities)
         vp_index = []

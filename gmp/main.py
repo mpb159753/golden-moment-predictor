@@ -360,6 +360,7 @@ def generate_all(
             events=events_list,
             fail_fast=fail_fast,
             no_archive=no_archive,
+            progress_callback=click.echo,
         )
 
         click.echo(f"✅ 生成完成")

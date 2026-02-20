@@ -455,3 +455,82 @@ class TestOutputStats:
         result = bg.generate_all(days=7, no_archive=True)
 
         assert result["archive_dir"] is None
+
+
+# ══════════════════════════════════════════════════════
+# 进度回调 Tests
+# ══════════════════════════════════════════════════════
+
+
+class TestProgressCallback:
+    """progress_callback 进度回调测试"""
+
+    def test_callback_receives_all_items(self):
+        """progress_callback 接收到所有观景台+线路的进度信息"""
+        bg, *_ = _build_batch_generator()
+        messages: list[str] = []
+
+        bg.generate_all(days=7, progress_callback=messages.append)
+
+        # 1 开始信息 + 2 viewpoints + 1 route = 4
+        assert len(messages) == 4
+
+    def test_callback_contains_counter(self):
+        """进度信息包含 [n/total] 计数器"""
+        bg, *_ = _build_batch_generator()
+        messages: list[str] = []
+
+        bg.generate_all(days=7, progress_callback=messages.append)
+
+        # 跳过开始信息，检查后续消息
+        assert "[1/3]" in messages[1]
+        assert "[2/3]" in messages[2]
+        assert "[3/3]" in messages[3]
+
+    def test_callback_shows_success_status(self):
+        """成功处理显示 ✅"""
+        bg, *_ = _build_batch_generator()
+        messages: list[str] = []
+
+        bg.generate_all(days=7, progress_callback=messages.append)
+
+        for msg in messages[1:]:
+            assert "✅" in msg
+
+    def test_callback_shows_failure_status(self):
+        """失败处理显示 ❌"""
+
+        def run_side_effect(vp_id, **kwargs):
+            if vp_id == "vp_b":
+                raise RuntimeError("fail")
+            return _make_pipeline_result(vp_id, days=kwargs.get("days", 7))
+
+        bg, *_ = _build_batch_generator(scheduler_run_side_effect=run_side_effect)
+        messages: list[str] = []
+
+        bg.generate_all(days=7, fail_fast=False, progress_callback=messages.append)
+
+        # vp_b 失败的那条消息应包含 ❌
+        failed_msgs = [m for m in messages if "vp_b" in m]
+        assert len(failed_msgs) == 1
+        assert "❌" in failed_msgs[0]
+        assert "失败" in failed_msgs[0]
+
+    def test_callback_shows_start_message(self):
+        """开始信息包含总数概览"""
+        bg, *_ = _build_batch_generator()
+        messages: list[str] = []
+
+        bg.generate_all(days=7, progress_callback=messages.append)
+
+        assert "🚀" in messages[0]
+        assert "2" in messages[0]  # 2 个观景台
+        assert "1" in messages[0]  # 1 条线路
+
+    def test_no_callback_still_works(self):
+        """不传 progress_callback 时正常工作"""
+        bg, *_ = _build_batch_generator()
+
+        result = bg.generate_all(days=7)
+
+        assert result["viewpoints_processed"] == 2
