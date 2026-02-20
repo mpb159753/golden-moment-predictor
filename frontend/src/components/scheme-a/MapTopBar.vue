@@ -36,17 +36,22 @@
     </div>
 
     <!-- 日期切换 -->
-    <div class="date-picker-wrapper" ref="datePickerRef">
+    <div class="date-picker-wrapper">
       <button class="date-btn" @click="showDatePicker = !showDatePicker">
         📅 {{ formatDate(selectedDate) }}
       </button>
-      <div v-if="showDatePicker" class="date-picker-dropdown">
-        <DatePicker
-          :model-value="selectedDate"
-          :dates="availableDates"
-          @update:model-value="onDateSelect"
-        />
-      </div>
+      <teleport to="body">
+        <div v-if="showDatePicker" class="date-picker-overlay" @click.self="showDatePicker = false">
+          <div class="date-picker-dropdown">
+            <DatePicker
+              :model-value="selectedDate"
+              :dates="availableDates"
+              wrap
+              @update:model-value="onDateSelect"
+            />
+          </div>
+        </div>
+      </teleport>
     </div>
 
     <!-- 线路模式切换 -->
@@ -60,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import DatePicker from '@/components/layout/DatePicker.vue'
 
 const props = defineProps({
@@ -75,17 +80,6 @@ const emit = defineEmits(['search', 'filter', 'date-change', 'toggle-route'])
 const searchQuery = ref('')
 const routeMode = ref(false)
 const showDatePicker = ref(false)
-const datePickerRef = ref(null)
-
-// 点击组件外部关闭日期选择器
-function handleClickOutside(e) {
-  if (datePickerRef.value && !datePickerRef.value.contains(e.target)) {
-    showDatePicker.value = false
-  }
-}
-
-onMounted(() => document.addEventListener('click', handleClickOutside))
-onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
 const filterOptions = [
   { type: 'golden_mountain', icon: '🏔️', label: '日照金山' },
@@ -263,18 +257,6 @@ function onDateSelect(date) {
   flex-shrink: 0;
 }
 
-.date-picker-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: var(--bg-card, #fff);
-  border-radius: var(--radius-md, 12px);
-  box-shadow: var(--shadow-elevated, 0 8px 24px rgba(0, 0, 0, 0.15));
-  padding: 8px;
-  z-index: 200;
-  min-width: 320px;
-}
-
 /* 小屏适配 —— 搜索框缩短、filter chips 隐藏在滚动中 */
 @media (max-width: 480px) {
   .map-top-bar {
@@ -300,10 +282,41 @@ function onDateSelect(date) {
     padding: 0 8px;
     font-size: 11px;
   }
+}
+</style>
 
-  .date-picker-dropdown {
-    right: -40px;
-    min-width: 280px;
+<!-- teleport 到 body 的元素需要全局样式 -->
+<style>
+.date-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 60px;
+  padding-top: calc(60px + env(safe-area-inset-top));
+}
+
+.date-picker-dropdown {
+  background: var(--bg-card, #fff);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: var(--shadow-elevated, 0 8px 24px rgba(0, 0, 0, 0.15));
+  padding: 12px;
+  width: calc(100vw - 32px);
+  max-width: 360px;
+  animation: date-picker-slide-in 0.2s ease-out;
+}
+
+@keyframes date-picker-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

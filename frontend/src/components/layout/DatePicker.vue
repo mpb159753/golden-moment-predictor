@@ -1,6 +1,6 @@
 <template>
   <div
-    class="date-picker"
+    :class="['date-picker', { 'date-picker--wrap': wrap }]"
     tabindex="0"
     @keydown="handleKeydown"
   >
@@ -21,6 +21,7 @@
 const props = defineProps({
   modelValue: { type: String, default: null },
   dates: { type: Array, default: () => [] },
+  wrap: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -65,6 +66,13 @@ function handleKeydown(e) {
   display: none;
 }
 
+.date-picker--wrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  justify-content: center;
+  gap: 6px;
+}
+
 .date-picker__pill {
   display: flex;
   flex-direction: column;
@@ -79,6 +87,13 @@ function handleKeydown(e) {
   cursor: pointer;
   transition: all var(--duration-fast, 200ms) ease;
   font-family: inherit;
+}
+
+.date-picker--wrap .date-picker__pill {
+  min-width: 0;
+  width: calc(25% - 5px);
+  padding: 6px 4px;
+  box-sizing: border-box;
 }
 
 .date-picker__pill:hover {
