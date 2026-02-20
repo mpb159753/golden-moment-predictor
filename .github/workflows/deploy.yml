@@ -33,7 +33,8 @@ jobs:
       - name: Copy data to frontend
         run: |
           rm -rf frontend/public/data
-          cp -r public/data frontend/public/data
+          mkdir -p frontend/public/data
+          cp -r public/data/* frontend/public/data/
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
