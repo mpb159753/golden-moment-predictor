@@ -461,5 +461,64 @@ describe('HomeView', () => {
         await miniTrend.vm.$emit('select', '2026-02-13')
         expect(mockSelectDate).toHaveBeenCalledWith('2026-02-13')
     })
+
+    // --- P1-1: 关闭按钮 ---
+    it('half-state renders a close button (.sheet-close-btn)', () => {
+        mockVpState.currentViewpoint = { id: 'niubei', name: '牛背山' }
+        mockVpState.currentDay = {
+            date: '2026-02-12',
+            best_event: { event_type: 'golden_mountain', score: 90 },
+            events: [{ event_type: 'golden_mountain', score: 90 }],
+        }
+        const wrapper = mountHome()
+        expect(wrapper.find('.half-content .sheet-close-btn').exists()).toBe(true)
+    })
+
+    it('full-state renders a close button (.sheet-close-btn--full)', () => {
+        mockVpState.currentViewpoint = { id: 'niubei', name: '牛背山' }
+        mockVpState.currentDay = {
+            date: '2026-02-12',
+            summary: '日照金山',
+            events: [{ event_type: 'golden_mountain', score: 90 }],
+        }
+        mockVpState.currentForecast = {
+            daily: [{ date: '2026-02-12', events: [] }],
+        }
+        const wrapper = mountHome()
+        expect(wrapper.find('.full-content .sheet-close-btn--full').exists()).toBe(true)
+    })
+
+    it('clicking close button sets sheetState to collapsed and clears selection', async () => {
+        mockVpState.currentViewpoint = { id: 'niubei', name: '牛背山' }
+        mockVpState.currentDay = {
+            date: '2026-02-12',
+            best_event: { event_type: 'golden_mountain', score: 90 },
+            events: [{ event_type: 'golden_mountain', score: 90 }],
+        }
+        const wrapper = mountHome()
+        const closeBtn = wrapper.find('.half-content .sheet-close-btn')
+        await closeBtn.trigger('click')
+        const sheet = wrapper.findComponent({ name: 'BottomSheet' })
+        expect(sheet.props('state')).toBe('collapsed')
+        expect(mockClearSelection).toHaveBeenCalled()
+    })
+
+    // --- P1-2: 设备自适应文案 ---
+    it('shows PC hint text on non-touch devices', () => {
+        // 模拟非触屏设备：删除 ontouchstart（in 检查的是属性是否存在）
+        delete window.ontouchstart
+        Object.defineProperty(navigator, 'maxTouchPoints', { value: 0, configurable: true })
+
+        mockVpState.currentViewpoint = { id: 'niubei', name: '牛背山' }
+        mockVpState.currentDay = {
+            date: '2026-02-12',
+            best_event: { event_type: 'golden_mountain', score: 90 },
+            events: [{ event_type: 'golden_mountain', score: 90 }],
+        }
+        const wrapper = mountHome()
+        const hint = wrapper.find('.half-expand-hint')
+        expect(hint.text()).toContain('点击查看完整报告')
+        expect(hint.text()).not.toContain('上拉')
+    })
 })
 

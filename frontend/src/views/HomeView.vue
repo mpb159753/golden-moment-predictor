@@ -71,10 +71,13 @@
           <!-- ① 标题行: 景点名 + 最高分 + 图标 -->
           <div class="half-title-row">
             <span class="half-vp-name">{{ currentViewpoint.name }}</span>
-            <span class="half-best-score">
-              <EventIcon v-if="currentDay?.best_event?.event_type" :event-type="currentDay.best_event.event_type" :size="18" />
-              {{ currentDay?.best_event?.score ?? 0 }}
-            </span>
+            <div class="half-title-right">
+              <span class="half-best-score">
+                <EventIcon v-if="currentDay?.best_event?.event_type" :event-type="currentDay.best_event.event_type" :size="18" />
+                {{ currentDay?.best_event?.score ?? 0 }}
+              </span>
+              <button class="sheet-close-btn" @click.stop="onCloseSheet" aria-label="关闭">✕</button>
+            </div>
           </div>
           <!-- ② 0分事件拒绝原因 (去重) -->
           <div v-if="zeroScoreReasons.length" class="half-reject-reasons">
@@ -104,7 +107,7 @@
               <span class="chip-score">{{ evt.score }}</span>
             </div>
           </div>
-          <div class="half-expand-hint">↑ 上拉查看完整报告</div>
+          <div class="half-expand-hint">{{ isTouchDevice ? '↑ 上拉查看完整报告' : '点击查看完整报告' }}</div>
         </div>
       </template>
 
@@ -116,6 +119,7 @@
             <div class="full-header__top">
               <h2 class="full-vp-name">{{ currentViewpoint.name }}</h2>
               <span class="full-date">{{ formatFullDate(currentDay?.date) }}</span>
+              <button class="sheet-close-btn sheet-close-btn--full" @click.stop="onCloseSheet" aria-label="关闭">✕</button>
             </div>
             <div class="full-header__summary" v-if="currentDay?.summary">{{ currentDay.summary }}</div>
             <div class="full-header__chips" v-if="currentDay?.events?.length">
@@ -126,6 +130,13 @@
               </div>
             </div>
           </div>
+          <!-- 日期导航条 -->
+          <MiniTrend
+            v-if="currentForecast?.daily"
+            :daily="currentForecast.daily"
+            :selected-date="selectedDate"
+            @select="onTrendDateSelect"
+          />
           <EventList :events="currentDay?.events ?? []" showBreakdown />
           <WeekTrend
             v-if="currentForecast"
@@ -387,6 +398,13 @@ function onRecommendSelect(rec) {
   onMarkerClick(rec.viewpoint)
 }
 
+const isTouchDevice = computed(() => 'ontouchstart' in window || navigator.maxTouchPoints > 0)
+
+function onCloseSheet() {
+  sheetState.value = 'collapsed'
+  vpStore.clearSelection()
+}
+
 function expandSheet() {
   sheetState.value = 'full'
 }
@@ -580,9 +598,40 @@ watch(mapInstance, (map) => {
   color: var(--color-text-dark, #374151);
 }
 
+.half-title-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .half-best-score {
   font-weight: 700;
   font-size: var(--text-lg, 18px);
+}
+
+.sheet-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full, 9999px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary, #6B7280);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast, 0.15s);
+  flex-shrink: 0;
+}
+
+.sheet-close-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text-primary, #374151);
+}
+
+.sheet-close-btn--full {
+  margin-left: auto;
 }
 
 .half-reject-reasons {

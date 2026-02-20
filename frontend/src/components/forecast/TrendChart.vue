@@ -14,6 +14,8 @@
           :event-type="day.best_event.event_type"
           :size="20"
         />
+        <span class="trend-icon-date">{{ formatShortDate(day.date) }}</span>
+        <span class="trend-icon-score">{{ day.best_event?.score ?? 0 }}</span>
       </div>
     </div>
   </div>
@@ -50,6 +52,13 @@ function formatDateLabel(dateStr) {
   const d = new Date(dateStr + 'T00:00:00+08:00')
   const mm = String(d.getMonth() + 1)
   const dd = String(d.getDate())
+  return `${mm}/${dd}`
+}
+
+function formatShortDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00+08:00')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
   return `${mm}/${dd}`
 }
 
@@ -134,20 +143,45 @@ onUnmounted(() => {
 
 .trend-icon-cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4px;
-  border-radius: 6px;
+  padding: 6px 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
+  min-width: 40px;
 }
 
 .trend-icon-cell.selected {
-  background-color: rgba(255, 215, 0, 0.15);
-  box-shadow: 0 0 0 1.5px rgba(255, 215, 0, 0.4);
+  background-color: rgba(255, 215, 0, 0.22);
+  box-shadow: 0 0 0 2.5px rgba(255, 215, 0, 0.7);
+}
+
+.trend-icon-cell.selected .trend-icon-score {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.trend-icon-cell.selected .trend-icon-date {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 .trend-icon-cell:hover {
   background-color: rgba(255, 255, 255, 0.08);
+}
+
+.trend-icon-date {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.trend-icon-score {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 </style>

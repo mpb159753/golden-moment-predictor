@@ -18,10 +18,24 @@ describe('MiniTrend', () => {
         expect(wrapper.findAll('.trend-day')).toHaveLength(7)
     })
 
-    it('displays date number', () => {
+    it('displays date in MM/DD format', () => {
         const wrapper = mount(MiniTrend, { props: { daily: mockDaily } })
         const days = wrapper.findAll('.trend-day')
-        expect(days[0].text()).toContain('19')
+        // 2026-02-19 → 02/19
+        expect(days[0].find('.trend-date').text()).toBe('02/19')
+        // 2026-02-22 → 02/22
+        expect(days[3].find('.trend-date').text()).toBe('02/22')
+    })
+
+    it('displays weekday label', () => {
+        const wrapper = mount(MiniTrend, { props: { daily: mockDaily } })
+        const days = wrapper.findAll('.trend-day')
+        // 2026-02-19 is Thursday → 周四
+        expect(days[0].find('.trend-weekday').text()).toBe('周四')
+        // 2026-02-20 is Friday → 周五
+        expect(days[1].find('.trend-weekday').text()).toBe('周五')
+        // 2026-02-22 is Sunday → 周日
+        expect(days[3].find('.trend-weekday').text()).toBe('周日')
     })
 
     it('displays score', () => {

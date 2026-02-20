@@ -98,4 +98,21 @@ describe('TrendChart', () => {
         expect(wrapper.emitted('select')).toBeTruthy()
         expect(wrapper.emitted('select')[0]).toEqual(['2026-02-21'])
     })
+
+    it('renders date text in each icon cell', () => {
+        const wrapper = mount(TrendChart, { props: { daily: mockDaily } })
+        const cells = wrapper.findAll('.trend-icon-cell')
+        // 2026-02-19 → 02/19
+        expect(cells[0].find('.trend-icon-date').text()).toBe('02/19')
+        // 2026-02-22 → 02/22
+        expect(cells[3].find('.trend-icon-date').text()).toBe('02/22')
+    })
+
+    it('renders score in each icon cell', () => {
+        const wrapper = mount(TrendChart, { props: { daily: mockDaily } })
+        const cells = wrapper.findAll('.trend-icon-cell')
+        expect(cells[0].find('.trend-icon-score').text()).toBe('30')
+        expect(cells[3].find('.trend-icon-score').text()).toBe('90')
+        expect(cells[6].find('.trend-icon-score').text()).toBe('5')
+    })
 })

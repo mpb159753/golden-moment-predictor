@@ -126,8 +126,27 @@ describe('MapTopBar', () => {
     })
 
     // --- 日期 ---
-    it('shows "今天" when selectedDate is empty', () => {
+    it('shows \"今天\" when selectedDate is empty', () => {
         const wrapper = mountTopBar({ selectedDate: '' })
         expect(wrapper.find('.date-btn').text()).toContain('今天')
+    })
+
+    // --- P1-4: 筛选按钮 Tooltip ---
+    it('each chip button has a title attribute with Chinese label', () => {
+        const wrapper = mountTopBar()
+        const chips = wrapper.findAll('.chip')
+        const expectedTitles = ['日照金山', '云海', '观星', '霜冻']
+        chips.forEach((chip, i) => {
+            expect(chip.attributes('title')).toBe(expectedTitles[i])
+        })
+    })
+
+    it('each chip button has an aria-label attribute for accessibility', () => {
+        const wrapper = mountTopBar()
+        const chips = wrapper.findAll('.chip')
+        const expectedLabels = ['日照金山', '云海', '观星', '霜冻']
+        chips.forEach((chip, i) => {
+            expect(chip.attributes('aria-label')).toBe(expectedLabels[i])
+        })
     })
 })

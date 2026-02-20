@@ -32,7 +32,7 @@
       <div v-if="zeroScoreReasons.length" class="reject-reasons">
         <div v-for="(evt, idx) in zeroScoreReasons" :key="idx" class="reject-reason">
           <EventIcon :event-type="evt.event_type" :size="16" />
-          <span>{{ evt.reject_reason }}</span>
+          <span>{{ translateReason(evt.reject_reason) }}</span>
         </div>
       </div>
 
@@ -115,6 +115,24 @@ const selectedDate = computed({
 const currentDay = computed(() =>
   forecast.value?.daily?.find(d => d.date === selectedDate.value)
 )
+
+// reject_reason 英译中映射
+const REASON_ZH_MAP = {
+  cloud: '云量',
+  avg_cloud: '平均云量',
+  cloud_base: '云底',
+  temp: '温度',
+  precip: '降水',
+  wind: '风速',
+  visibility: '能见度',
+}
+
+function translateReason(raw) {
+  if (!raw) return ''
+  return raw.replace(/^(\w+)=/, (_, key) => {
+    return (REASON_ZH_MAP[key] || key) + '='
+  })
+}
 
 // 0 分事件拒绝原因
 const zeroScoreReasons = computed(() =>

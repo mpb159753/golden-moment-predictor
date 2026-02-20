@@ -58,7 +58,7 @@ class ClearSkyPlugin:
         # ── 触发判定 ──
         trigger = self._config.get("trigger", {})
         max_cloud = trigger.get("max_cloud_cover", 80)
-        avg_cloud = weather["cloud_cover"].mean()
+        avg_cloud = weather["cloud_cover_total"].mean()
 
         if avg_cloud >= max_cloud:
             return None

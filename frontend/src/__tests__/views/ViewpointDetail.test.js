@@ -223,6 +223,18 @@ describe('ViewpointDetail', () => {
         expect(reasons[1].text()).toContain('云量过高')
     })
 
+    it('translates English reject reason keys to Chinese', () => {
+        mockStoreState.currentForecast.daily[0].events = [
+            { event_type: 'sunrise_golden_mountain', score: 0, reject_reason: 'cloud=74%' },
+            { event_type: 'frost', score: 0, reject_reason: 'wind=85%' },
+        ]
+        const wrapper = mountDetail()
+        const reasons = wrapper.findAll('.reject-reason')
+        expect(reasons.length).toBe(2)
+        expect(reasons[0].text()).toContain('云量=74%')
+        expect(reasons[1].text()).toContain('风速=85%')
+    })
+
     it('does not show reject reasons when no zero-score events', () => {
         const wrapper = mountDetail()
         expect(wrapper.findAll('.reject-reason').length).toBe(0)

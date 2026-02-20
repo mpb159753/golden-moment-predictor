@@ -102,13 +102,13 @@ describe('ViewpointMarker', () => {
     })
 
     // --- 三种状态 ---
-    it('renders default state: circle with score number', async () => {
+    it('renders default state: circle with score and viewpoint name label', async () => {
         mountMarker({ score: 75, selected: false, zoom: 10 })
         await flushPromises()
         const content = markerInstances[0].content
         expect(content).toContain('75')
-        // 默认标记不应包含观景台名称
-        expect(content).not.toContain('牛背山')
+        // 默认态（zoom >= 9）应包含观景台名称标签
+        expect(content).toContain('牛背山')
     })
 
     it('renders selected state: expanded with viewpoint name', async () => {
@@ -138,6 +138,21 @@ describe('ViewpointMarker', () => {
         const content = markerInstances[0].content
         // 即使 zoom 低，选中态也应该显示名称
         expect(content).toContain('牛背山')
+    })
+
+    // --- 名称标签 ---
+    it('default state name label has text-overflow ellipsis', async () => {
+        mountMarker({ score: 75, selected: false, zoom: 10 })
+        await flushPromises()
+        const content = markerInstances[0].content
+        expect(content).toContain('text-overflow: ellipsis')
+    })
+
+    it('mini state (zoom < 9) does not contain viewpoint name', async () => {
+        mountMarker({ score: 85, selected: false, zoom: 7 })
+        await flushPromises()
+        const content = markerInstances[0].content
+        expect(content).not.toContain('牛背山')
     })
 
     // --- 样式 ---

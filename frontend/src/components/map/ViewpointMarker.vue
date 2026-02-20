@@ -46,14 +46,17 @@ export default {
       const bg = colorInfo.gradient || colorInfo.color
       const isZoomMini = props.zoom < 9 && !props.selected
 
-      // 缩略态: 仅圆点 (zoom < 9 且未选中)
+      // 缩略态: 仅圆点 (zoom < 9 且未选中) + 扩大触摸热区
       if (isZoomMini) {
-        return `<div class="marker-dot" style="
+        return `<div style="
+          width: 32px; height: 32px;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+        "><div class="marker-dot" style="
           width: 12px; height: 12px; border-radius: 50%;
           background: ${bg};
           box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-          cursor: pointer;
-        "></div>`
+        "></div></div>`
       }
 
       const pulse = props.score >= 95
@@ -106,10 +109,15 @@ export default {
         </div>`
       }
 
-      // 默认态: 圆形评分标记
+      // 默认态: 圆形评分标记 + 名称标签 + 扩大触摸热区
       return `<div style="
         position: relative;
         transition: transform 0.3s ease;
+        padding: 4px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       ">
         ${pulse}
         <div style="
@@ -118,7 +126,6 @@ export default {
           color: white; display: flex; align-items: center; justify-content: center;
           font-weight: 700; font-size: 14px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-          cursor: pointer;
           transition: box-shadow 0.3s ease, transform 0.3s ease;
         ">${getSvgBadge()}${props.score}</div>
         <div style="
@@ -126,8 +133,18 @@ export default {
           border-left: 5px solid transparent;
           border-right: 5px solid transparent;
           border-top: 5px solid ${bg};
-          margin: 0 auto;
         "></div>
+        <div style="
+          font-size: 10px;
+          color: #374151;
+          white-space: nowrap;
+          text-align: center;
+          margin-top: 2px;
+          text-shadow: 0 0 3px white, 0 0 3px white;
+          max-width: 80px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        ">${props.viewpoint.name}</div>
       </div>`
     }
 

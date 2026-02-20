@@ -56,7 +56,25 @@ function buildOption() {
   }))
 
   return {
-    tooltip: { trigger: 'axis' },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#E5E7EB',
+      textStyle: { color: '#374151', fontSize: 12 },
+      formatter(params) {
+        if (!params || !params.length) return ''
+        let html = `<div style="font-weight:600;margin-bottom:4px">${params[0].axisValue}</div>`
+        for (const p of params) {
+          if (p.value == null) continue
+          html += `<div style="display:flex;align-items:center;gap:6px;margin:2px 0">
+            ${p.marker}
+            <span>${p.seriesName}</span>
+            <span style="font-weight:700;margin-left:auto">${p.value}</span>
+          </div>`
+        }
+        return html
+      },
+    },
     legend: {
       bottom: 0,
       type: 'scroll',        // 可滚动图例，避免多行重叠

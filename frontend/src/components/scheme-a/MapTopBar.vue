@@ -28,6 +28,8 @@
         :key="filter.type"
         :class="['chip', { active: activeFilters.includes(filter.type) }]"
         @click="toggleFilter(filter.type)"
+        :title="filter.label"
+        :aria-label="filter.label"
       >
         {{ filter.icon }}
       </button>
@@ -86,10 +88,10 @@ onMounted(() => document.addEventListener('click', handleClickOutside))
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
 const filterOptions = [
-  { type: 'golden_mountain', icon: '🏔️' },
-  { type: 'cloud_sea', icon: '☁️' },
-  { type: 'stargazing', icon: '⭐' },
-  { type: 'frost', icon: '❄️' },
+  { type: 'golden_mountain', icon: '🏔️', label: '日照金山' },
+  { type: 'cloud_sea', icon: '☁️', label: '云海' },
+  { type: 'stargazing', icon: '⭐', label: '观星' },
+  { type: 'frost', icon: '❄️', label: '霜冻' },
 ]
 
 const searchResults = computed(() => {
