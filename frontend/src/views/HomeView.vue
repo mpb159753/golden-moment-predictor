@@ -111,7 +111,21 @@
       <!-- 全展态: 七日预测 -->
       <template #full>
         <div v-if="currentViewpoint" ref="sheetContentRef" class="full-content">
-          <DaySummary :day="currentDay" :clickable="false" />
+          <!-- 紧凑头部: 景点名 + 日期 + 摘要 + 事件徽章 -->
+          <div class="full-header">
+            <div class="full-header__top">
+              <h2 class="full-vp-name">{{ currentViewpoint.name }}</h2>
+              <span class="full-date">{{ formatFullDate(currentDay?.date) }}</span>
+            </div>
+            <div class="full-header__summary" v-if="currentDay?.summary">{{ currentDay.summary }}</div>
+            <div class="full-header__chips" v-if="currentDay?.events?.length">
+              <div v-for="evt in currentDay.events" :key="evt.event_type" class="full-chip">
+                <EventIcon :event-type="evt.event_type" :size="16" />
+                <ScoreRing :score="evt.score" size="sm" />
+                <StatusBadge :status="evt.status" />
+              </div>
+            </div>
+          </div>
           <EventList :events="currentDay?.events ?? []" showBreakdown />
           <WeekTrend
             v-if="currentForecast"
@@ -173,7 +187,16 @@ import TimePeriodBar from '@/components/forecast/TimePeriodBar.vue'
 import MiniTrend from '@/components/forecast/MiniTrend.vue'
 import ScreenshotBtn from '@/components/export/ScreenshotBtn.vue'
 import EventIcon from '@/components/event/EventIcon.vue'
+import ScoreRing from '@/components/score/ScoreRing.vue'
+import StatusBadge from '@/components/score/StatusBadge.vue'
 import { useTimePeriod } from '@/composables/useTimePeriod'
+
+function formatFullDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr + 'T00:00:00+08:00')
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${weekdays[d.getDay()]}`
+}
 
 
 const router = useRouter()
@@ -491,6 +514,53 @@ watch(mapInstance, (map) => {
 .half-content,
 .full-content {
   padding: 16px;
+}
+
+.full-header {
+  margin-bottom: 12px;
+}
+
+.full-header__top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.full-vp-name {
+  font-size: var(--text-lg, 18px);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.full-date {
+  font-size: var(--text-sm, 14px);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.full-header__summary {
+  font-size: var(--text-sm, 14px);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+
+.full-header__chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.full-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary, #F9FAFB);
+  font-size: var(--text-xs);
 }
 
 .half-content {
