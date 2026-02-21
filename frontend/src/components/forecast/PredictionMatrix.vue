@@ -23,7 +23,10 @@
                                 <span class="cell-event" v-if="getDayData(vp, day)?.am?.event && (getDayData(vp, day)?.am?.score ?? 0) >= 50">
                                     {{ getDayData(vp, day)?.am?.event }}
                                 </span>
-                                <span class="cell-weather">{{ getDayData(vp, day)?.am?.weather || '—' }}</span>
+                                <span class="cell-weather">
+                                    <span class="weather-icon">{{ weatherEmoji(getDayData(vp, day)?.am?.weather) }}</span>
+                                    <span class="weather-text">{{ getDayData(vp, day)?.am?.weather || '—' }}</span>
+                                </span>
                             </span>
                         </td>
                     </tr>
@@ -40,7 +43,10 @@
                                 <span class="cell-event" v-if="getDayData(vp, day)?.pm?.event && (getDayData(vp, day)?.pm?.score ?? 0) >= 50">
                                     {{ getDayData(vp, day)?.pm?.event }}
                                 </span>
-                                <span class="cell-weather">{{ getDayData(vp, day)?.pm?.weather || '—' }}</span>
+                                <span class="cell-weather">
+                                    <span class="weather-icon">{{ weatherEmoji(getDayData(vp, day)?.pm?.weather) }}</span>
+                                    <span class="weather-text">{{ getDayData(vp, day)?.pm?.weather || '—' }}</span>
+                                </span>
                             </span>
                         </td>
                     </tr>
@@ -55,6 +61,8 @@
                 </tr>
             </tfoot>
         </table>
+        <!-- 品牌水印 -->
+        <div class="watermark">黄金时刻预测 GMP · golden-moment-predictor</div>
     </div>
 </template>
 
@@ -67,9 +75,30 @@ const props = defineProps({
     generatedAt: { type: String, default: '' },
 })
 
+const WEATHER_EMOJI = {
+    '晴天': '☀️',
+    '多云': '⛅',
+    '阴天': '☁️',
+    '雾': '🌫️',
+    '小雨': '🌦️',
+    '中雨': '🌧️',
+    '大雨': '🌧️',
+    '雨': '🌦️',
+    '小雪': '🌨️',
+    '大雪': '❄️',
+    '雪': '🌨️',
+    '冻雨': '🌨️',
+}
+
+function weatherEmoji(weather) {
+    if (!weather) return ''
+    return WEATHER_EMOJI[weather] ?? '🌤️'
+}
+
 function formatDate(dateStr) {
     const d = new Date(dateStr)
-    return `${d.getMonth() + 1}/${d.getDate()}`
+    const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+    return `${d.getMonth() + 1}/${d.getDate()}\n周${weekDays[d.getDay()]}`
 }
 
 function formatGeneratedAt(iso) {
@@ -79,11 +108,11 @@ function formatGeneratedAt(iso) {
 }
 
 /**
- * 返回分数对应的 CSS class，替代内联 backgroundColor
- * score >= 80  → score-star   (强烈推荐，深青）
- * score >= 50  → score-good   (推荐，暖琥珀）
- * score >= 25  → score-mild   (一般，冷蓝灰）
- * score < 25   → score-poor   (不推荐，极浅冷灰）
+ * 分数色阶（明亮主题）
+ * score >= 80  → score-star   (金橙，强烈推荐)
+ * score >= 50  → score-good   (翠绿，推荐)
+ * score >= 25  → score-mild   (蓝灰，一般)
+ * score < 25   → score-poor   (极浅，不推荐)
  */
 function getScoreClass(score) {
     if (score >= 80) return 'score-star'
@@ -101,6 +130,7 @@ function getDayData(vp, day) {
 /* ── 容器 ── */
 .prediction-matrix {
     overflow-x: auto;
+    position: relative;
 }
 
 /* ── 表格基础 ── */
@@ -108,138 +138,167 @@ table {
     border-collapse: separate;
     border-spacing: 0;
     width: 100%;
-    font-size: 12.5px;
-    font-family: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+    font-size: 12px;
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
 /* ── 表头：山系标题行 ── */
 .group-header-row th {
-    background: #1e293b;   /* slate-900 */
-    color: #f8fafc;        /* slate-50 */
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 10px 12px;
+    background: linear-gradient(135deg, #1a4a2e 0%, #2d6a4f 60%, #1a5e3a 100%);
+    color: #fef9e7;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    padding: 11px 14px;
     border: none;
 }
 
 .group-name-cell {
     text-align: left;
-    font-size: 13.5px;
+    font-size: 14px;
+    font-family: 'Noto Serif SC', 'Songti SC', serif;
+    letter-spacing: 0.14em;
 }
 
 .date-header {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    opacity: 0.85;
-    min-width: 80px;
+    opacity: 0.92;
+    min-width: 78px;
+    text-align: center;
+    white-space: pre-line;
+    line-height: 1.6;
 }
 
 /* ── 景点名称列 ── */
 .viewpoint-name {
-    font-weight: 600;
-    font-size: 12px;
-    color: #334155;        /* slate-700 */
-    background: #f8fafc;   /* slate-50 */
-    min-width: 72px;
+    font-weight: 700;
+    font-size: 11.5px;
+    color: #2d4a2d;
+    background: #f0f7f0;
+    min-width: 68px;
     padding: 0 10px;
-    border-right: 2px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
+    border-right: 2px solid #c8e0c8;
+    border-bottom: 1px solid #dceadc;
     vertical-align: middle;
     white-space: normal;
     word-break: keep-all;
     text-align: center;
-    line-height: 1.3;
+    line-height: 1.4;
 }
 
 /* ── 上午/下午标签 ── */
 .period-label {
-    font-size: 11px;
-    font-weight: 500;
-    min-width: 32px;
-    padding: 5px 6px;
-    border-right: 1px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
+    font-size: 10.5px;
+    font-weight: 600;
+    min-width: 28px;
+    padding: 4px 6px;
+    border-right: 1px solid #e0ece0;
+    border-bottom: 1px solid #e8f0e8;
     white-space: nowrap;
+    text-align: center;
+    letter-spacing: 0.02em;
 }
 
 .am-label {
-    color: #b45309;        /* amber-700 */
-    background: #fffbeb;   /* amber-50 */
+    color: #92400e;
+    background: #fffbeb;
 }
 
 .pm-label {
-    color: #6366f1;        /* indigo-500 */
-    background: #eef2ff;   /* indigo-50 */
+    color: #4c1d95;
+    background: #f5f3ff;
 }
-
-/* ── 行间隔着色 ── */
-.row-even .viewpoint-name,
-.row-even .period-label { /* 已由 am/pm 覆盖 */ }
 
 /* ── 数据格子 ── */
 .score-cell {
-    padding: 5px 6px;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    border-right: 1px solid rgba(0,0,0,0.06);
+    padding: 5px 5px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
     vertical-align: middle;
-    transition: opacity 0.15s;
+    transition: filter 0.15s;
 }
 
-.score-cell:hover { opacity: 0.85; }
+.score-cell:hover { filter: brightness(0.94); }
 
 .cell-inner {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1px;
+    gap: 2px;
     line-height: 1.3;
 }
 
+/* 景观事件标签 */
 .cell-event {
-    font-size: 11.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
     color: inherit;
-    white-space: nowrap;
+    background: rgba(255, 255, 255, 0.55);
+    border-radius: 10px;
+    padding: 1px 7px;
+    letter-spacing: 0.02em;
 }
 
+/* 天气行 */
 .cell-weather {
-    font-size: 10.5px;
-    opacity: 0.75;
+    display: flex;
+    align-items: center;
+    gap: 2px;
     white-space: nowrap;
 }
 
-/* ══ 评分色阶 ══
-   设计原则：
-   - 强推荐 (≥80)：深青底 + 白字，醒目但不刺眼
-   - 推荐   (50-79)：暖琥珀底，中等饱和，文字深棕
-   - 一般   (25-49)：冷蓝灰底，低饱和，表示「存在但不突出」
-   - 不推荐 (<25)： 极浅冷底，几乎无色，低噪声
+.weather-icon {
+    font-size: 11px;
+    line-height: 1;
+}
+
+.weather-text {
+    font-size: 10px;
+    opacity: 0.78;
+}
+
+/* ══ 评分色阶（明亮主题）══
+   ★ ≥80: 饱和金橙，醒目强推
+   ✦ 50-79: 清新翠绿，值得关注
+   - 25-49: 冷蓝灰，存在但不突出
+   · <25: 极浅米色，视觉静音
 */
 .score-star {
-    background: #0d9488;   /* teal-600 */
-    color: #ffffff;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #78350f;
 }
-.score-star .cell-weather { color: rgba(255,255,255,0.8); }
+.score-star .cell-event {
+    background: rgba(255, 255, 255, 0.6);
+    color: #7c2d12;
+}
 
 .score-good {
-    background: #fef3c7;   /* amber-100 */
-    color: #92400e;        /* amber-800 */
+    background: linear-gradient(135deg, #6ee7b7 0%, #34d399 100%);
+    color: #064e3b;
+}
+.score-good .cell-event {
+    background: rgba(255, 255, 255, 0.55);
+    color: #065f46;
 }
 
 .score-mild {
-    background: #e2e8f0;   /* slate-200 */
-    color: #475569;        /* slate-600 */
+    background: #dbeafe;
+    color: #1e40af;
+}
+.score-mild .cell-event {
+    background: rgba(255, 255, 255, 0.6);
 }
 
 .score-poor {
-    background: #f8fafc;   /* slate-50 */
-    color: #94a3b8;        /* slate-400 */
+    background: #fafaf9;
+    color: #a8a29e;
 }
 
 /* ── 页脚 ── */
 .footer-row td {
-    background: #f1f5f9;   /* slate-100 */
-    border-top: 1px solid #cbd5e1;
+    background: #f0f7f0;
+    border-top: 1px solid #c8e0c8;
     padding: 8px 12px;
 }
 
@@ -248,9 +307,29 @@ table {
     justify-content: space-between;
     align-items: center;
     font-size: 11px;
-    color: #64748b;        /* slate-500 */
+    color: #6b7280;
 }
 
-.footer-brand { font-weight: 700; color: #334155; }
+.footer-brand { font-weight: 700; color: #2d4a2d; }
 .footer-time { font-style: italic; }
+
+/* ── 品牌水印 ── */
+.watermark {
+    text-align: center;
+    padding: 6px 0;
+    font-size: 10px;
+    color: #a0b8a0;
+    letter-spacing: 0.08em;
+    font-family: 'Noto Sans SC', sans-serif;
+    border-top: 1px solid #dceadc;
+    background: #f8fcf8;
+}
+
+/* ── 行间色 ── */
+.row-even .viewpoint-name {
+    background: #f0f7f0;
+}
+.row-odd .viewpoint-name {
+    background: #e8f4e8;
+}
 </style>
