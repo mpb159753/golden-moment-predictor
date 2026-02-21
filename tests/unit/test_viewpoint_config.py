@@ -203,3 +203,47 @@ class TestViewpointConfigEdgeCases:
         vpc = ViewpointConfig()
         vpc.load(str(empty_dir))
         assert vpc.list_all() == []
+
+
+# ==================== Groups 字段测试 ====================
+
+
+class TestViewpointGroups:
+    """Viewpoint groups 字段测试。"""
+
+    def test_viewpoint_groups_field(self, tmp_path):
+        """验证 groups 字段被正确解析"""
+        yaml_content = """\
+id: test_vp
+name: 测试观景台
+groups:
+  - gongga
+  - "318"
+location:
+  lat: 30.0
+  lon: 102.0
+  altitude: 3000
+capabilities:
+  - clear_sky
+"""
+        (tmp_path / "test.yaml").write_text(yaml_content, encoding="utf-8")
+        config = ViewpointConfig()
+        config.load(str(tmp_path))
+        vp = config.get("test_vp")
+        assert vp.groups == ["gongga", "318"]
+
+    def test_viewpoint_groups_default_empty(self, tmp_path):
+        """验证 groups 缺失时默认空列表"""
+        yaml_content = """\
+id: test_vp2
+name: 无分组观景台
+location:
+  lat: 30.0
+  lon: 102.0
+  altitude: 3000
+"""
+        (tmp_path / "test2.yaml").write_text(yaml_content, encoding="utf-8")
+        config = ViewpointConfig()
+        config.load(str(tmp_path))
+        vp = config.get("test_vp2")
+        assert vp.groups == []

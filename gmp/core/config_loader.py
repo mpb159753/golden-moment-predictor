@@ -229,6 +229,7 @@ class ViewpointConfig:
                 location=location,
                 capabilities=data.get("capabilities", []),
                 targets=targets,
+                groups=data.get("groups", []),
             )
             self._viewpoints[vp.id] = vp
 
