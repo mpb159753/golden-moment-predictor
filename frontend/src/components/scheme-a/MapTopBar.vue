@@ -75,7 +75,7 @@ const props = defineProps({
   activeFilters: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['search', 'filter', 'date-change', 'toggle-route'])
+const emit = defineEmits(['search', 'filter', 'date-change', 'toggle-route', 'easter-egg'])
 
 const searchQuery = ref('')
 const routeMode = ref(false)
@@ -101,7 +101,10 @@ function selectResult(vp) {
 }
 
 function onSearch() {
-  // 搜索逻辑由 computed 自动处理
+  if (searchQuery.value.trim() === '岽岩') {
+    searchQuery.value = ''
+    emit('easter-egg')
+  }
 }
 
 function toggleFilter(type) {

@@ -43,6 +43,7 @@
       @filter="onFilter"
       @date-change="onDateChange"
       @toggle-route="onToggleRoute"
+      @easter-egg="showEasterEgg = true"
     />
 
     <!-- Bottom Sheet -->
@@ -175,6 +176,12 @@
     <div class="map-watermark">
       <span class="watermark-text">GMP 川西景观预测</span>
     </div>
+
+    <!-- 董妍彩蛋 -->
+    <EasterEggModal
+      :show="showEasterEgg"
+      @close="showEasterEgg = false"
+    />
   </div>
 </template>
 
@@ -201,6 +208,7 @@ import ScreenshotBtn from '@/components/export/ScreenshotBtn.vue'
 import EventIcon from '@/components/event/EventIcon.vue'
 import ScoreRing from '@/components/score/ScoreRing.vue'
 import StatusBadge from '@/components/score/StatusBadge.vue'
+import EasterEggModal from '@/components/easter-egg/EasterEggModal.vue'
 import { useTimePeriod } from '@/composables/useTimePeriod'
 
 function formatFullDate(dateStr) {
@@ -233,6 +241,7 @@ const mapOptions = {
 const sheetState = ref('collapsed')   // 'collapsed' | 'half' | 'full'
 const activeFilters = ref([])
 const routeMode = ref(false)
+const showEasterEgg = ref(false)
 
 // 计算属性
 const viewpoints = computed(() => vpStore.index)

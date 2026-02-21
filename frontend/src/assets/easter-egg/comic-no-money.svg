@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#b8d4f0"/>
+      <stop offset="100%" style="stop-color:#e8f4ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="400" height="400" fill="url(#sky)" rx="16"/>
+
+  <!-- 雪山 -->
+  <polygon points="60,300 160,120 260,300" fill="white" stroke="#aaa" stroke-width="2"/>
+  <polygon points="180,300 280,140 380,300" fill="#e8f0f8" stroke="#aaa" stroke-width="2"/>
+  <polygon points="0,300 100,160 190,300" fill="white" stroke="#aaa" stroke-width="2"/>
+
+  <!-- 雪峰阴影 -->
+  <polygon points="120,185 160,120 200,185" fill="#d0e8f8"/>
+  <polygon points="240,200 280,140 320,200" fill="#c8dff0"/>
+
+  <!-- 地面 -->
+  <rect x="0" y="300" width="400" height="100" fill="#f0f8e8"/>
+
+  <!-- 左边人物 (穷人) -->
+  <!-- 身体 -->
+  <ellipse cx="130" cy="290" rx="28" ry="35" fill="#ffd700"/>
+  <!-- 头 -->
+  <circle cx="130" cy="248" r="28" fill="#ffcc99"/>
+  <!-- 眼睛 -->
+  <circle cx="122" cy="244" r="4" fill="#333"/>
+  <circle cx="138" cy="244" r="4" fill="#333"/>
+  <!-- 嘴 (无奈) -->
+  <path d="M122,258 Q130,253 138,258" stroke="#666" stroke-width="2" fill="none"/>
+  <!-- 空口袋 -->
+  <path d="M102,280 L95,320 L115,320 L108,280" fill="#e8c840" stroke="#cca800" stroke-width="1.5"/>
+  <path d="M154,280 L160,320 L145,320 L152,280" fill="#e8c840" stroke="#cca800" stroke-width="1.5"/>
+  <!-- 翻口袋手势 -->
+  <line x1="95" y1="320" x2="82" y2="335" stroke="#ffcc99" stroke-width="5" stroke-linecap="round"/>
+  <line x1="115" y1="320" x2="125" y2="338" stroke="#ffcc99" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- 右边人物 (酷炫师傅) -->
+  <!-- 身体 -->
+  <ellipse cx="280" cy="288" rx="28" ry="37" fill="#2d2d2d"/>
+  <!-- 头 -->
+  <circle cx="280" cy="248" r="28" fill="#e8a87c"/>
+  <!-- 墨镜 -->
+  <rect x="259" y="239" width="18" height="12" rx="5" fill="#1a1a1a"/>
+  <rect x="282" y="239" width="18" height="12" rx="5" fill="#1a1a1a"/>
+  <line x1="277" y1="245" x2="282" y2="245" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- 酷炫微笑 -->
+  <path d="M269,262 Q280,270 291,262" stroke="#666" stroke-width="2" fill="none"/>
+  <!-- 大拇指 -->
+  <line x1="308" y1="285" x2="328" y2="265" stroke="#e8a87c" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="330" cy="262" r="8" fill="#e8a87c"/>
+
+  <!-- 文字 -->
+  <rect x="50" y="340" width="300" height="50" rx="8" fill="rgba(255,255,255,0.85)"/>
+  <text x="200" y="360" text-anchor="middle" font-size="13" font-family="sans-serif" fill="#333">会员特权千般好，奈何兜里铜板少。</text>
+  <text x="200" y="380" text-anchor="middle" font-size="13" font-family="sans-serif" fill="#333">转身抱紧师傅腿，刷脸白嫖没烦恼！</text>
+</svg>
