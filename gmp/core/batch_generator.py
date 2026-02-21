@@ -96,6 +96,7 @@ class BatchGenerator:
             vp_index.append({
                 "id": vp.id,
                 "name": vp.name,
+                "groups": vp.groups,
                 "location": {
                     "lat": vp.location.lat,
                     "lon": vp.location.lon,
