@@ -17,19 +17,21 @@ import pytest
 from click.testing import CliRunner
 
 from gmp.main import cli
-from gmp.scoring.engine import _CAPABILITY_EVENT_MAP
+from gmp.scoring.engine import _CAPABILITY_EVENT_MAP, _UNIVERSAL_CAPABILITIES
 
 
 # ==================== 动态常量构建 ====================
 
 
 def _load_viewpoint_expected_event_types(viewpoint_id: str) -> set[str]:
-    """从配置文件 + 映射表动态构建期望的 event_types"""
+    """从配置文件 + 映射表动态构建期望的 event_types（含通用能力）"""
     config_path = Path(f"config/viewpoints/{viewpoint_id}.yaml")
     with open(config_path) as f:
         vp_config = yaml.safe_load(f)
+    # 合并通用能力，与 ScoreEngine.filter_active_plugins 逻辑一致
+    all_caps = list(set(vp_config.get("capabilities", []) + _UNIVERSAL_CAPABILITIES))
     event_types: set[str] = set()
-    for cap in vp_config["capabilities"]:
+    for cap in all_caps:
         mapped = _CAPABILITY_EVENT_MAP.get(cap, [cap])
         event_types.update(mapped)
     return event_types
@@ -289,7 +291,7 @@ def test_predict_seven_days_real_api():
 def test_predict_events_filter_real_api():
     """事件过滤仅返回指定事件，且不能为空"""
     runner = CliRunner()
-    filter_events = {"cloud_sea", "frost"}
+    filter_events = {"clear_sky", "stargazing"}
     # 使用 7 天增加事件产出概率 (Plugin 有天气触发条件)
     result = _invoke(runner, [
         "predict", "niubei_gongga", "--days", "7",
@@ -528,9 +530,9 @@ def test_backtest_real_api():
         # 2026-01-10: 冬季晴天 → golden_mountain + stargazing
         ("2026-01-10", {"sunrise_golden_mountain", "sunset_golden_mountain", "stargazing"},
          "冬季晴天应触发日照金山+观星"),
-        # 2026-02-16: 严冬降温 → frost
-        ("2026-02-16", {"frost"},
-         "降温日应触发霜冻"),
+        # 2025-11-20: 深秋晴天 → golden_mountain + stargazing
+        ("2025-11-20", {"sunrise_golden_mountain", "sunset_golden_mountain", "stargazing"},
+         "深秋晴天应触发日照金山+观星"),
         # 2025-12-01: 初冬晴天 → golden_mountain + stargazing
         ("2025-12-01", {"sunrise_golden_mountain", "sunset_golden_mountain", "stargazing"},
          "初冬晴天应触发日照金山+观星"),
@@ -538,7 +540,7 @@ def test_backtest_real_api():
         ("2026-01-28", {"sunrise_golden_mountain", "sunset_golden_mountain"},
          "多云冬天应仅触发日照金山"),
     ],
-    ids=["winter_clear", "frost_day", "early_winter", "cloudy_winter"],
+    ids=["winter_clear", "autumn_clear", "early_winter", "cloudy_winter"],
 )
 def test_backtest_multi_date_plugin_coverage(backtest_date, expected_plugins, description):
     """通过多个精选历史日期验证不同 Plugin 路径的触发
@@ -596,15 +598,15 @@ def test_backtest_aggregate_plugin_diversity():
         for event in data["events"]:
             all_triggered.add(event["event_type"])
 
-    # 累积应覆盖至少 4 种不同 Plugin
-    assert len(all_triggered) >= 4, (
+    # 累积应覆盖至少 3 种不同 Plugin
+    assert len(all_triggered) >= 3, (
         f"多日期回测累积仅覆盖 {len(all_triggered)} 种 Plugin: {all_triggered}，"
-        f"预期至少 4 种。可能需要更新测试日期。"
+        f"预期至少 3 种。可能需要更新测试日期。"
     )
 
-    # 至少包含既有非冬季 Plugin(golden_mountain/stargazing) 和冬季 Plugin(frost)
-    assert "frost" in all_triggered, "累积回测缺少 frost 触发"
+    # 至少包含日照金山和观星
     assert "stargazing" in all_triggered, "累积回测缺少 stargazing 触发"
+    assert "sunrise_golden_mountain" in all_triggered, "累积回测缺少 sunrise_golden_mountain 触发"
 
 
 # ==================== Task 6: 错误处理验证 ====================

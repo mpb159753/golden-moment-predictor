@@ -277,6 +277,18 @@ class TestHappyPath:
         assert meta["viewpoints_count"] == 2
         assert meta["routes_count"] == 1
 
+    def test_writes_poster_json(self):
+        """生成 poster.json — write_poster 被调用"""
+        bg, _, _, _, json_writer = _build_batch_generator()
+
+        bg.generate_all(days=7)
+
+        json_writer.write_poster.assert_called_once()
+        poster_data = json_writer.write_poster.call_args.args[0]
+        assert "generated_at" in poster_data
+        assert "days" in poster_data
+        assert "groups" in poster_data
+
     def test_return_stats(self):
         """返回统计 dict"""
         bg, *_ = _build_batch_generator()

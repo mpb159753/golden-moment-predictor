@@ -104,7 +104,9 @@ async function exportAll() {
             const link = document.createElement('a')
             link.download = `poster_${group.key}.png`
             link.href = canvas.toDataURL('image/png')
+            document.body.appendChild(link)
             link.click()
+            document.body.removeChild(link)
         } catch (e) {
             console.error(`导出 ${group.name} 失败:`, e)
         }

@@ -67,6 +67,12 @@ class JSONFileWriter:
 
         self._write_json(output / "meta.json", metadata)
 
+    def write_poster(self, data: dict) -> None:
+        """写入 poster.json"""
+        output = Path(self._output_dir)
+        output.mkdir(parents=True, exist_ok=True)
+        self._write_json(output / "poster.json", data)
+
     def archive(self, timestamp: str) -> None:
         """将当前 output_dir 内容复制到 archive_dir/timestamp/"""
         src = Path(self._output_dir)

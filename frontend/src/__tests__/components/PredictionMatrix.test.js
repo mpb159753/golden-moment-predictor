@@ -39,13 +39,22 @@ describe('PredictionMatrix', () => {
         expect(wrapper.text()).toContain('下午')
     })
 
-    it('applies green background for score >= 80', () => {
+    it('applies score-star class for score >= 80', () => {
         const wrapper = mount(PredictionMatrix, {
             props: { group: mockGroup, days: ['2026-02-21'], showHeader: true, showFooter: false },
         })
         const cells = wrapper.findAll('td')
         const amCell = cells.find(c => c.text().includes('日照金山'))
-        expect(amCell?.attributes('style')).toContain('#C6EFCE')
+        expect(amCell?.classes()).toContain('score-star')
+    })
+
+    it('applies score-good class for score 50-79', () => {
+        const wrapper = mount(PredictionMatrix, {
+            props: { group: mockGroup, days: ['2026-02-21'], showHeader: true, showFooter: false },
+        })
+        const cells = wrapper.findAll('td')
+        const pmCell = cells.find(c => c.text().includes('云海'))
+        expect(pmCell?.classes()).toContain('score-good')
     })
 
     it('formats date as M/D', () => {

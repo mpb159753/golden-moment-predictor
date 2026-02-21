@@ -18,6 +18,7 @@
         :best-event="getBestEvent(vp.id)"
         :selected="selectedId === vp.id"
         :zoom="currentZoom"
+        :rank="vpRankMap[vp.id] || 'low'"
         :map="mapInstance"
         :loading="!vpStore.forecasts[vp.id]"
         :enter-delay="idx * 0.08"
@@ -219,9 +220,10 @@ const sheetRef = ref(null)
 const sheetContentRef = ref(null)
 const mapInstance = ref(null)
 
-// 地图默认配置 (川西中心)
+// 地图默认配置 (川西中心, 手机端缩小一级确保所有景点可见)
+const isMobileViewport = window.innerWidth < 768
 const mapOptions = {
-  zoom: 8,
+  zoom: isMobileViewport ? 7 : 8,
   center: [102.0, 30.5],
   mapStyle: 'amap://styles/light',
   zooms: [6, 15],
@@ -305,6 +307,20 @@ const filteredViewpoints = computed(() => {
       activeFilters.value.some(f => cap.includes(f))
     )
   )
+})
+
+// 观景台排名等级映射 (Top/标准/低优先级)
+const vpRankMap = computed(() => {
+  const ranked = filteredViewpoints.value
+    .map(vp => ({ id: vp.id, score: getBestScore(vp.id) }))
+    .sort((a, b) => b.score - a.score)
+  const map = {}
+  ranked.forEach((item, idx) => {
+    if (idx < 5 || item.score >= 80) map[item.id] = 'top'
+    else if (item.score >= 50) map[item.id] = 'standard'
+    else map[item.id] = 'low'
+  })
+  return map
 })
 
 // 当日最佳推荐 (前3个最高分)

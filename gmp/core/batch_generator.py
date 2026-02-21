@@ -139,12 +139,22 @@ class BatchGenerator:
             }
         )
 
-        # 5. 归档
+        # 5. 生成 poster.json
+        from gmp.output.poster_generator import PosterGenerator
+
+        poster_gen = PosterGenerator(self._output_dir)
+        poster_data = poster_gen.generate(
+            self._viewpoint_config, days=min(days, 5)
+        )
+        self._json_writer.write_poster(poster_data)
+
+        # 6. 归档
         archive_dir: str | None = None
         if not no_archive:
             timestamp = now.strftime("%Y-%m-%dT%H-%M")
             self._json_writer.archive(timestamp)
             archive_dir = timestamp
+
 
         return {
             "viewpoints_processed": len(successful_viewpoints),
