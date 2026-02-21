@@ -98,6 +98,17 @@ describe('useDataLoader', () => {
         expect(error.value).toContain('Failed to load')
     })
 
+    it('loadPoster() requests correct URL and returns JSON', async () => {
+        const posterData = { generated_at: '2026-02-21T08:00:00+08:00', days: ['2026-02-21'], groups: [] }
+        mockFetch({ 'poster.json': posterData })
+
+        const { loadPoster } = useDataLoader()
+        const result = await loadPoster()
+
+        expect(result).toEqual(posterData)
+        expect(globalThis.fetch).toHaveBeenCalledWith('/data/poster.json')
+    })
+
     it('loading.value is true during fetch and false after', async () => {
         let resolvePromise
         globalThis.fetch = vi.fn(() => new Promise((resolve) => {

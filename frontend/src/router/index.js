@@ -24,6 +24,11 @@ const routes = [
         component: () => import('@/views/RouteDetail.vue'),
         props: true,
     },
+    {
+        path: '/ops/poster',
+        name: 'poster',
+        component: () => import('@/views/PosterView.vue'),
+    },
 ]
 
 const router = createRouter({

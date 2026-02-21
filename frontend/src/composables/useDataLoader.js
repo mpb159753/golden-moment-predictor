@@ -81,5 +81,13 @@ export function useDataLoader() {
         return _fetch(`routes/${routeId}/forecast.json`)
     }
 
-    return { loadIndex, loadForecast, loadTimeline, loadRouteForecast, loading, error }
+    /**
+     * 加载海报聚合数据
+     * @returns {Promise<Object>} poster.json 内容
+     */
+    async function loadPoster() {
+        return _fetch('poster.json')
+    }
+
+    return { loadIndex, loadForecast, loadTimeline, loadRouteForecast, loadPoster, loading, error }
 }
