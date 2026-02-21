@@ -1,5 +1,7 @@
 id: siguniang_changping
 name: 长坪沟
+groups:
+  - siguniang
 location:
   lat: 31.014731
   lon: 102.857694

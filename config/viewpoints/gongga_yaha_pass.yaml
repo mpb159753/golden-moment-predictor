@@ -1,5 +1,7 @@
 id: gongga_yaha_pass
 name: 雅哈垭口
+groups:
+  - gongga
 location:
   lat: 29.7425
   lon: 101.723135

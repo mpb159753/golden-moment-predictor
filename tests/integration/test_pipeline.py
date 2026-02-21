@@ -70,7 +70,7 @@ def _make_clear_weather_df(days: int = 1, base_date: date | None = None) -> pd.D
         current_date = base + timedelta(days=d)
         for h in range(24):
             rows.append({
-                "forecast_date": current_date,
+                "forecast_date": current_date.isoformat(),
                 "forecast_hour": h,
                 "temperature_2m": -3.0 + h * 0.5,
                 "cloud_cover_total": 15,
@@ -355,7 +355,7 @@ def _make_real_plugin_weather_df(days: int = 1, base_date: date | None = None) -
         current_date = base + timedelta(days=d)
         for h in range(24):
             rows.append({
-                "forecast_date": current_date,
+                "forecast_date": current_date.isoformat(),
                 "forecast_hour": h,
                 "temperature_2m": -3.0,  # 低温 → 触发 FrostPlugin
                 "cloud_cover_total": 15,

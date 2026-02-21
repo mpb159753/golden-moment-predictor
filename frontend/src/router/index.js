@@ -24,6 +24,16 @@ const routes = [
         component: () => import('@/views/RouteDetail.vue'),
         props: true,
     },
+    {
+        path: '/ops/poster',
+        name: 'poster',
+        component: () => import('@/views/PosterView.vue'),
+    },
+    {
+        path: '/easter-egg/vip',
+        name: 'easter-egg-vip',
+        component: () => import('@/views/EasterEggVip.vue'),
+    },
 ]
 
 const router = createRouter({

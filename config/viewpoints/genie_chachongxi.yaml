@@ -1,5 +1,7 @@
 id: genie_chachongxi
 name: 查冲西村
+groups:
+  - genie
 location:
   lat: 29.742763
   lon: 99.656227

@@ -18,6 +18,7 @@
         :best-event="getBestEvent(vp.id)"
         :selected="selectedId === vp.id"
         :zoom="currentZoom"
+        :rank="vpRankMap[vp.id] || 'low'"
         :map="mapInstance"
         :loading="!vpStore.forecasts[vp.id]"
         :enter-delay="idx * 0.08"
@@ -42,6 +43,7 @@
       @filter="onFilter"
       @date-change="onDateChange"
       @toggle-route="onToggleRoute"
+      @easter-egg="showEasterEgg = true"
     />
 
     <!-- Bottom Sheet -->
@@ -174,6 +176,12 @@
     <div class="map-watermark">
       <span class="watermark-text">GMP 川西景观预测</span>
     </div>
+
+    <!-- 董妍彩蛋 -->
+    <EasterEggModal
+      :show="showEasterEgg"
+      @close="showEasterEgg = false"
+    />
   </div>
 </template>
 
@@ -200,6 +208,7 @@ import ScreenshotBtn from '@/components/export/ScreenshotBtn.vue'
 import EventIcon from '@/components/event/EventIcon.vue'
 import ScoreRing from '@/components/score/ScoreRing.vue'
 import StatusBadge from '@/components/score/StatusBadge.vue'
+import EasterEggModal from '@/components/easter-egg/EasterEggModal.vue'
 import { useTimePeriod } from '@/composables/useTimePeriod'
 
 function formatFullDate(dateStr) {
@@ -219,9 +228,10 @@ const sheetRef = ref(null)
 const sheetContentRef = ref(null)
 const mapInstance = ref(null)
 
-// 地图默认配置 (川西中心)
+// 地图默认配置 (川西中心, 手机端缩小一级确保所有景点可见)
+const isMobileViewport = window.innerWidth < 768
 const mapOptions = {
-  zoom: 8,
+  zoom: isMobileViewport ? 7 : 8,
   center: [102.0, 30.5],
   mapStyle: 'amap://styles/light',
   zooms: [6, 15],
@@ -231,6 +241,7 @@ const mapOptions = {
 const sheetState = ref('collapsed')   // 'collapsed' | 'half' | 'full'
 const activeFilters = ref([])
 const routeMode = ref(false)
+const showEasterEgg = ref(false)
 
 // 计算属性
 const viewpoints = computed(() => vpStore.index)
@@ -305,6 +316,20 @@ const filteredViewpoints = computed(() => {
       activeFilters.value.some(f => cap.includes(f))
     )
   )
+})
+
+// 观景台排名等级映射 (Top/标准/低优先级)
+const vpRankMap = computed(() => {
+  const ranked = filteredViewpoints.value
+    .map(vp => ({ id: vp.id, score: getBestScore(vp.id) }))
+    .sort((a, b) => b.score - a.score)
+  const map = {}
+  ranked.forEach((item, idx) => {
+    if (idx < 5 || item.score >= 80) map[item.id] = 'top'
+    else if (item.score >= 50) map[item.id] = 'standard'
+    else map[item.id] = 'low'
+  })
+  return map
 })
 
 // 当日最佳推荐 (前3个最高分)

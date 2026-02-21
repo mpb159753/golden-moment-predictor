@@ -1,5 +1,7 @@
 id: genie_xiazetong
 name: 下则通村
+groups:
+  - genie
 location:
   lat: 29.825485
   lon: 99.77077

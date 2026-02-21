@@ -1,5 +1,7 @@
 id: genie_laolenggusi
 name: 老冷古寺
+groups:
+  - genie
 location:
   lat: 29.819585
   lon: 99.643822

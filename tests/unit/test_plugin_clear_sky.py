@@ -56,7 +56,7 @@ def _make_weather(
     """创建均匀的天气 DataFrame (所有小时使用相同值)"""
     return pd.DataFrame({
         "time": pd.date_range("2025-06-15T00:00", periods=hours, freq="h"),
-        "cloud_cover": [cloud_cover] * hours,
+        "cloud_cover_total": [cloud_cover] * hours,
         "precipitation_probability": [precip_prob] * hours,
         "visibility": [visibility_km * 1000] * hours,  # km → m
     })

@@ -1,5 +1,7 @@
 id: lianbaoyeze_zhagaer
 name: 扎尕尔措
+groups:
+  - other
 location:
   lat: 33.066421
   lon: 101.174174

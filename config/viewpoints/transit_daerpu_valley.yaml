@@ -1,5 +1,7 @@
 id: transit_daerpu_valley
 name: 大二普
+groups:
+  - 318
 location:
   lat: 31.38526
   lon: 102.991165

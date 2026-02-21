@@ -1,5 +1,7 @@
 id: yala_tagong_view
 name: 塔公草原机位
+groups:
+  - yala
 location:
   lat: 30.332783
   lon: 101.553397

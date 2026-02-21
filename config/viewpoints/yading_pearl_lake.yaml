@@ -1,5 +1,7 @@
 id: yading_pearl_lake
 name: 珍珠海
+groups:
+  - yading
 location:
   lat: 28.438425
   lon: 100.305771

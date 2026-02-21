@@ -101,13 +101,13 @@ describe('ViewpointMarker', () => {
         expect(content).toContain('80')
     })
 
-    // --- 三种状态 ---
-    it('renders default state: circle with score and viewpoint name label', async () => {
-        mountMarker({ score: 75, selected: false, zoom: 10 })
+    // --- 三种状态 (基于 rank) ---
+    it('renders default state (standard rank, zoom >= 10): circle with score and viewpoint name label', async () => {
+        mountMarker({ score: 75, selected: false, zoom: 10, rank: 'standard' })
         await flushPromises()
         const content = markerInstances[0].content
         expect(content).toContain('75')
-        // 默认态（zoom >= 9）应包含观景台名称标签
+        // 默认态（standard + zoom >= 10）应包含观景台名称标签
         expect(content).toContain('牛背山')
     })
 
@@ -122,18 +122,17 @@ describe('ViewpointMarker', () => {
         expect(content).toContain('scale(1.2)')
     })
 
-    it('renders mini state when zoom < 9', async () => {
-        mountMarker({ score: 85, selected: false, zoom: 7 })
+    it('renders mini state when rank=standard and zoom < 7', async () => {
+        mountMarker({ score: 85, selected: false, zoom: 6, rank: 'standard' })
         await flushPromises()
         const content = markerInstances[0].content
         // 缩略态应该只有简单圆点，不包含分数
         expect(content).toContain('marker-dot')
-        // 不应包含分数文字
         expect(content).not.toContain('85')
     })
 
     it('selected state overrides mini state even at low zoom', async () => {
-        mountMarker({ score: 85, selected: true, zoom: 7 })
+        mountMarker({ score: 85, selected: true, zoom: 6 })
         await flushPromises()
         const content = markerInstances[0].content
         // 即使 zoom 低，选中态也应该显示名称
@@ -142,17 +141,61 @@ describe('ViewpointMarker', () => {
 
     // --- 名称标签 ---
     it('default state name label has text-overflow ellipsis', async () => {
-        mountMarker({ score: 75, selected: false, zoom: 10 })
+        mountMarker({ score: 75, selected: false, zoom: 10, rank: 'standard' })
         await flushPromises()
         const content = markerInstances[0].content
         expect(content).toContain('text-overflow: ellipsis')
     })
 
-    it('mini state (zoom < 9) does not contain viewpoint name', async () => {
-        mountMarker({ score: 85, selected: false, zoom: 7 })
+    it('standard rank at zoom < 7 does not contain viewpoint name', async () => {
+        mountMarker({ score: 85, selected: false, zoom: 6, rank: 'standard' })
         await flushPromises()
         const content = markerInstances[0].content
         expect(content).not.toContain('牛背山')
+    })
+
+    // --- rank 分级 ---
+    it('rank=top always shows full marker with name at any zoom', async () => {
+        mountMarker({ score: 90, selected: false, zoom: 6, rank: 'top' })
+        await flushPromises()
+        const content = markerInstances[0].content
+        expect(content).toContain('marker-top')
+        expect(content).toContain('牛背山')
+        expect(content).toContain('90')
+        expect(content).toContain('44px')
+    })
+
+    it('rank=top shows badge when bestEvent is provided', async () => {
+        mountMarker({ score: 85, selected: false, zoom: 7, rank: 'top', bestEvent: 'cloud_sea' })
+        await flushPromises()
+        const content = markerInstances[0].content
+        expect(content).toContain('<svg')
+        expect(content).toContain('牛背山')
+    })
+
+    it('rank=standard shows compact marker at zoom=8', async () => {
+        mountMarker({ score: 70, selected: false, zoom: 8, rank: 'standard' })
+        await flushPromises()
+        const content = markerInstances[0].content
+        expect(content).toContain('marker-compact')
+        expect(content).toContain('70')
+        expect(content).not.toContain('牛背山')
+    })
+
+    it('rank=low shows dot at zoom=8', async () => {
+        mountMarker({ score: 30, selected: false, zoom: 8, rank: 'low' })
+        await flushPromises()
+        const content = markerInstances[0].content
+        expect(content).toContain('marker-dot')
+        expect(content).not.toContain('30')
+    })
+
+    it('rank=low shows compact at zoom >= 10', async () => {
+        mountMarker({ score: 30, selected: false, zoom: 10, rank: 'low' })
+        await flushPromises()
+        const content = markerInstances[0].content
+        expect(content).toContain('marker-compact')
+        expect(content).toContain('30')
     })
 
     // --- 样式 ---
@@ -241,5 +284,16 @@ describe('ViewpointMarker', () => {
         // 未知类型不应显示 SVG 图标
         expect(content).not.toContain('<svg')
         expect(content).toContain('60')
+    })
+
+    // --- rank 变化响应 ---
+    it('updates marker content when rank changes', async () => {
+        const wrapper = mountMarker({ score: 80, selected: false, zoom: 8, rank: 'low' })
+        await flushPromises()
+        expect(markerInstances[0].content).toContain('marker-dot')
+        await wrapper.setProps({ rank: 'top' })
+        const newContent = markerInstances[0].setContent.mock.calls.at(-1)[0]
+        expect(newContent).toContain('marker-top')
+        expect(newContent).toContain('牛背山')
     })
 })

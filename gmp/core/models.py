@@ -49,6 +49,7 @@ class Viewpoint:
     location: Location
     capabilities: list[str]  # ["sunrise", "sunset", "stargazing", ...]
     targets: list[Target]
+    groups: list[str] = field(default_factory=list)  # 山系分组 (如 ["gongga", "318"])
 
 
 @dataclass

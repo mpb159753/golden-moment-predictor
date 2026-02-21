@@ -1,5 +1,7 @@
 id: yading_milk_lake
 name: 牛奶海
+groups:
+  - yading
 location:
   lat: 28.374149
   lon: 100.345963

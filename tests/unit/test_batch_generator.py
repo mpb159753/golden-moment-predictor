@@ -228,6 +228,27 @@ class TestHappyPath:
         assert "stops" in rt
         assert "forecast_url" in rt
 
+    def test_index_json_includes_groups(self):
+        """index.json 中每个 viewpoint 包含 groups 字段"""
+        vps = [
+            Viewpoint(
+                id="vp_a",
+                name="观景台_vp_a",
+                location=Location(lat=29.75, lon=102.35, altitude=3660),
+                capabilities=["cloud_sea"],
+                targets=[],
+                groups=["gongga", "318"],
+            ),
+        ]
+        bg, _, _, _, json_writer = _build_batch_generator(viewpoints=vps)
+
+        bg.generate_all(days=7)
+
+        json_writer.write_index.assert_called_once()
+        index_args = json_writer.write_index.call_args
+        viewpoints_list = index_args.kwargs.get("viewpoints") or index_args.args[0]
+        assert viewpoints_list[0]["groups"] == ["gongga", "318"]
+
     def test_index_json_capabilities_include_universal(self):
         """index.json 中每个 viewpoint 的 capabilities 合并通用能力"""
         bg, _, _, _, json_writer = _build_batch_generator()
@@ -255,6 +276,18 @@ class TestHappyPath:
         assert "generated_at" in meta
         assert meta["viewpoints_count"] == 2
         assert meta["routes_count"] == 1
+
+    def test_writes_poster_json(self):
+        """生成 poster.json — write_poster 被调用"""
+        bg, _, _, _, json_writer = _build_batch_generator()
+
+        bg.generate_all(days=7)
+
+        json_writer.write_poster.assert_called_once()
+        poster_data = json_writer.write_poster.call_args.args[0]
+        assert "generated_at" in poster_data
+        assert "days" in poster_data
+        assert "groups" in poster_data
 
     def test_return_stats(self):
         """返回统计 dict"""

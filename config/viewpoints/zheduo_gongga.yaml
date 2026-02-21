@@ -1,5 +1,7 @@
 id: zheduo_gongga
 name: 折多山
+groups:
+  - gongga
 location:
   lat: 30.07003
   lon: 101.804206

@@ -1,5 +1,7 @@
 id: yala_yunrao_view
 name: 云绕亚拉
+groups:
+  - yala
 location:
   lat: 30.38665
   lon: 101.661825

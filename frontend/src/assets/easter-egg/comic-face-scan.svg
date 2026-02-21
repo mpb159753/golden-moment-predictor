@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff3cd"/>
+      <stop offset="100%" style="stop-color:#ffeeba"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="400" height="400" fill="url(#bg2)" rx="16"/>
+
+  <!-- 大屏幕 -->
+  <rect x="110" y="130" width="170" height="130" rx="10" fill="#1a1a2e" stroke="#ffd200" stroke-width="3"/>
+  <rect x="120" y="140" width="150" height="100" rx="6" fill="#0f3460"/>
+  <!-- $0.00 显示 -->
+  <text x="195" y="200" text-anchor="middle" font-size="32" font-weight="bold" font-family="monospace" fill="#00ff88">$0.00</text>
+  <text x="195" y="225" text-anchor="middle" font-size="11" font-family="sans-serif" fill="#aaa">会员费用：</text>
+  <!-- 屏幕腿 -->
+  <rect x="180" y="260" width="30" height="20" fill="#333"/>
+  <rect x="160" y="278" width="70" height="8" rx="3" fill="#444"/>
+
+  <!-- 左边开心人物 (抱着屏幕) -->
+  <!-- 头 -->
+  <circle cx="110" cy="210" r="28" fill="#ffcc99"/>
+  <!-- 开心眼睛 -->
+  <path d="M100,205 Q106,200 113,205" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M118,205 Q124,200 130,205" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- 大嘴笑 -->
+  <path d="M96,222 Q110,236 124,222" stroke="#c0392b" stroke-width="2" fill="#ff6b6b"/>
+  <!-- 身体 -->
+  <ellipse cx="110" cy="268" rx="26" ry="34" fill="#e74c3c"/>
+  <!-- 抱屏幕的手 -->
+  <line x1="84" y1="255" x2="108" y2="265" stroke="#ffcc99" stroke-width="8" stroke-linecap="round"/>
+  <line x1="136" y1="255" x2="112" y2="265" stroke="#ffcc99" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- 右边无奈师傅 -->
+  <!-- 头 -->
+  <circle cx="310" cy="210" r="28" fill="#e8a87c"/>
+  <!-- 眼睛 (无奈) -->
+  <circle cx="302" cy="206" r="4" fill="#333"/>
+  <circle cx="318" cy="206" r="4" fill="#333"/>
+  <!-- 无奈的眉毛 -->
+  <path d="M296,196 Q302,192 308,196" stroke="#8B4513" stroke-width="2.5" fill="none"/>
+  <path d="M312,196 Q318,192 324,196" stroke="#8B4513" stroke-width="2.5" fill="none"/>
+  <!-- 无奈嘴 -->
+  <path d="M300,226 Q310,220 320,226" stroke="#888" stroke-width="2" fill="none"/>
+  <!-- 身体 -->
+  <ellipse cx="310" cy="268" rx="26" ry="34" fill="#2c3e50"/>
+  <!-- 叉手 -->
+  <line x1="284" y1="255" x2="296" y2="285" stroke="#e8a87c" stroke-width="6" stroke-linecap="round"/>
+  <line x1="336" y1="255" x2="321" y2="285" stroke="#e8a87c" stroke-width="6" stroke-linecap="round"/>
+  <line x1="296" y1="285" x2="326" y2="270" stroke="#e8a87c" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- 文字 -->
+  <rect x="30" y="338" width="340" height="52" rx="8" fill="rgba(255,255,255,0.9)"/>
+  <text x="200" y="358" text-anchor="middle" font-size="13" font-family="sans-serif" fill="#333">扫码以为要掏钱，谁知是个假会员。</text>
+  <text x="200" y="380" text-anchor="middle" font-size="13" font-family="sans-serif" fill="#333">一路畅通去刷脸，白嫖到底不花钱！</text>
+</svg>

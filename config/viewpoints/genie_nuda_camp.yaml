@@ -1,5 +1,7 @@
 id: genie_nuda_camp
 name: 努达营地
+groups:
+  - genie
 location:
   lat: 29.857773
   lon: 99.78883

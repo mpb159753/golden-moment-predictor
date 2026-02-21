@@ -1,5 +1,7 @@
 id: jiuzhai_wuhuahai
 name: 五花海
+groups:
+  - other
 location:
   lat: 33.161324
   lon: 103.878596

@@ -1,5 +1,7 @@
 id: majiagou_main_view
 name: 主沟观景点
+groups:
+  - other
 location:
   lat: 29.643257
   lon: 102.125221

@@ -25,6 +25,7 @@ export default {
     bestEvent: { type: String, default: null },
     selected: { type: Boolean, default: false },
     zoom: { type: Number, default: 10 },
+    rank: { type: String, default: 'standard' },  // 'top' | 'standard' | 'low'
     enterDelay: { type: Number, default: 0 },
     loading: { type: Boolean, default: false },
     map: { type: Object, default: null },
@@ -36,28 +37,105 @@ export default {
 
     const { getScoreColor } = useScoreColor()
 
-    function getSvgBadge() {
+    function getSvgBadge(size = 16) {
       if (!props.bestEvent) return ''
-      return getEventSvgBadge(props.bestEvent, 16, 'white')
+      return getEventSvgBadge(props.bestEvent, size, 'white')
+    }
+
+    /** 圆点标记 (最小态) */
+    function renderDot(bg, dotSize = 12) {
+      return `<div style="
+        width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+      "><div class="marker-dot" style="
+        width: ${dotSize}px; height: ${dotSize}px; border-radius: 50%;
+        background: ${bg};
+        border: 2px solid rgba(255,255,255,0.8);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      "></div></div>`
+    }
+
+    /** 中等紧凑标记 (评分圆形, 无名称) */
+    function renderCompact(bg, colorInfo) {
+      return `<div style="
+        position: relative; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center;
+      ">
+        <div class="marker-compact" style="
+          width: 28px; height: 28px; border-radius: 50%;
+          background: ${bg}; color: white;
+          display: flex; align-items: center; justify-content: center;
+          font-weight: 700; font-size: 11px;
+          border: 2px solid rgba(255,255,255,0.8);
+          box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+        ">${props.score}</div>
+        <div style="
+          width: 0; height: 0;
+          border-left: 4px solid transparent;
+          border-right: 4px solid transparent;
+          border-top: 4px solid ${bg};
+        "></div>
+      </div>`
+    }
+
+    /** Top 级大标记 (评分+名称+事件图标, 始终可见) */
+    function renderTop(bg, colorInfo) {
+      const pulse = props.score >= 95
+        ? `<div style="
+            position: absolute; top: -4px; left: -4px;
+            width: 52px; height: 52px; border-radius: 50%;
+            border: 2px solid ${colorInfo.color};
+            animation: marker-pulse 2s infinite;
+            pointer-events: none;
+          "></div>`
+        : ''
+      return `<div class="marker-top" style="
+        position: relative;
+        transition: transform 0.3s ease;
+        padding: 4px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 10;
+      ">
+        ${pulse}
+        <div style="
+          width: 44px; height: 44px; border-radius: 50%;
+          background: ${bg};
+          color: white; display: flex; align-items: center; justify-content: center;
+          font-weight: 700; font-size: 14px;
+          border: 2.5px solid rgba(255,255,255,0.9);
+          box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+          transition: box-shadow 0.3s ease, transform 0.3s ease;
+        ">${getSvgBadge(14)}${props.score}</div>
+        <div style="
+          width: 0; height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 5px solid ${bg};
+        "></div>
+        <div style="
+          font-size: 10px;
+          color: #374151;
+          font-weight: 600;
+          white-space: nowrap;
+          text-align: center;
+          margin-top: 2px;
+          text-shadow: 0 0 3px white, 0 0 3px white, 0 0 5px white;
+          max-width: 80px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        ">${props.viewpoint.name}</div>
+      </div>`
     }
 
     function createContent() {
       const colorInfo = getScoreColor(props.score)
       const bg = colorInfo.gradient || colorInfo.color
-      const isZoomMini = props.zoom < 9 && !props.selected
-
-      // 缩略态: 仅圆点 (zoom < 9 且未选中) + 扩大触摸热区
-      if (isZoomMini) {
-        return `<div style="
-          width: 32px; height: 32px;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer;
-        "><div class="marker-dot" style="
-          width: 12px; height: 12px; border-radius: 50%;
-          background: ${bg};
-          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-        "></div></div>`
-      }
+      const rank = props.rank
+      const zoom = props.zoom
 
       const pulse = props.score >= 95
         ? `<div style="
@@ -69,13 +147,14 @@ export default {
           "></div>`
         : ''
 
-      // 选中态: 展开名称 + 评分 + 弹跳动画 + 脉冲光圈
+      // 选中态: 展开名称 + 评分 + 弹跳动画 + 脉冲光圈 (最高优先级)
       if (props.selected) {
         return `<div style="
           position: relative;
           transform: scale(1.2);
           animation: marker-bounce 0.4s ease-out;
           transition: transform 0.3s ease;
+          z-index: 20;
         ">
           ${pulse}
           <div class="marker-expanded" style="
@@ -109,7 +188,27 @@ export default {
         </div>`
       }
 
-      // 默认态: 圆形评分标记 + 名称标签 + 扩大触摸热区
+      // === 排名分级渲染 ===
+
+      // Top 级: 始终显示大标记 (44px + 名称 + 评分 + 事件图标)
+      if (rank === 'top') {
+        return renderTop(bg, colorInfo)
+      }
+
+      // 标准级: zoom < 7 → 圆点; zoom >= 7 → 紧凑评分
+      if (rank === 'standard') {
+        if (zoom < 7) return renderDot(bg, 16)
+        if (zoom < 10) return renderCompact(bg, colorInfo)
+        // zoom >= 10: 完整默认态
+      }
+
+      // 低优先级: zoom < 10 → 小圆点; zoom >= 10 → 紧凑评分
+      if (rank === 'low') {
+        if (zoom < 10) return renderDot(bg, 12)
+        return renderCompact(bg, colorInfo)
+      }
+
+      // 默认态 (standard + zoom >= 10): 圆形评分标记 + 名称标签
       return `<div style="
         position: relative;
         transition: transform 0.3s ease;
@@ -212,8 +311,8 @@ export default {
       }
     })
 
-    // 监听 score / selected / zoom / bestEvent 变化更新样式
-    watch(() => [props.score, props.selected, props.zoom, props.bestEvent], () => {
+    // 监听 score / selected / zoom / bestEvent / rank 变化更新样式
+    watch(() => [props.score, props.selected, props.zoom, props.bestEvent, props.rank], () => {
       updateMarker()
     })
 

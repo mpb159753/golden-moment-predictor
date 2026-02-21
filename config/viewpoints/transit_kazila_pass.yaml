@@ -1,5 +1,7 @@
 id: transit_kazila_pass
 name: 卡子拉山垭口
+groups:
+  - 318
 location:
   lat: 30.148019
   lon: 100.647116
