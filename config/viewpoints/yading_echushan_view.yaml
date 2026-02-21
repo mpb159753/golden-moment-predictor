@@ -1,5 +1,7 @@
 id: yading_echushan_view
 name: 俄初山观景台
+groups:
+  - yading
 location:
   lat: 28.562789
   lon: 100.194275

@@ -1,5 +1,7 @@
 id: yala_gedilamu
 name: 格底拉姆
+groups:
+  - yala
 location:
   lat: 30.2359
   lon: 101.644077

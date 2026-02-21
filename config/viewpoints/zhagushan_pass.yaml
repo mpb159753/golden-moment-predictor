@@ -1,5 +1,7 @@
 id: zhagushan_pass
 name: 鹧鸪山垭口机位
+groups:
+  - other
 location:
   lat: 31.853109
   lon: 102.672527

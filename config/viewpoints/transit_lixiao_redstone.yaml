@@ -1,5 +1,7 @@
 id: transit_lixiao_redstone
 name: 理小路红石滩（凉台沟）
+groups:
+  - lixiao
 location:
   lat: 31.388087
   lon: 102.876353

@@ -1,5 +1,7 @@
 id: siguniang_shuangqiao
 name: 双桥沟
+groups:
+  - siguniang
 location:
   lat: 30.982511
   lon: 102.768042

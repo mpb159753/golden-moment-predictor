@@ -1,5 +1,7 @@
 id: genie_eye
 name: 格聂之眼
+groups:
+  - genie
 location:
   lat: 29.798288
   lon: 99.759393

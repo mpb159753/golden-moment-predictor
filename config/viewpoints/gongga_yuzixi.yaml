@@ -1,5 +1,7 @@
 id: gongga_yuzixi
 name: 鱼子西
+groups:
+  - gongga
 location:
   lat: 30.210279
   lon: 101.581788

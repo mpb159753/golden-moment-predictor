@@ -1,5 +1,7 @@
 id: gongga_lenggacuo
 name: 冷嘎措
+groups:
+  - gongga
 location:
   lat: 29.638151
   lon: 101.69951

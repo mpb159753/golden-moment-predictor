@@ -1,5 +1,7 @@
 id: transit_gaoersi_pass
 name: 高尔寺山垭口
+groups:
+  - 318
 location:
   lat: 30.039849
   lon: 101.345279

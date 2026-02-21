@@ -1,5 +1,7 @@
 id: transit_18bends_view
 name: 天路十八弯观景台
+groups:
+  - 318
 location:
   lat: 29.999766
   lon: 100.873712

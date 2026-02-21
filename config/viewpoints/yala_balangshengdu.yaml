@@ -1,5 +1,7 @@
 id: yala_balangshengdu
 name: 八郎生都
+groups:
+  - yala
 location:
   lat: 30.338197
   lon: 101.42751

@@ -1,5 +1,7 @@
 id: siguniang_maobiliang
 name: 猫鼻梁
+groups:
+  - siguniang
 location:
   lat: 30.988782
   lon: 102.842315

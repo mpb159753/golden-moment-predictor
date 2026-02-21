@@ -1,5 +1,7 @@
 id: yading_luorong_pasture
 name: 洛绒牛场
+groups:
+  - yading
 location:
   lat: 28.389973
   lon: 100.381201

@@ -1,5 +1,7 @@
 id: mengtun_gaoqiaogou
 name: 高桥沟
+groups:
+  - other
 location:
   lat: 31.724865
   lon: 103.090956

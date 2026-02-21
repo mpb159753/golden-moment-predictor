@@ -1,5 +1,7 @@
 id: siguniang_haizi_chaoshanping
 name: 海子沟-朝山坪
+groups:
+  - siguniang
 location:
   lat: 30.996446
   lon: 102.838233

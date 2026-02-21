@@ -1,5 +1,7 @@
 id: niubei_gongga
 name: 牛背山
+groups:
+  - gongga
 location:
   lat: 29.77381
   lon: 102.414969

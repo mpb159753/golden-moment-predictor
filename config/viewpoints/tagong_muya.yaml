@@ -1,5 +1,7 @@
 id: tagong_muya
 name: 木雅金塔机位
+groups:
+  - other
 location:
   lat: 30.323371
   lon: 101.526473

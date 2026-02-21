@@ -1,5 +1,7 @@
 id: transit_lixiao_tunnel_view
 name: 理小隧道口观景台
+groups:
+  - lixiao
 location:
   lat: 31.310194
   lon: 102.744718

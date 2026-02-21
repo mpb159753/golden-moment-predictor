@@ -1,5 +1,7 @@
 id: bipenggou_panyang
 name: 磐羊湖
+groups:
+  - other
 location:
   lat: 31.229248
   lon: 102.870003

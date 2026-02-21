@@ -1,5 +1,7 @@
 id: yala_gunong
 name: 姑弄村
+groups:
+  - yala
 location:
   lat: 30.355645
   lon: 101.516433

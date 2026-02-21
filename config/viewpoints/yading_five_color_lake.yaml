@@ -1,5 +1,7 @@
 id: yading_five_color_lake
 name: 五色海
+groups:
+  - yading
 location:
   lat: 28.380442
   lon: 100.351471

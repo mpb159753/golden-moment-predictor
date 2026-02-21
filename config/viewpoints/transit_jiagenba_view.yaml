@@ -1,5 +1,7 @@
 id: transit_jiagenba_view
 name: 甲根坝机位
+groups:
+  - 318
 location:
   lat: 29.846973
   lon: 101.55904

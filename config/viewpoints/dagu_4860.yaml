@@ -1,5 +1,7 @@
 id: dagu_4860
 name: 4860观景台
+groups:
+  - other
 location:
   lat: 32.133504
   lon: 102.909396

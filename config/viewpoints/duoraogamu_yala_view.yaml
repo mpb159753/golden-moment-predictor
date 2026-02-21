@@ -1,5 +1,7 @@
 id: duoraogamu_yala_view
 name: 亚拉主景平台
+groups:
+  - yala
 location:
   lat: 30.447693
   lon: 101.540804

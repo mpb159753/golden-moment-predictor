@@ -1,5 +1,7 @@
 id: shenmulei_redwood_view
 name: 红杉林主机位
+groups:
+  - other
 location:
   lat: 30.678644
   lon: 102.674996

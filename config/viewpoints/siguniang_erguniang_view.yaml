@@ -1,5 +1,7 @@
 id: siguniang_erguniang_view
 name: 二姑娘峰观景位
+groups:
+  - siguniang
 location:
   lat: 31.096836
   lon: 102.824391

@@ -1,5 +1,7 @@
 id: transit_zheduoshan_pass
 name: 折多山垭口
+groups:
+  - 318
 location:
   lat: 30.074318
   lon: 101.803517

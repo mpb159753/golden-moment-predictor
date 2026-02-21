@@ -1,5 +1,7 @@
 id: moshi_main_view
 name: 异域星球观景位
+groups:
+  - other
 location:
   lat: 30.447693
   lon: 101.540804

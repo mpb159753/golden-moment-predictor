@@ -1,5 +1,7 @@
 id: transit_jianziwan_pass
 name: 剪子弯山垭口
+groups:
+  - 318
 location:
   lat: 30.021268
   lon: 100.796678

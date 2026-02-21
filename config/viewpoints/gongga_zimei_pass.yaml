@@ -1,5 +1,7 @@
 id: gongga_zimei_pass
 name: 子梅垭口
+groups:
+  - gongga
 location:
   lat: 29.518239
   lon: 101.721355
