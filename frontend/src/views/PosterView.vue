@@ -28,9 +28,10 @@
                             @click="selectedDays = d"
                         >{{ d }}天</button>
                     </div>
-                    <button class="export-btn" @click="exportAll">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:5px"><path d="M12 2v14M5 9l7 7 7-7"/><rect x="3" y="18" width="18" height="3" rx="1"/></svg>
-                        一键导出全部
+                    <button class="export-btn" :disabled="exporting" @click="exportAll">
+                        <svg v-if="!exporting" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:5px"><path d="M12 2v14M5 9l7 7 7-7"/><rect x="3" y="18" width="18" height="3" rx="1"/></svg>
+                        <span v-if="exporting">{{ exportProgress }}</span>
+                        <span v-else>一键导出全部</span>
                     </button>
                 </div>
             </header>
@@ -63,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { useDataLoader } from '@/composables/useDataLoader'
 import PredictionMatrix from '@/components/forecast/PredictionMatrix.vue'
 
@@ -73,7 +74,9 @@ const posterData = ref(null)
 const loading = ref(true)
 const error = ref(null)
 const selectedDays = ref(5)
-const groupRefs = ref({})
+const groupRefs = reactive({})
+const exporting = ref(false)
+const exportProgress = ref('')
 
 const displayedDays = computed(() => {
     if (!posterData.value) return []
@@ -108,26 +111,60 @@ onMounted(async () => {
 })
 
 async function exportAll() {
-    for (const group of posterData.value?.groups ?? []) {
-        const el = groupRefs.value[group.key]
-        if (!el) continue
-        try {
-            const { default: html2canvas } = await import('html2canvas')
-            const canvas = await html2canvas(el, {
-                width: 1080,
-                scale: 2,
-                backgroundColor: '#ffffff',
-                useCORS: true,
-            })
-            const link = document.createElement('a')
-            link.download = `poster_${group.key}.png`
-            link.href = canvas.toDataURL('image/png')
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-        } catch (e) {
-            console.error(`导出 ${group.name} 失败:`, e)
+    if (exporting.value) return
+    exporting.value = true
+    try {
+        const [{ default: html2canvas }, { default: JSZip }] = await Promise.all([
+            import('html2canvas'),
+            import('jszip'),
+        ])
+        const zip = new JSZip()
+        const groups = posterData.value?.groups ?? []
+
+        console.log('[导出] 开始，共', groups.length, '个分组，groupRefs 键：', Object.keys(groupRefs))
+        for (let i = 0; i < groups.length; i++) {
+            const group = groups[i]
+            const el = groupRefs[group.key]
+            if (!el) {
+                console.warn(`[导出] 找不到 ${group.key} 的 DOM 节点，跳过`)
+                continue
+            }
+            exportProgress.value = `渲染中 ${i + 1}/${groups.length}…`
+            try {
+                const canvas = await html2canvas(el, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false,
+                })
+                // 将 base64 数据（去掉前缀）加入 zip
+                const base64 = canvas.toDataURL('image/png').split(',')[1]
+                zip.file(`poster_${group.key}.png`, base64, { base64: true })
+                console.log(`[导出] ${group.name} 截图完成`)
+            } catch (e) {
+                console.error(`渲染 ${group.name} 失败:`, e)
+            }
         }
+
+        exportProgress.value = '打包中…'
+        // 使用 blob URL 触发下载。data URI 在 Safari 下有 ~15MB 大小限制，
+        // 7 张 scale=2 PNG 打包后远超限制会静默失败（UUID 文件名无法打开）。
+        // 改回 blob URL，并延迟 5s 释放，确保 Safari 有足够时间完成文件写入。
+        const blob = await zip.generateAsync({ type: 'blob' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.setAttribute('href', url)
+        link.setAttribute('download', 'posters.zip')
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        setTimeout(() => {
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+        }, 5000)
+    } finally {
+        exporting.value = false
+        exportProgress.value = ''
     }
 }
 </script>
@@ -135,7 +172,7 @@ async function exportAll() {
 <style scoped>
 .poster-view {
     min-height: 100vh;
-    background: linear-gradient(160deg, #f0faf4 0%, #fefce8 50%, #f0f7f4 100%);
+    background: #F9FAFB; /* 最简洁的浅灰白背景 */
     padding: 24px;
     font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -151,7 +188,7 @@ async function exportAll() {
 }
 
 .error-state {
-    color: #e53e3e;
+    color: #EF4444;
 }
 
 /* ── 页面头部 ── */
@@ -160,96 +197,105 @@ async function exportAll() {
     align-items: flex-start;
     justify-content: space-between;
     margin-bottom: 24px;
-    padding: 16px 22px;
+    padding: 18px 24px;
     background: white;
     border-radius: 12px;
-    box-shadow: 0 2px 16px rgba(45, 106, 79, 0.10);
-    border: 1px solid #c8e6c9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid #E5E7EB;
 }
 
 .poster-header__title h1 {
-    margin: 0 0 4px;
-    font-size: 20px;
-    color: #1a4a2e;
+    margin: 0 0 6px;
+    font-size: 22px;
+    color: #C0392B; /* 与表格标题呼应的砖红 */
     font-family: 'Noto Serif SC', 'Songti SC', serif;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    font-weight: 800;
+    letter-spacing: 0.05em;
 }
 
 .poster-header__dates {
     margin: 0;
-    color: #6b9a6b;
-    font-size: 13px;
+    color: #6B7280;
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .poster-header__controls {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
 }
 
 .day-selector {
     display: flex;
-    gap: 4px;
+    gap: 6px;
 }
 
 .day-btn {
-    padding: 6px 14px;
-    border: 1.5px solid #c8e0c8;
+    padding: 6px 16px;
+    border: 1px solid #D1D5DB;
     background: white;
     border-radius: 20px;
     cursor: pointer;
-    font-size: 12px;
-    color: #4a7a4a;
+    font-size: 13px;
+    color: #4B5563;
     transition: all 0.15s;
     font-family: inherit;
+    font-weight: 500;
 }
 
 .day-btn.active {
-    background: #2d6a4f;
-    border-color: #2d6a4f;
+    background: #C0392B;
+    border-color: #C0392B;
     color: white;
 }
 
 .day-btn:hover:not(.active) {
-    border-color: #2d6a4f;
-    color: #2d6a4f;
-    background: #f0f7f0;
+    border-color: #C0392B;
+    color: #C0392B;
+    background: #FEF2F2;
 }
 
 .export-btn {
-    padding: 8px 18px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    padding: 8px 20px;
+    background: #FF8C00;
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
     font-family: inherit;
     font-weight: 600;
     transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+    box-shadow: 0 2px 8px rgba(255, 140, 0, 0.25);
 }
 
-.export-btn:hover {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45);
+.export-btn:hover:not(:disabled) {
+    background: #E67E00;
+    box-shadow: 0 4px 12px rgba(255, 140, 0, 0.35);
     transform: translateY(-1px);
+}
+
+.export-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* ── 内容区 ── */
 .poster-content {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 32px; /* 组间隔大一些，呼吸感好 */
 }
 
 .group-section {
+    width: 540px;   /* 小红书场景固定宽：html2canvas scale=2 → 1080px 物理像素 */
     background: white;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    border: 1px solid #c8e0c8;
-    box-shadow: 0 2px 10px rgba(45, 106, 79, 0.08);
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
 /* ── 页脚 ── */
@@ -257,11 +303,11 @@ async function exportAll() {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 24px;
-    padding: 10px 16px;
-    color: #9ab89a;
-    font-size: 11px;
-    border-top: 1px solid #dceadc;
-    letter-spacing: 0.04em;
+    margin-top: 32px;
+    padding: 12px 16px;
+    color: #9CA3AF;
+    font-size: 12px;
+    border-top: 1px solid #E5E7EB;
+    letter-spacing: 0.02em;
 }
 </style>

@@ -62,7 +62,7 @@
             </tfoot>
         </table>
         <!-- 品牌水印 -->
-        <div class="watermark">黄金时刻预测 GMP · golden-moment-predictor</div>
+        <div class="watermark">数据来源：专业气象预报模型 · 黄金时刻预测 GMP</div>
     </div>
 </template>
 
@@ -108,11 +108,11 @@ function formatGeneratedAt(iso) {
 }
 
 /**
- * 分数色阶（明亮主题）
- * score >= 80  → score-star   (金橙，强烈推荐)
- * score >= 50  → score-good   (翠绿，推荐)
- * score >= 25  → score-mild   (蓝灰，一般)
- * score < 25   → score-poor   (极浅，不推荐)
+ * 分数色阶（暖橙日落主题）
+ * score >= 80  → score-star   (金橙/琥珀，强烈推荐)
+ * score >= 50  → score-good   (温杏/暖黄，推荐)
+ * score >= 25  → score-mild   (浅米色，一般)
+ * score < 25   → score-poor   (纯白/发灰，不推荐)
  */
 function getScoreClass(score) {
     if (score >= 80) return 'score-star'
@@ -131,6 +131,7 @@ function getDayData(vp, day) {
 .prediction-matrix {
     overflow-x: auto;
     position: relative;
+    background: #ffffff; /* 确保内部白色背景 */
 }
 
 /* ── 表格基础 ── */
@@ -138,47 +139,47 @@ table {
     border-collapse: separate;
     border-spacing: 0;
     width: 100%;
-    font-size: 12px;
+    font-size: 13px;
     font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
 /* ── 表头：山系标题行 ── */
 .group-header-row th {
-    background: linear-gradient(135deg, #1a4a2e 0%, #2d6a4f 60%, #1a5e3a 100%);
-    color: #fef9e7;
+    background: #C0392B; /* 砖红标题 */
+    color: #ffffff;
     font-weight: 800;
-    letter-spacing: 0.1em;
-    padding: 11px 14px;
+    letter-spacing: 0.12em;
+    padding: 12px 14px;
     border: none;
 }
 
 .group-name-cell {
-    text-align: left;
-    font-size: 14px;
+    text-align: center;
+    font-size: 16px;
     font-family: 'Noto Serif SC', 'Songti SC', serif;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.2em;
 }
 
 .date-header {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    opacity: 0.92;
-    min-width: 78px;
+    opacity: 0.95;
+    min-width: 82px;
     text-align: center;
     white-space: pre-line;
-    line-height: 1.6;
+    line-height: 1.5;
 }
 
 /* ── 景点名称列 ── */
 .viewpoint-name {
     font-weight: 700;
-    font-size: 11.5px;
-    color: #2d4a2d;
-    background: #f0f7f0;
-    min-width: 68px;
+    font-size: 13px;
+    color: #333333;
+    background: #FFFFFF;
+    min-width: 76px;
     padding: 0 10px;
-    border-right: 2px solid #c8e0c8;
-    border-bottom: 1px solid #dceadc;
+    border-right: 1px solid #E5E7EB;
+    border-bottom: 1px solid #E5E7EB;
     vertical-align: middle;
     white-space: normal;
     word-break: keep-all;
@@ -188,59 +189,60 @@ table {
 
 /* ── 上午/下午标签 ── */
 .period-label {
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 600;
-    min-width: 28px;
-    padding: 4px 6px;
-    border-right: 1px solid #e0ece0;
-    border-bottom: 1px solid #e8f0e8;
+    min-width: 32px;
+    padding: 6px 6px;
+    border-right: 1px solid #E5E7EB;
+    border-bottom: 1px solid #E5E7EB;
     white-space: nowrap;
     text-align: center;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.05em;
 }
 
 .am-label {
     color: #92400e;
-    background: #fffbeb;
+    background: #FFFAEB;
 }
 
 .pm-label {
-    color: #4c1d95;
-    background: #f5f3ff;
+    color: #0c4a6e;
+    background: #F0F9FF;
 }
 
 /* ── 数据格子 ── */
 .score-cell {
-    padding: 5px 5px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    border-right: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 6px 4px;
+    border-bottom: 1px solid #F3F4F6;
+    border-right: 1px solid #F3F4F6;
     vertical-align: middle;
     transition: filter 0.15s;
 }
 
-.score-cell:hover { filter: brightness(0.94); }
+.score-cell:hover { filter: brightness(0.95); }
 
 .cell-inner {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    line-height: 1.3;
+    gap: 4px;
+    line-height: 1.2;
 }
 
-/* 景观事件标签 */
+/* 景观事件标签：需要更大更醒目 */
 .cell-event {
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 13px; /* 从 11px 放大到 13px */
+    font-weight: 900;
     white-space: nowrap;
     color: inherit;
-    background: rgba(255, 255, 255, 0.55);
-    border-radius: 10px;
-    padding: 1px 7px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 12px; /* 圆角更大 */
+    padding: 2px 8px; /* 内边距更大 */
     letter-spacing: 0.02em;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* 轻微阴影突出 */
 }
 
-/* 天气行 */
+/* 天气行：次要信息，字号缩小或保持相对较小 */
 .cell-weather {
     display: flex;
     align-items: center;
@@ -249,56 +251,59 @@ table {
 }
 
 .weather-icon {
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1;
 }
 
 .weather-text {
-    font-size: 10px;
-    opacity: 0.78;
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.85;
 }
 
-/* ══ 评分色阶（明亮主题）══
-   ★ ≥80: 饱和金橙，醒目强推
-   ✦ 50-79: 清新翠绿，值得关注
-   - 25-49: 冷蓝灰，存在但不突出
-   · <25: 极浅米色，视觉静音
+/* ══ 评分色阶（暖橙日落主题）══
+   ★ ≥80: 饱和金橙，字白，强烈推荐
+   ✦ 50-79: 温杏色/淡橙黄，深褐字，值得关注
+   - 25-49: 极淡米色，灰字，存在但不突出
+   · <25: 纯白/接近纯白，浅灰字，视觉静音
 */
 .score-star {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-    color: #78350f;
+    background: #FF8C00;
+    color: #FFFFFF;
 }
 .score-star .cell-event {
-    background: rgba(255, 255, 255, 0.6);
-    color: #7c2d12;
+    background: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+    text-shadow: 0 1px 2px rgba(180, 83, 9, 0.5); /* 文字阴影增加可读性 */
 }
 
 .score-good {
-    background: linear-gradient(135deg, #6ee7b7 0%, #34d399 100%);
-    color: #064e3b;
+    background: #FFD580;
+    color: #5C2A0B;
 }
 .score-good .cell-event {
-    background: rgba(255, 255, 255, 0.55);
-    color: #065f46;
+    background: rgba(255, 255, 255, 0.6);
+    color: #8C430B;
 }
 
 .score-mild {
-    background: #dbeafe;
-    color: #1e40af;
+    background: #FFF3E0;
+    color: #97786A;
 }
 .score-mild .cell-event {
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.8);
+    color: #7B5C43;
 }
 
 .score-poor {
-    background: #fafaf9;
-    color: #a8a29e;
+    background: #FAFAFA;
+    color: #9CA3AF;
 }
 
 /* ── 页脚 ── */
 .footer-row td {
-    background: #f0f7f0;
-    border-top: 1px solid #c8e0c8;
+    background: #FFFFFF;
+    border-top: 1px solid #E5E7EB;
     padding: 8px 12px;
 }
 
@@ -310,26 +315,26 @@ table {
     color: #6b7280;
 }
 
-.footer-brand { font-weight: 700; color: #2d4a2d; }
+.footer-brand { font-weight: 700; color: #374151; }
 .footer-time { font-style: italic; }
 
 /* ── 品牌水印 ── */
 .watermark {
     text-align: center;
-    padding: 6px 0;
-    font-size: 10px;
-    color: #a0b8a0;
-    letter-spacing: 0.08em;
+    padding: 8px 0;
+    font-size: 11px;
+    color: #9CA3AF;
+    letter-spacing: 0.05em;
     font-family: 'Noto Sans SC', sans-serif;
-    border-top: 1px solid #dceadc;
-    background: #f8fcf8;
+    border-top: 1px solid #F3F4F6;
+    background: #FFFFFF;
 }
 
 /* ── 行间色 ── */
 .row-even .viewpoint-name {
-    background: #f0f7f0;
+    background: #FFFFFF;
 }
 .row-odd .viewpoint-name {
-    background: #e8f4e8;
+    background: #F9FAFB;
 }
 </style>
