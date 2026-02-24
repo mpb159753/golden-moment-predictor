@@ -113,11 +113,12 @@ onMounted(async () => {
 /**
  * 从 posterData 构建精简摘要，用于 AI 生成小红书文案。
  * @param {object} data - posterData
- * @param {number} days - 当前显示天数
+ * @param {number} dayCount - 要包含的天数（从 dayOffset 起）
+ * @param {number} [dayOffset=0] - 起始偏移（0=今天，1=明天）
  * @returns {object} summary
  */
-function buildSummary(data, days) {
-    const displayedDayList = data.days.slice(0, days)
+function buildSummary(data, dayCount, dayOffset = 0) {
+    const displayedDayList = data.days.slice(dayOffset, dayOffset + dayCount)
     const highlights = []
     const groupOverview = {}
 
@@ -137,6 +138,7 @@ function buildSummary(data, days) {
                         event: slot.event || '',
                         weather: slot.weather,
                         score: slot.score,
+                        conditions: slot.conditions || {},
                     })
                     if (!groupBest || slot.score > groupBest.score) {
                         groupBest = { date: day.date, viewpoint: vp.name, score: slot.score }
@@ -175,6 +177,7 @@ async function exportAll() {
         ])
         const zip = new JSZip()
         const groups = posterData.value?.groups ?? []
+        const dateStr = posterData.value.generated_at.slice(0, 10).replace(/-/g, '')
 
         // ── 图片截图 ──
         console.log('[导出] 开始，共', groups.length, '个分组，groupRefs 键：', Object.keys(groupRefs))
@@ -194,16 +197,22 @@ async function exportAll() {
                     logging: false,
                 })
                 const base64 = canvas.toDataURL('image/png').split(',')[1]
-                zip.file(`poster_${group.key}.png`, base64, { base64: true })
+                zip.file(`poster_${group.key}_${dateStr}.png`, base64, { base64: true })
                 console.log(`[导出] ${group.name} 截图完成`)
             } catch (e) {
                 console.error(`渲染 ${group.name} 失败:`, e)
             }
         }
 
-        // ── 精简 JSON (含 highlights/group_overview，供 AI 生成文案) ──
-        const summary = buildSummary(posterData.value, selectedDays.value)
-        zip.file('poster_summary.json', JSON.stringify(summary, null, 2))
+        // ── 精简 JSON（供 AI 生成文案）──
+
+        // 明日摘要（日帖用）：取 days[1]，即明天
+        const summaryTomorrow = buildSummary(posterData.value, 1, 1)
+        zip.file(`poster_tomorrow_${dateStr}.json`, JSON.stringify(summaryTomorrow, null, 2))
+
+        // 本周摘要（周报用）：取全部 7 天
+        const summaryWeek = buildSummary(posterData.value, 7, 0)
+        zip.file(`poster_week_${dateStr}.json`, JSON.stringify(summaryWeek, null, 2))
 
         // ── 打包下载 ──
         exportProgress.value = '打包中…'
@@ -215,7 +224,6 @@ async function exportAll() {
         const link = document.createElement('a')
         link.setAttribute('href', url)
         // 文件名格式：posters_YYYYMMDD.zip（以数据生成日期为准）
-        const dateStr = posterData.value.generated_at.slice(0, 10).replace(/-/g, '')
         link.setAttribute('download', `posters_${dateStr}.zip`)
         link.style.display = 'none'
         document.body.appendChild(link)

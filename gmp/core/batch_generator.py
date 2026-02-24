@@ -171,7 +171,7 @@ class BatchGenerator:
 
         poster_gen = PosterGenerator(self._output_dir)
         poster_data = poster_gen.generate(
-            self._viewpoint_config, days=min(days, 5)
+            self._viewpoint_config, days=min(days, 7)
         )
         self._json_writer.write_poster(poster_data)
 
