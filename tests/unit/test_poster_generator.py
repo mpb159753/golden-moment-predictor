@@ -1,6 +1,7 @@
 """tests/unit/test_poster_generator.py — PosterGenerator 单元测试"""
 
 import json
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from unittest.mock import MagicMock
@@ -11,16 +12,24 @@ from gmp.output.poster_generator import (
     GROUP_META,
 )
 
+_CST = timezone(timedelta(hours=8))
+
 
 @pytest.fixture
 def tmp_data_dir(tmp_path):
-    """创建临时数据目录并写入测试数据"""
+    """创建临时数据目录并写入测试数据。
+
+    日期必须与 generate() 内部 datetime.now() 一致，
+    所以动态计算而不是硬编码。
+    """
+    today = datetime.now(_CST).strftime("%Y-%m-%d")
+
     vp_dir = tmp_path / "viewpoints" / "niubei_gongga"
     vp_dir.mkdir(parents=True)
 
     forecast = {
         "daily": [{
-            "date": "2026-02-21",
+            "date": today,
             "events": [
                 {"event_type": "sunrise_golden_mountain", "display_name": "日照金山", "score": 90},
                 {"event_type": "cloud_sea", "display_name": "云海", "score": 75},
@@ -35,7 +44,7 @@ def tmp_data_dir(tmp_path):
     timeline = {
         "hourly": [{"hour": h, "weather": {"weather_icon": "clear"}} for h in range(24)],
     }
-    (vp_dir / "timeline_2026-02-21.json").write_text(
+    (vp_dir / f"timeline_{today}.json").write_text(
         json.dumps(timeline), encoding="utf-8"
     )
     return tmp_path

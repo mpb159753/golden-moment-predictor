@@ -110,6 +110,61 @@ onMounted(async () => {
     }
 })
 
+/**
+ * 从 posterData 构建精简摘要，用于 AI 生成小红书文案。
+ * @param {object} data - posterData
+ * @param {number} days - 当前显示天数
+ * @returns {object} summary
+ */
+function buildSummary(data, days) {
+    const displayedDayList = data.days.slice(0, days)
+    const highlights = []
+    const groupOverview = {}
+
+    for (const group of data.groups) {
+        let groupBest = null
+        for (const vp of group.viewpoints) {
+            for (const day of vp.daily) {
+                if (!displayedDayList.includes(day.date)) continue
+                for (const half of ['am', 'pm']) {
+                    const slot = day[half]
+                    if (!slot || slot.score < 70) continue
+                    highlights.push({
+                        date: day.date,
+                        period: half === 'am' ? '上午' : '下午',
+                        group: group.name,
+                        viewpoint: vp.name,
+                        event: slot.event || '',
+                        weather: slot.weather,
+                        score: slot.score,
+                    })
+                    if (!groupBest || slot.score > groupBest.score) {
+                        groupBest = { date: day.date, viewpoint: vp.name, score: slot.score }
+                    }
+                }
+            }
+        }
+        if (groupBest) groupOverview[group.name] = groupBest
+    }
+
+    highlights.sort((a, b) => b.score - a.score)
+
+    const fmt = d => {
+        const dt = new Date(d)
+        return `${dt.getMonth() + 1}月${dt.getDate()}日`
+    }
+    const dateRange = displayedDayList.length
+        ? `${fmt(displayedDayList[0])}—${fmt(displayedDayList[displayedDayList.length - 1])}`
+        : ''
+
+    return {
+        generated_at: data.generated_at,
+        date_range: dateRange,
+        highlights,
+        group_overview: groupOverview,
+    }
+}
+
 async function exportAll() {
     if (exporting.value) return
     exporting.value = true
@@ -121,6 +176,7 @@ async function exportAll() {
         const zip = new JSZip()
         const groups = posterData.value?.groups ?? []
 
+        // ── 图片截图 ──
         console.log('[导出] 开始，共', groups.length, '个分组，groupRefs 键：', Object.keys(groupRefs))
         for (let i = 0; i < groups.length; i++) {
             const group = groups[i]
@@ -137,7 +193,6 @@ async function exportAll() {
                     useCORS: true,
                     logging: false,
                 })
-                // 将 base64 数据（去掉前缀）加入 zip
                 const base64 = canvas.toDataURL('image/png').split(',')[1]
                 zip.file(`poster_${group.key}.png`, base64, { base64: true })
                 console.log(`[导出] ${group.name} 截图完成`)
@@ -146,6 +201,11 @@ async function exportAll() {
             }
         }
 
+        // ── 精简 JSON (含 highlights/group_overview，供 AI 生成文案) ──
+        const summary = buildSummary(posterData.value, selectedDays.value)
+        zip.file('poster_summary.json', JSON.stringify(summary, null, 2))
+
+        // ── 打包下载 ──
         exportProgress.value = '打包中…'
         // 使用 blob URL 触发下载。data URI 在 Safari 下有 ~15MB 大小限制，
         // 7 张 scale=2 PNG 打包后远超限制会静默失败（UUID 文件名无法打开）。
@@ -154,7 +214,9 @@ async function exportAll() {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.setAttribute('href', url)
-        link.setAttribute('download', 'posters.zip')
+        // 文件名格式：posters_YYYYMMDD.zip（以数据生成日期为准）
+        const dateStr = posterData.value.generated_at.slice(0, 10).replace(/-/g, '')
+        link.setAttribute('download', `posters_${dateStr}.zip`)
         link.style.display = 'none'
         document.body.appendChild(link)
         link.click()
