@@ -1,0 +1,871 @@
+{
+  "generated_at": "2026-02-24T19:59:31.595372+08:00",
+  "date_range": "2月24日—2月28日",
+  "highlights": [
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "雅哈垭口",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 100
+    },
+    {
+      "date": "2026-02-26",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "五色海",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 96
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "五色海",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 96
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "五色海",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 96
+    },
+    {
+      "date": "2026-02-26",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "洛绒牛场",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 96
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "洛绒牛场",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 96
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "洛绒牛场",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 96
+    },
+    {
+      "date": "2026-02-26",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "牛奶海",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 96
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "牛奶海",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 96
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "牛奶海",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 96
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "贡嘎山系",
+      "viewpoint": "冷嘎措",
+      "event": "",
+      "weather": "阴天",
+      "score": 95
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "俄初山观景台",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 94
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "子梅垭口",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 93
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "冷嘎措",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 92
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "雅哈垭口",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 91
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "鱼子西",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 91
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "雅拉山系",
+      "viewpoint": "格底拉姆",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 91
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "努达营地",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 89
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "俄初山观景台",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 89
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "子梅垭口",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 88
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "折多山",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 88
+    },
+    {
+      "date": "2026-02-26",
+      "period": "上午",
+      "group": "四姑娘山",
+      "viewpoint": "海子沟-朝山坪",
+      "event": "树挂积雪",
+      "weather": "雪",
+      "score": 88
+    },
+    {
+      "date": "2026-02-26",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "磐羊湖",
+      "event": "树挂积雪",
+      "weather": "雪",
+      "score": 88
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "查冲西村",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 87
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "贡嘎山系",
+      "viewpoint": "冷嘎措",
+      "event": "",
+      "weather": "阴天",
+      "score": 85
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "贡嘎山系",
+      "viewpoint": "鱼子西",
+      "event": "",
+      "weather": "阴天",
+      "score": 85
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "贡嘎山系",
+      "viewpoint": "鱼子西",
+      "event": "",
+      "weather": "晴天",
+      "score": 85
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "贡嘎山系",
+      "viewpoint": "折多山",
+      "event": "",
+      "weather": "阴天",
+      "score": 85
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "贡嘎山系",
+      "viewpoint": "折多山",
+      "event": "",
+      "weather": "晴天",
+      "score": 85
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "格底拉姆",
+      "event": "",
+      "weather": "阴天",
+      "score": 85
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "格聂之眼",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 83
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "老冷古寺",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 83
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "下则通村",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 83
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "折多山",
+      "event": "观星",
+      "weather": "多云",
+      "score": 80
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "冷嘎措",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 78
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "四姑娘山",
+      "viewpoint": "海子沟-朝山坪",
+      "event": "树挂积雪",
+      "weather": "阴天",
+      "score": 78
+    },
+    {
+      "date": "2026-02-26",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "红杉林主机位",
+      "event": "树挂积雪",
+      "weather": "雨",
+      "score": 78
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "查冲西村",
+      "event": "观星",
+      "weather": "多云",
+      "score": 77
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "鱼子西",
+      "event": "观星",
+      "weather": "阴天",
+      "score": 76
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "雅拉山系",
+      "viewpoint": "格底拉姆",
+      "event": "观星",
+      "weather": "阴天",
+      "score": 76
+    },
+    {
+      "date": "2026-02-25",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "格聂之眼",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 76
+    },
+    {
+      "date": "2026-02-25",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "老冷古寺",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 76
+    },
+    {
+      "date": "2026-02-25",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "下则通村",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 76
+    },
+    {
+      "date": "2026-02-26",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "俄初山观景台",
+      "event": "观星",
+      "weather": "多云",
+      "score": 76
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "红杉林主机位",
+      "event": "树挂积雪",
+      "weather": "阴天",
+      "score": 76
+    },
+    {
+      "date": "2026-02-25",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "雅哈垭口",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 75
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "格底拉姆",
+      "event": "",
+      "weather": "晴天",
+      "score": 75
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "格聂山系",
+      "viewpoint": "努达营地",
+      "event": "日照金山",
+      "weather": "多云",
+      "score": 75
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "亚丁景区",
+      "viewpoint": "俄初山观景台",
+      "event": "日照金山",
+      "weather": "晴天",
+      "score": 75
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "亚丁景区",
+      "viewpoint": "俄初山观景台",
+      "event": "日照金山",
+      "weather": "晴天",
+      "score": 75
+    },
+    {
+      "date": "2026-02-25",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "五色海",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 75
+    },
+    {
+      "date": "2026-02-25",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "洛绒牛场",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 75
+    },
+    {
+      "date": "2026-02-25",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "牛奶海",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 75
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "格聂之眼",
+      "event": "观星",
+      "weather": "多云",
+      "score": 73
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "老冷古寺",
+      "event": "观星",
+      "weather": "多云",
+      "score": 73
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "下则通村",
+      "event": "观星",
+      "weather": "多云",
+      "score": 73
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "珍珠海",
+      "event": "观星",
+      "weather": "多云",
+      "score": 73
+    },
+    {
+      "date": "2026-02-28",
+      "period": "下午",
+      "group": "格聂山系",
+      "viewpoint": "努达营地",
+      "event": "观星",
+      "weather": "阴天",
+      "score": 72
+    },
+    {
+      "date": "2026-02-24",
+      "period": "下午",
+      "group": "其它景区",
+      "viewpoint": "扎尕尔措",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 72
+    },
+    {
+      "date": "2026-02-25",
+      "period": "下午",
+      "group": "贡嘎山系",
+      "viewpoint": "子梅垭口",
+      "event": "观星",
+      "weather": "晴天",
+      "score": 71
+    },
+    {
+      "date": "2026-02-27",
+      "period": "下午",
+      "group": "亚丁景区",
+      "viewpoint": "珍珠海",
+      "event": "观星",
+      "weather": "多云",
+      "score": 71
+    },
+    {
+      "date": "2026-02-24",
+      "period": "上午",
+      "group": "四姑娘山",
+      "viewpoint": "二姑娘峰观景位",
+      "event": "雾凇",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "四姑娘山",
+      "viewpoint": "二姑娘峰观景位",
+      "event": "雾凇",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "亚拉主景平台",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "亚拉主景平台",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "八郎生都",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "八郎生都",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-25",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "格底拉姆",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "姑弄村",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "姑弄村",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "塔公草原机位",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "雅拉山系",
+      "viewpoint": "塔公草原机位",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "格聂山系",
+      "viewpoint": "查冲西村",
+      "event": "日照金山",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "格聂山系",
+      "viewpoint": "查冲西村",
+      "event": "日照金山",
+      "weather": "晴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "格聂山系",
+      "viewpoint": "格聂之眼",
+      "event": "日照金山",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "格聂山系",
+      "viewpoint": "老冷古寺",
+      "event": "日照金山",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-25",
+      "period": "上午",
+      "group": "格聂山系",
+      "viewpoint": "努达营地",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "格聂山系",
+      "viewpoint": "下则通村",
+      "event": "日照金山",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-25",
+      "period": "上午",
+      "group": "亚丁景区",
+      "viewpoint": "俄初山观景台",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-26",
+      "period": "上午",
+      "group": "亚丁景区",
+      "viewpoint": "俄初山观景台",
+      "event": "日照金山",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-24",
+      "period": "上午",
+      "group": "理小路沿途",
+      "viewpoint": "理小隧道口观景台",
+      "event": "雾凇",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-24",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "磐羊湖",
+      "event": "雾凇",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-25",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "磐羊湖",
+      "event": "雾凇",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "磐羊湖",
+      "event": "雾凇",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-24",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "4860观景台",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "4860观景台",
+      "event": "树挂积雪",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-24",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "五花海",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "异域星球观景位",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "异域星球观景位",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-27",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "木雅金塔机位",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-28",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "木雅金塔机位",
+      "event": "",
+      "weather": "阴天",
+      "score": 70
+    },
+    {
+      "date": "2026-02-26",
+      "period": "上午",
+      "group": "其它景区",
+      "viewpoint": "鹧鸪山垭口机位",
+      "event": "雾凇",
+      "weather": "阴天",
+      "score": 70
+    }
+  ],
+  "group_overview": {
+    "贡嘎山系": {
+      "date": "2026-02-28",
+      "viewpoint": "雅哈垭口",
+      "score": 100
+    },
+    "四姑娘山": {
+      "date": "2026-02-26",
+      "viewpoint": "海子沟-朝山坪",
+      "score": 88
+    },
+    "雅拉山系": {
+      "date": "2026-02-28",
+      "viewpoint": "格底拉姆",
+      "score": 91
+    },
+    "格聂山系": {
+      "date": "2026-02-27",
+      "viewpoint": "努达营地",
+      "score": 89
+    },
+    "亚丁景区": {
+      "date": "2026-02-26",
+      "viewpoint": "五色海",
+      "score": 96
+    },
+    "理小路沿途": {
+      "date": "2026-02-24",
+      "viewpoint": "理小隧道口观景台",
+      "score": 70
+    },
+    "其它景区": {
+      "date": "2026-02-26",
+      "viewpoint": "磐羊湖",
+      "score": 88
+    }
+  }
+}

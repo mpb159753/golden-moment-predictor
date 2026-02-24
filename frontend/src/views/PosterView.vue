@@ -136,27 +136,30 @@ function buildSummary(data, dayCount, dayOffset = 0) {
                 if (!displayedDayList.includes(day.date)) continue
                 for (const half of ['am', 'pm']) {
                     const slot = day[half]
-                    if (!slot || slot.score < 70) continue
-                    highlights.push({
-                        date: day.date,
-                        period: half === 'am' ? '上午' : '下午',
-                        group: group.name,
-                        viewpoint: vp.name,
-                        event: slot.event || '',
-                        weather: slot.weather,
-                        score: slot.score,
-                        conditions: slot.conditions || {},
-                    })
-                    if (!groupBest || slot.score > groupBest.score) {
-                        groupBest = { date: day.date, viewpoint: vp.name, score: slot.score }
+                    if (!slot) continue
+                    
+                    if (!groupBest || slot.score > groupBest.分数) {
+                        groupBest = { 点位: vp.name, 分数: slot.score, 天气: slot.weather }
                     }
+                    
+                    if (slot.score < 60) continue
+                    
+                    highlights.push({
+                        日期: day.date,
+                        时段: half === 'am' ? '上午' : '下午',
+                        区域: group.name,
+                        点位: vp.name,
+                        景观: slot.event || '无',
+                        天气: slot.weather,
+                        分数: slot.score
+                    })
                 }
             }
         }
         if (groupBest) groupOverview[group.name] = groupBest
     }
 
-    highlights.sort((a, b) => b.score - a.score)
+    highlights.sort((a, b) => b.分数 - a.分数)
 
     const fmt = d => {
         const dt = new Date(d)
@@ -167,10 +170,10 @@ function buildSummary(data, dayCount, dayOffset = 0) {
         : ''
 
     return {
-        generated_at: data.generated_at,
-        date_range: dateRange,
-        highlights,
-        group_overview: groupOverview,
+        生成时间: data.generated_at,
+        适用日期: dateRange,
+        各区概况: groupOverview,
+        推荐点位: highlights,
     }
 }
 

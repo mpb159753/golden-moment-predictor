@@ -79,27 +79,30 @@ function buildSummaryFromPosterData(data, dayCount, dayOffset = 0) {
                 if (!displayedDayList.includes(day.date)) continue
                 for (const half of ['am', 'pm']) {
                     const slot = day[half]
-                    if (!slot || slot.score < 70) continue
-                    highlights.push({
-                        date: day.date,
-                        period: half === 'am' ? '上午' : '下午',
-                        group: group.name,
-                        viewpoint: vp.name,
-                        event: slot.event || '',
-                        weather: slot.weather,
-                        score: slot.score,
-                        conditions: slot.conditions || {},
-                    })
-                    if (!groupBest || slot.score > groupBest.score) {
-                        groupBest = { date: day.date, viewpoint: vp.name, score: slot.score }
+                    if (!slot) continue
+
+                    if (!groupBest || slot.score > groupBest.分数) {
+                        groupBest = { 点位: vp.name, 分数: slot.score, 天气: slot.weather }
                     }
+
+                    if (slot.score < 60) continue
+
+                    highlights.push({
+                        日期: day.date,
+                        时段: half === 'am' ? '上午' : '下午',
+                        区域: group.name,
+                        点位: vp.name,
+                        景观: slot.event || '无',
+                        天气: slot.weather,
+                        分数: slot.score
+                    })
                 }
             }
         }
         if (groupBest) groupOverview[group.name] = groupBest
     }
 
-    highlights.sort((a, b) => b.score - a.score)
+    highlights.sort((a, b) => b.分数 - a.分数)
 
     const fmt = d => {
         const dt = new Date(d)
@@ -110,10 +113,10 @@ function buildSummaryFromPosterData(data, dayCount, dayOffset = 0) {
         : ''
 
     return {
-        generated_at: data.generated_at,
-        date_range: dateRange,
-        highlights,
-        group_overview: groupOverview,
+        生成时间: data.generated_at,
+        适用日期: dateRange,
+        各区概况: groupOverview,
+        推荐点位: highlights,
     }
 }
 
@@ -130,17 +133,17 @@ const summaryData = {
                 {
                     date: '2026-02-24',
                     am: { score: 80, event: '雾凇', weather: '晴天', conditions: { temperature: { score: 40, max: 40, detail: 'avg_temp=-2°C' } } },
-                    pm: { score: 55, event: '', weather: '阴天', conditions: {} },  // < 70
+                    pm: { score: 55, event: '', weather: '阴天', conditions: {} },  // < 60
                 },
                 {
                     date: '2026-02-25',
-                    am: { score: 60, event: '', weather: '阴天', conditions: {} },  // < 70
+                    am: { score: 65, event: '', weather: '阴天', conditions: {} },  // >= 60, 无 event
                     pm: { score: 90, event: '观星', weather: '晴天', conditions: { base: { score: 100, max: 100, detail: 'quality=optimal' } } },
                 },
                 {
                     date: '2026-02-26',
                     am: { score: 85, event: '日照金山', weather: '晴天', conditions: { light_path: { score: 30, max: 35, detail: 'cloud=8%' } } },
-                    pm: { score: 50, event: '', weather: '多云', conditions: {} },  // < 70
+                    pm: { score: 50, event: '', weather: '多云', conditions: {} },  // < 60
                 },
             ],
         }],
@@ -148,68 +151,70 @@ const summaryData = {
 }
 
 describe('buildSummary', () => {
-    it('only includes slots with score >= 70 in highlights', () => {
+    it('only includes slots with score >= 60 in highlights', () => {
         const summary = buildSummaryFromPosterData(summaryData, 3)
-        expect(summary.highlights.every(h => h.score >= 70)).toBe(true)
-        expect(summary.highlights).toHaveLength(3)  // score 55, 60, 50 被排除
+        expect(summary.推荐点位.every(h => h.分数 >= 60)).toBe(true)
+        expect(summary.推荐点位).toHaveLength(4)  // score 80, 65, 90, 85
     })
 
     it('highlights are sorted by score descending', () => {
         const summary = buildSummaryFromPosterData(summaryData, 3)
-        expect(summary.highlights[0].score).toBe(90)
-        expect(summary.highlights[1].score).toBe(85)
-        expect(summary.highlights[2].score).toBe(80)
+        expect(summary.推荐点位[0].分数).toBe(90)
+        expect(summary.推荐点位[1].分数).toBe(85)
+        expect(summary.推荐点位[2].分数).toBe(80)
+        expect(summary.推荐点位[3].分数).toBe(65)
     })
 
     it('group_overview records the best viewpoint', () => {
         const summary = buildSummaryFromPosterData(summaryData, 3)
-        expect(summary.group_overview['贡嘎山系'].score).toBe(90)
-        expect(summary.group_overview['贡嘎山系'].viewpoint).toBe('雅哈垭口')
+        expect(summary.各区概况['贡嘎山系'].分数).toBe(90)
+        expect(summary.各区概况['贡嘎山系'].点位).toBe('雅哈垭口')
     })
 
     it('date_range uses Chinese format with 月 and 日', () => {
         const summary = buildSummaryFromPosterData(summaryData, 3)
-        expect(summary.date_range).toMatch(/月.*日.*月.*日/)
+        expect(summary.适用日期).toMatch(/月.*日.*月.*日/)
     })
 
     it('respects selected days count (only day 1 of 3)', () => {
         const summary = buildSummaryFromPosterData(summaryData, 1)
-        expect(summary.highlights.some(h => h.date === '2026-02-25')).toBe(false)
-        expect(summary.highlights).toHaveLength(1)  // 仅 2-24 am 80
+        expect(summary.推荐点位.some(h => h.日期 === '2026-02-25')).toBe(false)
+        expect(summary.推荐点位).toHaveLength(1)  // 仅 2-24 am 80
     })
 
     it('dayOffset=1 returns tomorrow only (skips today)', () => {
-        // offset=1, count=1 → 只取 2026-02-25
         const summary = buildSummaryFromPosterData(summaryData, 1, 1)
-        expect(summary.highlights.some(h => h.date === '2026-02-24')).toBe(false)
-        expect(summary.highlights).toHaveLength(1)  // 2-25 pm 90
-        expect(summary.highlights[0].date).toBe('2026-02-25')
+        expect(summary.推荐点位.some(h => h.日期 === '2026-02-24')).toBe(false)
+        expect(summary.推荐点位).toHaveLength(2)  // 2-25 am 65, pm 90
+        expect(summary.推荐点位[0].日期).toBe('2026-02-25')
+        expect(summary.推荐点位[1].日期).toBe('2026-02-25')
     })
 
-    it('conditions are transparently included in highlights', () => {
+    it('removes technical conditions and empty events get replaced with 无', () => {
         const summary = buildSummaryFromPosterData(summaryData, 3)
-        const frostHighlight = summary.highlights.find(h => h.event === '雾凇')
-        expect(frostHighlight).toBeDefined()
-        expect(frostHighlight.conditions).toHaveProperty('temperature')
-        expect(frostHighlight.conditions.temperature.detail).toBe('avg_temp=-2°C')
+        const noEventHighlight = summary.推荐点位.find(h => h.分数 === 65)
+        expect(noEventHighlight.景观).toBe('无')
+        expect(noEventHighlight).not.toHaveProperty('conditions')
     })
 
-    it('missing conditions defaults to empty object', () => {
-        const dataWithoutConditions = {
+    it('finds group best even if all are < 60', () => {
+        const allBadData = {
             generated_at: '2026-02-24T10:00:00+08:00',
             days: ['2026-02-24'],
             groups: [{
                 name: '测试', key: 'test', viewpoints: [{
                     id: 'v', name: '点', daily: [{
                         date: '2026-02-24',
-                        am: { score: 75, event: '云海', weather: '晴天' },  // 无 conditions 字段
-                        pm: { score: 0, event: '', weather: '阴天' }
+                        am: { score: 40, event: '', weather: '雨天' },
+                        pm: { score: 55, event: '', weather: '阴天' }
                     }]
                 }]
             }],
         }
-        const summary = buildSummaryFromPosterData(dataWithoutConditions, 1)
-        expect(summary.highlights[0].conditions).toEqual({})
+        const summary = buildSummaryFromPosterData(allBadData, 1)
+        expect(summary.推荐点位).toHaveLength(0)
+        expect(summary.各区概况['测试'].分数).toBe(55)
+        expect(summary.各区概况['测试'].天气).toBe('阴天')
     })
 })
 
