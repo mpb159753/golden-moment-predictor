@@ -149,6 +149,7 @@ class PosterGenerator:
 
         event_name = ""
         score = 0
+        conditions: dict = {}
         target_events = AM_EVENTS if half == "am" else PM_EVENTS
 
         for day_data in forecast.get("daily", []):
@@ -163,6 +164,7 @@ class PosterGenerator:
                         best_score = ev_score
                         event_name = ev.get("display_name", ev_type)
                         score = ev_score
+                        conditions = ev.get("score_breakdown", {})
             # 如果无专属时段事件 >= 50, 检查 clear_sky
             if not event_name:
                 for ev in day_data.get("events", []):
@@ -171,9 +173,10 @@ class PosterGenerator:
                         and ev.get("score", 0) >= 50
                     ):
                         score = ev["score"]
+                        conditions = ev.get("score_breakdown", {})
             break
 
-        return {"weather": weather, "event": event_name, "score": score}
+        return {"weather": weather, "event": event_name, "score": score, "conditions": conditions}
 
     def _get_dominant_weather(self, timeline: dict, half: str) -> str:
         """从 timeline 中提取上午/下午的主导天气"""
