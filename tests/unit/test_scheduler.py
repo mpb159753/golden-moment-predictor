@@ -710,9 +710,9 @@ class TestExtractHourlyWeather:
         assert hw[today_str][0]["weather_icon"] == "clear"
 
     def test_weather_icon_cloudy(self):
-        """cloud_cover = 60%（>= 20, < 80, precip_prob < 50）→ weather_icon = 'cloudy'"""
+        """cloud_cover = 65%（>= 60, < 80, precip_prob < 50）→ weather_icon = 'cloudy'"""
         weather_df = _make_clear_weather(days=1)
-        weather_df["cloud_cover_total"] = 60
+        weather_df["cloud_cover_total"] = 65
         weather_df["precipitation_probability"] = 10
 
         plugin = _make_l1_plugin("cloud_sea")
@@ -728,9 +728,9 @@ class TestExtractHourlyWeather:
         assert hw[today_str][0]["weather_icon"] == "cloudy"
 
     def test_weather_icon_partly_cloudy(self):
-        """cloud_cover 在 20-50 之间 → weather_icon = 'partly_cloudy'"""
+        """cloud_cover 在 20-60 之间 → weather_icon = 'partly_cloudy'"""
         weather_df = _make_clear_weather(days=1)
-        weather_df["cloud_cover_total"] = 30
+        weather_df["cloud_cover_total"] = 55
 
         plugin = _make_l1_plugin("cloud_sea")
         scheduler, *_ = _build_scheduler(

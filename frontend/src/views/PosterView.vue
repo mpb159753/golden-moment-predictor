@@ -43,6 +43,7 @@
                     :key="group.key"
                     :ref="el => { if (el) groupRefs[group.key] = el }"
                     class="group-section"
+                    :style="groupSectionStyle"
                 >
                     <PredictionMatrix
                         :group="group"
@@ -98,6 +99,12 @@ const formattedGeneratedAt = computed(() => {
     if (!iso) return ''
     const d = new Date(iso)
     return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+})
+
+// 根据天数动态计算表格宽度（景点名 76px + 时段 32px = 108px，每列 90px）
+const groupSectionStyle = computed(() => {
+    const w = Math.max(540, 108 + selectedDays.value * 90)
+    return { width: w + 'px' }
 })
 
 onMounted(async () => {
@@ -360,7 +367,7 @@ async function exportAll() {
 }
 
 .group-section {
-    width: 540px;   /* 小红书场景固定宽：html2canvas scale=2 → 1080px 物理像素 */
+    /* 宽度由 groupSectionStyle 动态计算：3天 540px / 5天 558px / 7天 738px */
     background: white;
     border-radius: 12px;
     overflow: hidden;

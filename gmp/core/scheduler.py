@@ -461,7 +461,7 @@ class GMPScheduler:
 
         weather_icon 映射规则:
         - cloud_cover < 20% → "clear"
-        - cloud_cover < 50% → "partly_cloudy"
+        - cloud_cover < 60% → "partly_cloudy"
         - cloud_cover < 80% 且 precip_prob >= 50% 且 temp < 0 → "snow"
         - cloud_cover < 80% 且 precip_prob >= 50% → "rain"
         - 其他 → "cloudy"
@@ -478,7 +478,7 @@ class GMPScheduler:
         # 向量化 weather_icon 映射
         conditions = [
             cc < 20,
-            cc < 50,
+            cc < 60,
             (pp >= 50) & (temp < 0),
             pp >= 50,
         ]
