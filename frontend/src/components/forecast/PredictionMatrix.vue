@@ -62,7 +62,7 @@
             </tfoot>
         </table>
         <!-- 品牌水印 -->
-        <div class="watermark">数据来源：专业气象预报模型 · 黄金时刻预测 GMP</div>
+        <div class="watermark">数据来源：专业气象预报模型 · 川西观景雷达</div>
     </div>
 </template>
 

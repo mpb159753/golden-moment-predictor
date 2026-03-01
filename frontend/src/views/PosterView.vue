@@ -21,18 +21,14 @@
                 <div class="poster-header__controls">
                     <div class="day-selector">
                         <button
-                            v-for="d in [3, 5, 7]"
+                            v-for="d in [3, 7]"
                             :key="d"
                             class="day-btn"
                             :class="{ active: selectedDays === d }"
                             @click="selectedDays = d"
                         >{{ d }}天</button>
                     </div>
-                    <button class="export-btn" :disabled="exporting" @click="exportAll">
-                        <svg v-if="!exporting" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:5px"><path d="M12 2v14M5 9l7 7 7-7"/><rect x="3" y="18" width="18" height="3" rx="1"/></svg>
-                        <span v-if="exporting">{{ exportProgress }}</span>
-                        <span v-else>一键导出全部</span>
-                    </button>
+
                 </div>
             </header>
 
@@ -66,22 +62,23 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useDataLoader } from '@/composables/useDataLoader'
 import PredictionMatrix from '@/components/forecast/PredictionMatrix.vue'
 
+const route = useRoute()
 const { loadPoster } = useDataLoader()
 
 const posterData = ref(null)
 const loading = ref(true)
 const error = ref(null)
-const selectedDays = ref(5)
+const selectedDays = ref(Number(route.query.days) || 7)
 const groupRefs = reactive({})
-const exporting = ref(false)
-const exportProgress = ref('')
+
 
 const displayedDays = computed(() => {
     if (!posterData.value) return []
-    return posterData.value.days.slice(0, selectedDays.value)
+    return posterData.value.days.slice(1, 1 + selectedDays.value)
 })
 
 const dateRange = computed(() => {
@@ -117,136 +114,7 @@ onMounted(async () => {
     }
 })
 
-/**
- * 从 posterData 构建精简摘要，用于 AI 生成小红书文案。
- * @param {object} data - posterData
- * @param {number} dayCount - 要包含的天数（从 dayOffset 起）
- * @param {number} [dayOffset=0] - 起始偏移（0=今天，1=明天）
- * @returns {object} summary
- */
-function buildSummary(data, dayCount, dayOffset = 0) {
-    const displayedDayList = data.days.slice(dayOffset, dayOffset + dayCount)
-    const highlights = []
-    const groupOverview = {}
 
-    for (const group of data.groups) {
-        let groupBest = null
-        for (const vp of group.viewpoints) {
-            for (const day of vp.daily) {
-                if (!displayedDayList.includes(day.date)) continue
-                for (const half of ['am', 'pm']) {
-                    const slot = day[half]
-                    if (!slot) continue
-                    
-                    if (!groupBest || slot.score > groupBest.分数) {
-                        groupBest = { 点位: vp.name, 分数: slot.score, 天气: slot.weather }
-                    }
-                    
-                    if (slot.score < 60) continue
-                    
-                    highlights.push({
-                        日期: day.date,
-                        时段: half === 'am' ? '上午' : '下午',
-                        区域: group.name,
-                        点位: vp.name,
-                        景观: slot.event || '无',
-                        天气: slot.weather,
-                        分数: slot.score
-                    })
-                }
-            }
-        }
-        if (groupBest) groupOverview[group.name] = groupBest
-    }
-
-    highlights.sort((a, b) => b.分数 - a.分数)
-
-    const fmt = d => {
-        const dt = new Date(d)
-        return `${dt.getMonth() + 1}月${dt.getDate()}日`
-    }
-    const dateRange = displayedDayList.length
-        ? `${fmt(displayedDayList[0])}—${fmt(displayedDayList[displayedDayList.length - 1])}`
-        : ''
-
-    return {
-        生成时间: data.generated_at,
-        适用日期: dateRange,
-        各区概况: groupOverview,
-        推荐点位: highlights,
-    }
-}
-
-async function exportAll() {
-    if (exporting.value) return
-    exporting.value = true
-    try {
-        const [{ default: html2canvas }, { default: JSZip }] = await Promise.all([
-            import('html2canvas'),
-            import('jszip'),
-        ])
-        const zip = new JSZip()
-        const groups = posterData.value?.groups ?? []
-        const dateStr = posterData.value.generated_at.slice(0, 10).replace(/-/g, '')
-
-        // ── 图片截图 ──
-        console.log('[导出] 开始，共', groups.length, '个分组，groupRefs 键：', Object.keys(groupRefs))
-        for (let i = 0; i < groups.length; i++) {
-            const group = groups[i]
-            const el = groupRefs[group.key]
-            if (!el) {
-                console.warn(`[导出] 找不到 ${group.key} 的 DOM 节点，跳过`)
-                continue
-            }
-            exportProgress.value = `渲染中 ${i + 1}/${groups.length}…`
-            try {
-                const canvas = await html2canvas(el, {
-                    scale: 2,
-                    backgroundColor: '#ffffff',
-                    useCORS: true,
-                    logging: false,
-                })
-                const base64 = canvas.toDataURL('image/png').split(',')[1]
-                zip.file(`poster_${group.key}_${dateStr}.png`, base64, { base64: true })
-                console.log(`[导出] ${group.name} 截图完成`)
-            } catch (e) {
-                console.error(`渲染 ${group.name} 失败:`, e)
-            }
-        }
-
-        // ── 精简 JSON（供 AI 生成文案）──
-
-        // 明日摘要（日帖用）：取 days[1]，即明天
-        const summaryTomorrow = buildSummary(posterData.value, 1, 1)
-        zip.file(`poster_tomorrow_${dateStr}.json`, JSON.stringify(summaryTomorrow, null, 2))
-
-        // 本周摘要（周报用）：取全部 7 天
-        const summaryWeek = buildSummary(posterData.value, 7, 0)
-        zip.file(`poster_week_${dateStr}.json`, JSON.stringify(summaryWeek, null, 2))
-
-        // ── 打包下载 ──
-        exportProgress.value = '打包中…'
-        // 使用 blob URL 触发下载。data URI 在 Safari 下有 ~15MB 大小限制，
-        // 7 张 scale=2 PNG 打包后远超限制会静默失败（UUID 文件名无法打开）。
-        // 改回 blob URL，并延迟 5s 释放，确保 Safari 有足够时间完成文件写入。
-        const blob = await zip.generateAsync({ type: 'blob' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.setAttribute('href', url)
-        // 文件名格式：posters_YYYYMMDD.zip（以数据生成日期为准）
-        link.setAttribute('download', `posters_${dateStr}.zip`)
-        link.style.display = 'none'
-        document.body.appendChild(link)
-        link.click()
-        setTimeout(() => {
-            document.body.removeChild(link)
-            URL.revokeObjectURL(url)
-        }, 5000)
-    } finally {
-        exporting.value = false
-        exportProgress.value = ''
-    }
-}
 </script>
 
 <style scoped>
@@ -336,31 +204,7 @@ async function exportAll() {
     background: #FEF2F2;
 }
 
-.export-btn {
-    padding: 8px 20px;
-    background: #FF8C00;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-family: inherit;
-    font-weight: 600;
-    transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(255, 140, 0, 0.25);
-}
 
-.export-btn:hover:not(:disabled) {
-    background: #E67E00;
-    box-shadow: 0 4px 12px rgba(255, 140, 0, 0.35);
-    transform: translateY(-1px);
-}
-
-.export-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    transform: none;
-}
 
 /* ── 内容区 ── */
 .poster-content {
