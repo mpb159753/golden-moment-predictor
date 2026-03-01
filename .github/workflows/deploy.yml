@@ -62,6 +62,17 @@ jobs:
         run: npm run build
         working-directory: frontend
 
+      - name: Install fonts for screenshot
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk fonts-noto-color-emoji
+
+      - name: Generate poster screenshots and summaries
+        run: |
+          npx playwright install --with-deps chromium
+          node scripts/generate-posters.mjs
+        working-directory: frontend
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
