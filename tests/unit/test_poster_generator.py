@@ -22,6 +22,7 @@ def tmp_data_dir(tmp_path):
     日期必须与 generate() 内部 datetime.now() 一致，
     所以动态计算而不是硬编码。
     """
+    # generate() 生成 days+1 个日期（今天作为 days[0] 占位），测试数据用今天
     today = datetime.now(_CST).strftime("%Y-%m-%d")
 
     vp_dir = tmp_path / "viewpoints" / "niubei"

@@ -54,11 +54,16 @@ class PosterGenerator:
         viewpoint_config: ViewpointConfig,
         days: int = 5,
     ) -> dict:
-        """聚合所有景点数据生成 poster.json 格式的 dict"""
+        """聚合所有景点数据生成 poster.json 格式的 dict
+
+        前端契约：days[0] = 今天（作为占位，由前端 .slice(1) 跳过），
+        days[1..N] = 未来 N 天的实际预测数据。
+        因此内部生成 days+1 个日期（含今天），让前端能完整 slice 到 N 天。
+        """
         now = datetime.now(_CST)
         date_list = [
             (now + timedelta(days=i)).strftime("%Y-%m-%d")
-            for i in range(days)
+            for i in range(days + 1)  # 今天(i=0) + 未来 days 天
         ]
 
         # 按 groups 分组 viewpoint (一个景点可属于多个组)
