@@ -76,7 +76,7 @@ class TestPipelineIntegration:
             config=test_config,
             fetcher=mock_fetcher_clear
         )
-        result = scheduler.run("niubei_gongga", days=1)
+        result = scheduler.run("niubei", days=1)
         
         assert len(result.forecast_days) == 1
         day = result.forecast_days[0]
@@ -91,7 +91,7 @@ class TestPipelineIntegration:
             config=test_config,
             fetcher=mock_fetcher_rain
         )
-        result = scheduler.run("niubei_gongga", days=1)
+        result = scheduler.run("niubei", days=1)
         
         day = result.forecast_days[0]
         assert day.events == []
@@ -101,7 +101,7 @@ class TestPipelineIntegration:
     def test_events_filter_skips_l2(self, mock_fetcher_clear):
         """events过滤: 仅请求L1景观时不触发L2"""
         scheduler = GMPScheduler(config=test_config, fetcher=mock_fetcher_clear)
-        result = scheduler.run("niubei_gongga", days=1, events=["cloud_sea", "frost"])
+        result = scheduler.run("niubei", days=1, events=["cloud_sea", "frost"])
         
         # 只有 L1 景观，不应有远程 API 调用
         assert mock_fetcher_clear.remote_call_count == 0
@@ -338,10 +338,10 @@ backtest:
 
 ---
 
-## 9.6 观景台配置示例 (`viewpoints/niubei_gongga.yaml`)
+## 9.6 观景台配置示例 (`viewpoints/niubei.yaml`)
 
 ```yaml
-id: niubei_gongga
+id: niubei
 name: 牛背山
 location:
   lat: 29.75
@@ -396,7 +396,7 @@ targets:
 | 测试用例 | 场景 | 预期结果 |
 |---------|------|----------|
 | `test_backtest_full_pipeline` | 历史晴天数据 | 完整跑通 L1→Plugin→评分 |
-| `test_backtest_cli` | gmp backtest niubei_gongga --date 2025-12-01 | 正确 JSON 格式输出 |
+| `test_backtest_cli` | gmp backtest niubei --date 2025-12-01 | 正确 JSON 格式输出 |
 | `test_backtest_vs_forecast` | 使用相同天气数据 | 回测和预测产生相同分数 |
 
 ---

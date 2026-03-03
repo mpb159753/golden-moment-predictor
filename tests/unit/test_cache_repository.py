@@ -212,7 +212,7 @@ class TestPredictionHistory:
     def test_save_and_get_predictions(self, memory_repo):
         """保存并查询预测历史"""
         record = {
-            "viewpoint_id": "niubei_gongga",
+            "viewpoint_id": "niubei",
             "prediction_date": "2026-02-10",
             "target_date": "2026-02-11",
             "event_type": "sunrise_golden_mountain",
@@ -224,7 +224,7 @@ class TestPredictionHistory:
             "data_source": "forecast",
         }
         memory_repo.save_prediction(record)
-        results = memory_repo.get_predictions("niubei_gongga")
+        results = memory_repo.get_predictions("niubei")
         assert len(results) == 1
         assert results[0]["predicted_score"] == 88
         assert results[0]["event_type"] == "sunrise_golden_mountain"
@@ -233,7 +233,7 @@ class TestPredictionHistory:
         """按日期过滤预测历史"""
         for i, target in enumerate(["2026-02-11", "2026-02-12"]):
             record = {
-                "viewpoint_id": "niubei_gongga",
+                "viewpoint_id": "niubei",
                 "prediction_date": "2026-02-10",
                 "target_date": target,
                 "event_type": "sunrise_golden_mountain",
@@ -247,7 +247,7 @@ class TestPredictionHistory:
             memory_repo.save_prediction(record)
 
         results = memory_repo.get_predictions(
-            "niubei_gongga", target_date=date(2026, 2, 11)
+            "niubei", target_date=date(2026, 2, 11)
         )
         assert len(results) == 1
         assert results[0]["target_date"] == "2026-02-11"

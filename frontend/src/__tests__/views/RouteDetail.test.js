@@ -14,13 +14,13 @@ const mockRouteStoreState = {
         route_name: '理小路',
         stops: [
             {
-                viewpoint_id: 'zheduo_gongga',
+                viewpoint_id: 'zheduo',
                 viewpoint_name: '折多山',
                 order: 1,
                 stay_note: '建议停留2小时观赏日出金山',
                 location: { lon: 101.8, lat: 30.1 },
                 forecast: {
-                    viewpoint_id: 'zheduo_gongga',
+                    viewpoint_id: 'zheduo',
                     daily: [
                         {
                             date: '2026-02-18',
@@ -38,13 +38,13 @@ const mockRouteStoreState = {
                 },
             },
             {
-                viewpoint_id: 'niubei_gongga',
+                viewpoint_id: 'niubei',
                 viewpoint_name: '牛背山',
                 order: 2,
                 stay_note: '建议停留3小时，云海+金山绝佳组合',
                 location: { lon: 102.4, lat: 29.8 },
                 forecast: {
-                    viewpoint_id: 'niubei_gongga',
+                    viewpoint_id: 'niubei',
                     daily: [
                         {
                             date: '2026-02-18',
@@ -107,13 +107,13 @@ describe('RouteDetail', () => {
             route_name: '理小路',
             stops: [
                 {
-                    viewpoint_id: 'zheduo_gongga',
+                    viewpoint_id: 'zheduo',
                     viewpoint_name: '折多山',
                     order: 1,
                     stay_note: '建议停留2小时观赏日出金山',
                     location: { lon: 101.8, lat: 30.1 },
                     forecast: {
-                        viewpoint_id: 'zheduo_gongga',
+                        viewpoint_id: 'zheduo',
                         daily: [{
                             date: '2026-02-18',
                             summary: '🌄 日照金山',
@@ -128,13 +128,13 @@ describe('RouteDetail', () => {
                     },
                 },
                 {
-                    viewpoint_id: 'niubei_gongga',
+                    viewpoint_id: 'niubei',
                     viewpoint_name: '牛背山',
                     order: 2,
                     stay_note: '建议停留3小时，云海+金山绝佳组合',
                     location: { lon: 102.4, lat: 29.8 },
                     forecast: {
-                        viewpoint_id: 'niubei_gongga',
+                        viewpoint_id: 'niubei',
                         daily: [{
                             date: '2026-02-18',
                             summary: '🌄☁️ 日照金山+壮观云海',

@@ -50,6 +50,7 @@ class Viewpoint:
     capabilities: list[str]  # ["sunrise", "sunset", "stargazing", ...]
     targets: list[Target]
     groups: list[str] = field(default_factory=list)  # 山系分组 (如 ["gongga", "318"])
+    scenic_area: str = ""  # 景区归属（如 "神木垒"），用于 poster 展示名拼接
 
 
 @dataclass

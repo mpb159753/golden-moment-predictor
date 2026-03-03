@@ -129,7 +129,7 @@ source venv/bin/activate
 pytest tests/scoring/plugins/test_clear_sky.py -v
 
 # 集成验证 — 对牛背山跑一次预测(需手动给牛背山加 clear_sky capability 或等 MG2B 自动注入)
-python -m gmp.main predict niubei_gongga --output json | python3 -m json.tool | head -40
+python -m gmp.main predict niubei --output json | python3 -m json.tool | head -40
 ```
 
 ---

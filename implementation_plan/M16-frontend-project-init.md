@@ -556,7 +556,7 @@ body {
 
 运行 `npm run dev`，分别访问:
 - `http://localhost:5173/` → 显示首页占位
-- `http://localhost:5173/viewpoint/niubei_gongga` → 显示观景台详情占位
+- `http://localhost:5173/viewpoint/niubei` → 显示观景台详情占位
 - `http://localhost:5173/route/lixiao` → 显示线路详情占位
 
 **Step 5: 提交**

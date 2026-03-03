@@ -167,7 +167,7 @@ const mockGroup = {
     name: '贡嘎山系',
     key: 'gongga',
     viewpoints: [{
-        id: 'niubei_gongga',
+        id: 'niubei',
         name: '牛背山',
         daily: [{
             date: '2026-02-21',

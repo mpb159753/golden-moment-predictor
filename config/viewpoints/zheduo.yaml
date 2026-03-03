@@ -1,18 +1,21 @@
-id: gongga_lenggacuo
-name: 冷嘎措
+id: zheduo
+name: 折多山
 groups:
   - gongga
 location:
-  lat: 29.638151
-  lon: 101.69951
-  altitude: 4520
+  lat: 30.07003
+  lon: 101.804206
+  altitude: 4298
 
+# 该观景台支持的景观类型
 capabilities:
   - sunrise
   - sunset
   - stargazing
   - cloud_sea
   - frost
+  - snow_tree
+  - ice_icicle
 
 targets:
   - name: 贡嘎主峰
@@ -20,6 +23,4 @@ targets:
     lon: 101.88
     altitude: 7556
     weight: primary
-    applicable_events:
-      - sunrise
-      - sunset
+    applicable_events: null

@@ -23,12 +23,12 @@ def route_yaml() -> dict:
         "description": "理塘→小金/丹巴 经典自驾线路",
         "stops": [
             {
-                "viewpoint_id": "niubei_gongga",
+                "viewpoint_id": "niubei",
                 "order": 2,
                 "stay_note": "推荐过夜，可同时观测金山+云海+星空",
             },
             {
-                "viewpoint_id": "zheduo_gongga",
+                "viewpoint_id": "zheduo",
                 "order": 1,
                 "stay_note": "建议日出前2小时到达",
             },
@@ -45,7 +45,7 @@ def second_route_yaml() -> dict:
         "description": "成都→康定→稻城 环线",
         "stops": [
             {
-                "viewpoint_id": "niubei_gongga",
+                "viewpoint_id": "niubei",
                 "order": 1,
                 "stay_note": "第一站",
             },
@@ -112,9 +112,9 @@ class TestRouteConfigLoad:
 
         route = rc.get("lixiao")
         assert route.stops[0].order == 1
-        assert route.stops[0].viewpoint_id == "zheduo_gongga"
+        assert route.stops[0].viewpoint_id == "zheduo"
         assert route.stops[1].order == 2
-        assert route.stops[1].viewpoint_id == "niubei_gongga"
+        assert route.stops[1].viewpoint_id == "niubei"
 
 
 # ==================== 查询测试 ====================

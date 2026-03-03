@@ -1,5 +1,6 @@
 id: majiagou_main_view
 name: 主沟观景点
+scenic_area: 玛嘉沟
 groups:
   - other
 location:

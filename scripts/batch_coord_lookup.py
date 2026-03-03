@@ -137,9 +137,9 @@ SEARCH_CONFIG = [
     ("moshi_main_view.yaml", ["墨石公园", "八美墨石公园"], "甘孜"),
     ("zhagushan_pass.yaml", ["鹧鸪山", "鹧鸪山垭口"], "阿坝"),
     # Task 8: 牛背山、神木垒、折多山
-    ("niubei_gongga.yaml", ["牛背山", "牛背山景区"], "雅安"),
+    ("niubei.yaml", ["牛背山", "牛背山景区"], "雅安"),
     ("shenmulei_redwood_view.yaml", ["神木垒", "神木垒景区"], "雅安"),
-    ("zheduo_gongga.yaml", ["折多山", "折多山观景台"], "甘孜"),
+    ("zheduo.yaml", ["折多山", "折多山观景台"], "甘孜"),
 ]
 
 

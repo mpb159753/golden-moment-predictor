@@ -32,7 +32,7 @@ def runner():
     return CliRunner()
 
 
-def _make_viewpoint(vid: str = "niubei_gongga", name: str = "牛背山") -> Viewpoint:
+def _make_viewpoint(vid: str = "niubei", name: str = "牛背山") -> Viewpoint:
     return Viewpoint(
         id=vid,
         name=name,
@@ -82,8 +82,8 @@ def _make_route() -> Route:
         id="lixiao",
         name="理小路",
         stops=[
-            RouteStop(viewpoint_id="zheduo_gongga", order=1, stay_note="建议停留2小时"),
-            RouteStop(viewpoint_id="niubei_gongga", order=2, stay_note="建议停留3小时"),
+            RouteStop(viewpoint_id="zheduo", order=1, stay_note="建议停留2小时"),
+            RouteStop(viewpoint_id="niubei", order=2, stay_note="建议停留3小时"),
         ],
     )
 
@@ -93,8 +93,8 @@ def _mock_scheduler():
     scheduler = MagicMock()
     scheduler.run.return_value = _make_pipeline_result()
     scheduler.run_route.return_value = [
-        _make_pipeline_result(_make_viewpoint("zheduo_gongga", "折多山")),
-        _make_pipeline_result(_make_viewpoint("niubei_gongga", "牛背山")),
+        _make_pipeline_result(_make_viewpoint("zheduo", "折多山")),
+        _make_pipeline_result(_make_viewpoint("niubei", "牛背山")),
     ]
     return scheduler
 
@@ -102,11 +102,11 @@ def _mock_scheduler():
 def _mock_viewpoint_config():
     """创建 mock viewpoint_config"""
     config = MagicMock()
-    vp1 = _make_viewpoint("niubei_gongga", "牛背山")
-    vp2 = _make_viewpoint("zheduo_gongga", "折多山")
+    vp1 = _make_viewpoint("niubei", "牛背山")
+    vp2 = _make_viewpoint("zheduo", "折多山")
     config.list_all.return_value = [vp1, vp2]
     config.get.side_effect = lambda vid: (
-        vp1 if vid == "niubei_gongga" else vp2
+        vp1 if vid == "niubei" else vp2
     )
     return config
 
@@ -186,35 +186,35 @@ class TestPredictCommand:
 
     @patch("gmp.main.create_scheduler")
     def test_predict_table_output(self, mock_create, runner):
-        """gmp predict niubei_gongga --days 1 → 正常表格输出"""
+        """gmp predict niubei --days 1 → 正常表格输出"""
         mock_create.return_value = _mock_scheduler()
         from gmp.main import cli
 
-        result = runner.invoke(cli, ["predict", "niubei_gongga", "--days", "1"])
+        result = runner.invoke(cli, ["predict", "niubei", "--days", "1"])
         assert result.exit_code == 0
         assert "牛背山" in result.output
 
     @patch("gmp.main.create_scheduler")
     def test_predict_json_output(self, mock_create, runner):
-        """gmp predict niubei_gongga --output json → 有效 JSON"""
+        """gmp predict niubei --output json → 有效 JSON"""
         mock_create.return_value = _mock_scheduler()
         from gmp.main import cli
 
-        result = runner.invoke(cli, ["predict", "niubei_gongga", "--output", "json"])
+        result = runner.invoke(cli, ["predict", "niubei", "--output", "json"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert "viewpoint_id" in data
 
     @patch("gmp.main.create_scheduler")
     def test_predict_json_output_file(self, mock_create, runner, tmp_path):
-        """gmp predict niubei_gongga --output json --output-file out.json → 写入文件"""
+        """gmp predict niubei --output json --output-file out.json → 写入文件"""
         mock_create.return_value = _mock_scheduler()
         from gmp.main import cli
 
         out_file = str(tmp_path / "out.json")
         result = runner.invoke(
             cli,
-            ["predict", "niubei_gongga", "--output", "json", "--output-file", out_file],
+            ["predict", "niubei", "--output", "json", "--output-file", out_file],
         )
         assert result.exit_code == 0
         assert "已输出到" in result.output
@@ -224,26 +224,36 @@ class TestPredictCommand:
 
     @patch("gmp.main.create_scheduler")
     def test_predict_detail_output(self, mock_create, runner):
-        """gmp predict niubei_gongga --detail → 详细输出"""
+        """gmp predict niubei --detail → 详细输出"""
         mock_create.return_value = _mock_scheduler()
         from gmp.main import cli
 
-        result = runner.invoke(cli, ["predict", "niubei_gongga", "--detail"])
+        result = runner.invoke(cli, ["predict", "niubei", "--detail"])
         assert result.exit_code == 0
         assert "Score:" in result.output
         assert "📊 Breakdown:" in result.output
         assert "light_path" in result.output
 
-    @patch("gmp.main.create_scheduler")
-    def test_predict_with_events_filter(self, mock_create, runner):
-        """gmp predict niubei_gongga --events sunrise_golden_mountain → 带事件过滤"""
+    @patch("gmp.main._create_core_components")
+    def test_predict_with_events_filter(self, mock_components, runner):
+        """gmp predict niubei --events sunrise_golden_mountain → 带事件过滤"""
         scheduler = _mock_scheduler()
-        mock_create.return_value = scheduler
+        mock_engine = MagicMock()
+        mock_engine.display_names = {}
+        mock_components.return_value = (
+            scheduler,
+            _mock_viewpoint_config(),
+            _mock_route_config(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            mock_engine,
+        )
         from gmp.main import cli
 
         result = runner.invoke(
             cli,
-            ["predict", "niubei_gongga", "--events", "sunrise_golden_mountain,cloud_sea"],
+            ["predict", "niubei", "--events", "sunrise_golden_mountain,cloud_sea"],
         )
         assert result.exit_code == 0
         # 确认 events 被解析传到 scheduler
@@ -263,6 +273,8 @@ class TestPredictRouteCommand:
     def test_predict_route_table(self, mock_components, runner):
         """gmp predict-route lixiao --days 3 → 正常表格输出"""
         scheduler = _mock_scheduler()
+        mock_engine = MagicMock()
+        mock_engine.display_names = {}
         mock_components.return_value = (
             scheduler,
             _mock_viewpoint_config(),
@@ -270,6 +282,7 @@ class TestPredictRouteCommand:
             MagicMock(),
             MagicMock(),
             MagicMock(),
+            mock_engine,
         )
         from gmp.main import cli
 
@@ -282,6 +295,8 @@ class TestPredictRouteCommand:
     def test_predict_route_json(self, mock_components, runner):
         """gmp predict-route lixiao --output json → 有效 JSON"""
         scheduler = _mock_scheduler()
+        mock_engine = MagicMock()
+        mock_engine.display_names = {}
         mock_components.return_value = (
             scheduler,
             _mock_viewpoint_config(),
@@ -289,6 +304,7 @@ class TestPredictRouteCommand:
             MagicMock(),
             MagicMock(),
             MagicMock(),
+            mock_engine,
         )
         from gmp.main import cli
 
@@ -309,6 +325,8 @@ class TestGenerateAllCommand:
     def test_generate_all_basic(self, mock_components, mock_create_bg, runner):
         """gmp generate-all --days 1 → 生成成功输出摘要"""
         scheduler = _mock_scheduler()
+        mock_engine = MagicMock()
+        mock_engine.display_names = {}
         mock_components.return_value = (
             scheduler,
             _mock_viewpoint_config(),
@@ -316,6 +334,7 @@ class TestGenerateAllCommand:
             MagicMock(),  # config_manager
             MagicMock(),  # repo
             MagicMock(),  # fetcher
+            mock_engine,  # engine
         )
         batch_gen = MagicMock()
         batch_gen.generate_all.return_value = {
@@ -340,6 +359,8 @@ class TestGenerateAllCommand:
     def test_generate_all_no_archive(self, mock_components, mock_create_bg, runner):
         """gmp generate-all --no-archive → no_archive=True 传递到 batch_gen"""
         scheduler = _mock_scheduler()
+        mock_engine = MagicMock()
+        mock_engine.display_names = {}
         mock_components.return_value = (
             scheduler,
             _mock_viewpoint_config(),
@@ -347,6 +368,7 @@ class TestGenerateAllCommand:
             MagicMock(),
             MagicMock(),
             MagicMock(),
+            mock_engine,
         )
         batch_gen = MagicMock()
         batch_gen.generate_all.return_value = {
@@ -371,6 +393,8 @@ class TestGenerateAllCommand:
     def test_generate_all_custom_paths(self, mock_components, mock_create_bg, runner):
         """gmp generate-all --output ./custom/data --archive ./custom/archive → 自定义路径"""
         scheduler = _mock_scheduler()
+        mock_engine = MagicMock()
+        mock_engine.display_names = {}
         mock_components.return_value = (
             scheduler,
             _mock_viewpoint_config(),
@@ -378,6 +402,7 @@ class TestGenerateAllCommand:
             MagicMock(),
             MagicMock(),
             MagicMock(),
+            mock_engine,
         )
         batch_gen = MagicMock()
         batch_gen.generate_all.return_value = {
@@ -411,11 +436,11 @@ class TestBacktestCommand:
     @patch("gmp.main.create_scheduler")
     @patch("gmp.main.create_backtester")
     def test_backtest_basic(self, mock_create_bt, mock_create_sched, runner):
-        """gmp backtest niubei_gongga --date 2025-12-01 → 回测输出"""
+        """gmp backtest niubei --date 2025-12-01 → 回测输出"""
         mock_create_sched.return_value = _mock_scheduler()
         backtester = MagicMock()
         backtester.run.return_value = {
-            "viewpoint_id": "niubei_gongga",
+            "viewpoint_id": "niubei",
             "target_date": "2025-12-01",
             "is_backtest": True,
             "data_source": "cache",
@@ -424,7 +449,7 @@ class TestBacktestCommand:
         mock_create_bt.return_value = backtester
         from gmp.main import cli
 
-        result = runner.invoke(cli, ["backtest", "niubei_gongga", "--date", "2025-12-01"])
+        result = runner.invoke(cli, ["backtest", "niubei", "--date", "2025-12-01"])
         assert result.exit_code == 0
 
 
@@ -505,28 +530,48 @@ class TestErrorHandling:
         assert result.exit_code == 1
         assert "错误" in result.output or "未找到" in result.output
 
-    @patch("gmp.main.create_scheduler")
-    def test_predict_service_unavailable(self, mock_create, runner):
+    @patch("gmp.main._create_core_components")
+    def test_predict_service_unavailable(self, mock_components, runner):
         """服务不可用 → exit code=2"""
         from gmp.core.exceptions import ServiceUnavailableError
 
         scheduler = _mock_scheduler()
         scheduler.run.side_effect = ServiceUnavailableError("API 超时")
-        mock_create.return_value = scheduler
+        mock_engine = MagicMock()
+        mock_engine.display_names = {}
+        mock_components.return_value = (
+            scheduler,
+            _mock_viewpoint_config(),
+            _mock_route_config(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            mock_engine,
+        )
         from gmp.main import cli
 
-        result = runner.invoke(cli, ["predict", "niubei_gongga"])
+        result = runner.invoke(cli, ["predict", "niubei"])
         assert result.exit_code == 2
 
-    @patch("gmp.main.create_scheduler")
-    def test_predict_generic_gmp_error(self, mock_create, runner):
+    @patch("gmp.main._create_core_components")
+    def test_predict_generic_gmp_error(self, mock_components, runner):
         """通用 GMPError → exit code=3"""
         from gmp.core.exceptions import GMPError
 
         scheduler = _mock_scheduler()
         scheduler.run.side_effect = GMPError("未知错误")
-        mock_create.return_value = scheduler
+        mock_engine = MagicMock()
+        mock_engine.display_names = {}
+        mock_components.return_value = (
+            scheduler,
+            _mock_viewpoint_config(),
+            _mock_route_config(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            mock_engine,
+        )
         from gmp.main import cli
 
-        result = runner.invoke(cli, ["predict", "niubei_gongga"])
+        result = runner.invoke(cli, ["predict", "niubei"])
         assert result.exit_code == 3

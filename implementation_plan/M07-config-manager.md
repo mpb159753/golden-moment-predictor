@@ -58,10 +58,10 @@ summary:
   mode: "rule"
 ```
 
-**viewpoints/niubei_gongga.yaml** — 见 [09-testing-config.md §9.6](file:///Users/mpb/WorkSpace/golden-moment-predictor/design/09-testing-config.md)
+**viewpoints/niubei.yaml** — 见 [09-testing-config.md §9.6](file:///Users/mpb/WorkSpace/golden-moment-predictor/design/09-testing-config.md)
 
 ```yaml
-id: niubei_gongga
+id: niubei
 name: 牛背山
 location: { lat: 29.75, lon: 102.35, altitude: 3660 }
 capabilities: [sunrise, sunset, stargazing, cloud_sea, frost, snow_tree, ice_icicle]
@@ -152,7 +152,7 @@ class ConfigManager:
 
 **Files:**
 - Modify: `gmp/core/config_loader.py` (添加 ViewpointConfig)
-- Create: `config/viewpoints/niubei_gongga.yaml`
+- Create: `config/viewpoints/niubei.yaml`
 - Test: `tests/unit/test_viewpoint_config.py`
 
 ### 要实现的类
@@ -179,8 +179,8 @@ class ViewpointConfig:
 
 ### 应测试的内容
 
-- 加载 `niubei_gongga.yaml` → Viewpoint 属性完整
-- `get("niubei_gongga")` 返回正确对象
+- 加载 `niubei.yaml` → Viewpoint 属性完整
+- `get("niubei")` 返回正确对象
 - `get("不存在")` → `ViewpointNotFoundError`
 - `list_all()` 返回所有加载的观景台
 - Target 的 `applicable_events=null` → `None`
@@ -202,10 +202,10 @@ id: lixiao
 name: 理小路
 description: 理塘→小金/丹巴 经典自驾线路
 stops:
-  - viewpoint_id: zheduo_gongga
+  - viewpoint_id: zheduo
     order: 1
     stay_note: 建议日出前2小时到达
-  - viewpoint_id: niubei_gongga
+  - viewpoint_id: niubei
     order: 2
     stay_note: 推荐过夜，可同时观测金山+云海+星空
 ```

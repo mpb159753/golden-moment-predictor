@@ -89,7 +89,7 @@ tests/
 config/
 ├── engine_config.yaml             # M07
 ├── viewpoints/
-│   └── niubei_gongga.yaml         # M07
+│   └── niubei.yaml         # M07
 └── routes/
     └── lixiao.yaml                # M07
 ```

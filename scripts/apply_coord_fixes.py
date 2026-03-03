@@ -131,9 +131,9 @@ CORRECTIONS["zhagushan_pass.yaml"] = (102.672527, 31.853109, "poi")
 # Task 8: 牛背山、神木垒、折多山
 # 牛背山(独立景区): POI 搜到的石棉县是大渡河方向的牛背山底部
 # 正确的山顶位置应使用 gongga_niubei 的同一结果
-CORRECTIONS["niubei_gongga.yaml"] = (102.414969, 29.77381, "poi")
+CORRECTIONS["niubei.yaml"] = (102.414969, 29.77381, "poi")
 CORRECTIONS["shenmulei_redwood_view.yaml"] = (102.674996, 30.678644, "poi")
-CORRECTIONS["zheduo_gongga.yaml"] = (101.804206, 30.07003, "poi")
+CORRECTIONS["zheduo.yaml"] = (101.804206, 30.07003, "poi")
 
 
 def update_yaml_coords(filepath, new_lon, new_lat):

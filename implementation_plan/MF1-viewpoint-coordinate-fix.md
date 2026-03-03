@@ -102,7 +102,7 @@ def gcj02_to_wgs84(gcj_lng, gcj_lat):
 | 17 | majiagou_main_view.yaml | 主沟观景点 | (102.884,31.571) | (102.117,29.653) | 225.5 | 海螺沟 |
 | 18 | mengtun_gaoqiaogou.yaml | 高桥沟 | (103.188,31.466) | (103.127,31.690) | 25.5 | 孟屯高桥沟露营 |
 | 19 | moshi_main_view.yaml | 异域星球观景位 | (101.565,30.045) | (101.538,30.434) | 43.3 | 墨石公园景区 |
-| 20 | niubei_gongga.yaml | 牛背山 | (102.35,29.75) | (102.372,29.772) | 3.3 | 牛背山游客中心 |
+| 20 | niubei.yaml | 牛背山 | (102.35,29.75) | (102.372,29.772) | 3.3 | 牛背山游客中心 |
 | 21 | shenmulei_redwood_view.yaml | 红杉林主机位 | (102.872,30.782) | (102.717,30.689) | 18.0 | 神木垒山庄 |
 | 22 | siguniang_changping.yaml | 长坪沟 | (102.941,31.09) | (102.824,31.097) | 11.1 | 四姑娘山景区 |
 | 23 | siguniang_erguniang_view.yaml | 二姑娘峰观景位 | (102.905,31.077) | (102.922,31.049) | 3.5 | 二峰大本营 |
@@ -131,7 +131,7 @@ def gcj02_to_wgs84(gcj_lng, gcj_lat):
 | 46 | yala_tagong_view.yaml | 塔公草原机位 | (101.546,30.02) | (101.524,30.319) | 33.4 | 塔公草原大酒店 |
 | 47 | yala_yunrao_view.yaml | 云绕亚拉 | (101.724,30.205) | (101.662,30.387) | 21.1 | 云绕亚拉停车场 |
 | 48 | zhagushan_pass.yaml | 鹧鸪山垭口机位 | (102.929,31.779) | (102.741,31.880) | 21.0 | 鹧鸪山冰雪世界 |
-| 49 | zheduo_gongga.yaml | 折多山 | (101.72,30.05) | (101.804,30.070) | 8.4 | 折多山 |
+| 49 | zheduo.yaml | 折多山 | (101.72,30.05) | (101.804,30.070) | 8.4 | 折多山 |
 
 ---
 
@@ -377,9 +377,9 @@ git commit -m "fix(config): correct coordinates for other scenic viewpoints"
 ## Task 8: 牛背山 + 神木垒 + 折多山 (4 个)
 
 **Files:**
-- Modify: `config/viewpoints/niubei_gongga.yaml` — 牛背山
+- Modify: `config/viewpoints/niubei.yaml` — 牛背山
 - Modify: `config/viewpoints/shenmulei_redwood_view.yaml` — 神木垒红杉林
-- Modify: `config/viewpoints/zheduo_gongga.yaml` — 折多山
+- Modify: `config/viewpoints/zheduo.yaml` — 折多山
 - Modify: `config/viewpoints/zhagushan_pass.yaml` — 鹧鸪山 (已在 Task 7)
 
 **Step 1: 搜索并确认坐标**

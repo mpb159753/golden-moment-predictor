@@ -55,7 +55,7 @@ export function useDataLoader() {
 
     /**
      * 加载观景台预测数据
-     * @param {string} viewpointId - 观景台 ID (如 'niubei_gongga')
+     * @param {string} viewpointId - 观景台 ID (如 'niubei')
      * @returns {Promise<Object>} forecast.json 内容
      */
     async function loadForecast(viewpointId) {

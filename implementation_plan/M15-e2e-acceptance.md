@@ -36,13 +36,13 @@
 def test_predict_single_day_real_api():
     """使用真实 API 预测牛背山 1 天"""
     runner = CliRunner()
-    result = runner.invoke(cli, ["predict", "niubei_gongga", "--days", "1", "--output", "json"])
+    result = runner.invoke(cli, ["predict", "niubei", "--days", "1", "--output", "json"])
 
     assert result.exit_code == 0
     data = json.loads(result.output)
 
     # 验证 JSON 结构完整性
-    assert data["viewpoint_id"] == "niubei_gongga"
+    assert data["viewpoint_id"] == "niubei"
     assert "daily" in data
     assert len(data["daily"]) == 1
 
@@ -66,7 +66,7 @@ def test_predict_single_day_real_api():
 def test_predict_seven_days_real_api():
     """使用真实 API 预测牛背山 7 天"""
     runner = CliRunner()
-    result = runner.invoke(cli, ["predict", "niubei_gongga", "--days", "7", "--output", "json"])
+    result = runner.invoke(cli, ["predict", "niubei", "--days", "7", "--output", "json"])
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -87,7 +87,7 @@ def test_predict_events_filter_real_api():
     """事件过滤仅返回指定事件"""
     runner = CliRunner()
     result = runner.invoke(cli, [
-        "predict", "niubei_gongga", "--days", "1",
+        "predict", "niubei", "--days", "1",
         "--events", "cloud_sea,frost", "--output", "json"
     ])
 
@@ -212,7 +212,7 @@ def test_backtest_real_api():
 
     runner = CliRunner()
     result = runner.invoke(cli, [
-        "backtest", "niubei_gongga", "--date", past_date, "--output", "json"
+        "backtest", "niubei", "--date", past_date, "--output", "json"
     ])
 
     assert result.exit_code == 0
@@ -250,7 +250,7 @@ def test_backtest_future_date_error():
     future_date = (date.today() + timedelta(days=7)).isoformat()
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["backtest", "niubei_gongga", "--date", future_date])
+    result = runner.invoke(cli, ["backtest", "niubei", "--date", future_date])
     assert result.exit_code != 0
 ```
 

@@ -1,7 +1,8 @@
 id: bipenggou_panyang
 name: 磐羊湖
+scenic_area: 毕棚沟
 groups:
-  - other
+  - siguniang
 location:
   lat: 31.229248
   lon: 102.870003

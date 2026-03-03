@@ -1,7 +1,8 @@
-id: transit_lixiao_tunnel_view
+id: lixiao_tunnel_view
 name: 理小隧道口观景台
+scenic_area: 理小路
 groups:
-  - lixiao
+  - siguniang
 location:
   lat: 31.310194
   lon: 102.744718

@@ -8,7 +8,6 @@ import { buildSummary } from './build-summary.mjs'
 // 重导出供外部使用
 export { buildSummary }
 
-const GROUP_KEYS = ['gongga', 'siguniang', 'yala', 'genie', 'yading', 'lixiao', 'other']
 
 const SCREENSHOT_CONFIGS = [
     { days: 3, dir: '3day' },
@@ -30,7 +29,11 @@ async function main() {
     console.log(`[generate-posters] 静态服务器启动: ${baseUrl}`)
 
     try {
-        // 2. 启动 Playwright
+        // 2. 读取 poster.json（获取 group keys，供截图和摘要生成复用）
+        const posterJsonPath = join(distDir, 'data', 'poster.json')
+        const posterData = JSON.parse(readFileSync(posterJsonPath, 'utf-8'))
+
+        // 3. 启动 Playwright
         const browser = await chromium.launch()
         const context = await browser.newContext({ deviceScaleFactor: 2 })
 
@@ -52,7 +55,7 @@ async function main() {
             console.log(`[generate-posters] ${config.dir}: 找到 ${sections.length} 个分组`)
 
             for (let i = 0; i < sections.length; i++) {
-                const key = GROUP_KEYS[i] || `group_${i}`
+                const key = posterData.groups[i]?.key || `group_${i}`
                 const filePath = join(outDir, `${key}.png`)
                 await sections[i].screenshot({ path: filePath })
                 console.log(`[generate-posters] 已保存 ${config.dir}/${key}.png`)
@@ -64,9 +67,6 @@ async function main() {
         await browser.close()
 
         // 4. 生成摘要 JSON
-        const posterJsonPath = join(distDir, 'data', 'poster.json')
-        const posterData = JSON.parse(readFileSync(posterJsonPath, 'utf-8'))
-
         for (const config of SCREENSHOT_CONFIGS) {
             const summary = buildSummary(posterData, config.days, 1) // dayOffset=1 从明天开始
             const jsonPath = join(outputBase, `summary_${config.dir}.json`)

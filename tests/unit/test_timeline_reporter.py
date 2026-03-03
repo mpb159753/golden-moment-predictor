@@ -36,7 +36,7 @@ def _make_event(
 
 def _make_viewpoint() -> Viewpoint:
     return Viewpoint(
-        id="niubei_gongga",
+        id="niubei",
         name="牛背山",
         location=Location(lat=29.75, lon=102.35, altitude=3660),
         capabilities=["sunrise", "cloud_sea"],
@@ -368,7 +368,7 @@ class TestTimelineReporterTopLevel:
         result = reporter.generate(
             _make_pipeline_result(), date(2026, 2, 12)
         )
-        assert result["viewpoint_id"] == "niubei_gongga"
+        assert result["viewpoint_id"] == "niubei"
 
     def test_generated_at(self) -> None:
         reporter = TimelineReporter()

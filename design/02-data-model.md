@@ -24,7 +24,7 @@ erDiagram
         string stay_note "停留建议"
     }
     Viewpoint {
-        string id PK "唯一标识 如 niubei_gongga"
+        string id PK "唯一标识 如 niubei"
         string name "显示名称"
         string capabilities "支持景观类型 JSON数组"
     }
@@ -183,7 +183,7 @@ CREATE INDEX idx_viewpoint ON prediction_history(viewpoint_id);
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | `id` | INTEGER | PK, AUTO | 自增主键 |
-| `viewpoint_id` | TEXT | NOT NULL | 观景台 ID (如 `niubei_gongga`) |
+| `viewpoint_id` | TEXT | NOT NULL | 观景台 ID (如 `niubei`) |
 | `prediction_date` | DATE | NOT NULL | 预测生成日期 (何时做的预测) |
 | `target_date` | DATE | NOT NULL | 预测目标日期 (预测哪天) |
 | `event_type` | TEXT | NOT NULL | 事件类型 (`sunrise_golden_mountain` / `sunset_golden_mountain` / `stargazing` / `cloud_sea` / `frost` / `snow_tree` / `ice_icicle`) |
@@ -225,12 +225,12 @@ CREATE INDEX idx_viewpoint ON prediction_history(viewpoint_id);
 ┌────┬────────────────┬─────────────────┬─────────────┬─────────────────────────┬───────┬───────────────┬────────┬──────────────┬─────────────────┐
 │ id │ viewpoint_id   │ prediction_date │ target_date │ event_type              │ score │ status        │ confid │actual_result │ user_feedback   │
 ├────┼────────────────┼─────────────────┼─────────────┼─────────────────────────┼───────┼───────────────┼────────┼──────────────┼─────────────────┤
-│  1 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ sunrise_golden_mountain │    88 │ Recommended   │ High   │ success      │ 拍到了金山!     │
-│  2 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ stargazing              │    98 │ Perfect       │ High   │ NULL         │ NULL            │
-│  3 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ cloud_sea               │    95 │ Perfect       │ High   │ NULL         │ NULL            │
-│  4 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ frost                   │    67 │ Possible      │ High   │ NULL         │ NULL            │
-│  5 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ snow_tree               │    46 │ Not Recommend │ High   │ NULL         │ NULL            │
-│  6 │ niubei_gongga  │ 2026-02-10      │ 2026-02-11  │ ice_icicle              │    70 │ Possible      │ Medium │ NULL         │ NULL            │
-│  7 │ niubei_gongga  │ 2026-02-10      │ 2026-02-14  │ sunrise_golden_mountain │    40 │ Not Recommend │ Low    │ NULL         │ NULL            │
+│  1 │ niubei  │ 2026-02-10      │ 2026-02-11  │ sunrise_golden_mountain │    88 │ Recommended   │ High   │ success      │ 拍到了金山!     │
+│  2 │ niubei  │ 2026-02-10      │ 2026-02-11  │ stargazing              │    98 │ Perfect       │ High   │ NULL         │ NULL            │
+│  3 │ niubei  │ 2026-02-10      │ 2026-02-11  │ cloud_sea               │    95 │ Perfect       │ High   │ NULL         │ NULL            │
+│  4 │ niubei  │ 2026-02-10      │ 2026-02-11  │ frost                   │    67 │ Possible      │ High   │ NULL         │ NULL            │
+│  5 │ niubei  │ 2026-02-10      │ 2026-02-11  │ snow_tree               │    46 │ Not Recommend │ High   │ NULL         │ NULL            │
+│  6 │ niubei  │ 2026-02-10      │ 2026-02-11  │ ice_icicle              │    70 │ Possible      │ Medium │ NULL         │ NULL            │
+│  7 │ niubei  │ 2026-02-10      │ 2026-02-14  │ sunrise_golden_mountain │    40 │ Not Recommend │ Low    │ NULL         │ NULL            │
 └────┴────────────────┴─────────────────┴─────────────┴─────────────────────────┴───────┴───────────────┴────────┴──────────────┴─────────────────┘
 ```

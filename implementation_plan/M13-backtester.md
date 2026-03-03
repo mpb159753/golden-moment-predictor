@@ -162,7 +162,7 @@ class Backtester:
 
 ```python
 {
-    "viewpoint_id": "niubei_gongga",
+    "viewpoint_id": "niubei",
     "target_date": "2025-12-01",
     "is_backtest": True,
     "data_source": "cache" | "archive",  # 标识数据来源

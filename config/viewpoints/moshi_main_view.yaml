@@ -1,7 +1,8 @@
 id: moshi_main_view
 name: 异域星球观景位
+scenic_area: 墨石公园
 groups:
-  - other
+  - yala
 location:
   lat: 30.447693
   lon: 101.540804

@@ -318,7 +318,7 @@ from gmp.output.poster_generator import (
 @pytest.fixture
 def tmp_data_dir(tmp_path):
     """创建临时数据目录并写入测试数据"""
-    vp_dir = tmp_path / "viewpoints" / "niubei_gongga"
+    vp_dir = tmp_path / "viewpoints" / "niubei"
     vp_dir.mkdir(parents=True)
 
     forecast = {
@@ -347,7 +347,7 @@ def tmp_data_dir(tmp_path):
 @pytest.fixture
 def mock_viewpoint_config():
     vp = MagicMock()
-    vp.id = "niubei_gongga"
+    vp.id = "niubei"
     vp.name = "牛背山"
     vp.groups = ["gongga"]
     config = MagicMock()
@@ -400,7 +400,7 @@ def test_missing_data_graceful(tmp_path):
 
 def test_multi_group_viewpoint(tmp_data_dir):
     vp = MagicMock()
-    vp.id = "niubei_gongga"
+    vp.id = "niubei"
     vp.name = "牛背山"
     vp.groups = ["gongga", "318"]
     config = MagicMock()

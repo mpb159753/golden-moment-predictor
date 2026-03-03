@@ -208,7 +208,7 @@ def run_route(
 **端到端管线测试 (晋天 fixture):**
 - Mock Open-Meteo HTTP 响应为晴天数据
 - 真实初始化 ConfigManager、ScoreEngine、所有 Plugin
-- 调用 `scheduler.run("niubei_gongga", days=1)` → 验证 PipelineResult 包含预期事件
+- 调用 `scheduler.run("niubei", days=1)` → 验证 PipelineResult 包含预期事件
 
 **多 Plugin 协同评分:**
 - 晴天低温场景: 应同时触发 golden_mountain 和 frost 等多个 Plugin

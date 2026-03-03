@@ -1,7 +1,8 @@
 id: guergou_hot_spring_view
 name: 河谷温泉机位
+scenic_area: 鹧鸪沟
 groups:
-  - other
+  - aba
 location:
   lat: 32.595224
   lon: 103.552897

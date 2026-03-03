@@ -1,15 +1,15 @@
-id: transit_daerpu_valley
-name: 大二普
+id: lixiao_redstone
+name: 理小路红石滩（凉台沟）
+scenic_area: 理小路
 groups:
-  - 318
+  - siguniang
 location:
-  lat: 31.38526
-  lon: 102.991165
-  altitude: 3300
+  lat: 31.388087
+  lon: 102.876353
+  altitude: 3490
 
 capabilities:
   - sunset
-  - stargazing
 
 targets:
   - name: 幺妹峰

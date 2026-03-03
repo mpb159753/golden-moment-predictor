@@ -12,8 +12,8 @@ vi.mock('@/composables/useDataLoader', () => ({
                         id: 'lixiao',
                         name: '理小路',
                         stops: [
-                            { viewpoint_id: 'zheduo_gongga', name: '折多山' },
-                            { viewpoint_id: 'niubei_gongga', name: '牛背山' },
+                            { viewpoint_id: 'zheduo', name: '折多山' },
+                            { viewpoint_id: 'niubei', name: '牛背山' },
                         ],
                     },
                 ],
@@ -26,8 +26,8 @@ vi.mock('@/composables/useDataLoader', () => ({
                     route_id: 'lixiao',
                     route_name: '理小路',
                     stops: [
-                        { viewpoint_id: 'zheduo_gongga', order: 1 },
-                        { viewpoint_id: 'niubei_gongga', order: 2 },
+                        { viewpoint_id: 'zheduo', order: 1 },
+                        { viewpoint_id: 'niubei', order: 2 },
                     ],
                 },
             }

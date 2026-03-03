@@ -34,7 +34,7 @@ def _make_event(
 
 def _make_viewpoint() -> Viewpoint:
     return Viewpoint(
-        id="niubei_gongga",
+        id="niubei",
         name="牛背山",
         location=Location(lat=29.75, lon=102.35, altitude=3660),
         capabilities=["sunrise", "cloud_sea"],

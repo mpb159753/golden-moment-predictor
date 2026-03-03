@@ -8,16 +8,16 @@ vi.mock('@/composables/useDataLoader', () => ({
         loadIndex: vi.fn().mockResolvedValue({
             index: {
                 viewpoints: [
-                    { id: 'niubei_gongga', name: '牛背山' },
-                    { id: 'zheduo_gongga', name: '折多山' },
+                    { id: 'niubei', name: '牛背山' },
+                    { id: 'zheduo', name: '折多山' },
                 ],
             },
             meta: { generated_at: '2026-02-18T12:00:00+08:00' },
         }),
         loadForecast: vi.fn().mockImplementation((id) => {
             const forecasts = {
-                niubei_gongga: {
-                    viewpoint_id: 'niubei_gongga',
+                niubei: {
+                    viewpoint_id: 'niubei',
                     daily: [
                         {
                             date: '2026-02-18',
@@ -32,7 +32,7 @@ vi.mock('@/composables/useDataLoader', () => ({
             return Promise.resolve(forecasts[id] || null)
         }),
         loadTimeline: vi.fn().mockResolvedValue({
-            viewpoint_id: 'niubei_gongga',
+            viewpoint_id: 'niubei',
             date: '2026-02-18',
             hourly: [{ hour: 6, time: '06:00' }],
         }),
@@ -49,7 +49,7 @@ describe('useViewpointStore', () => {
         await store.init()
 
         expect(store.index).toHaveLength(2)
-        expect(store.index[0].id).toBe('niubei_gongga')
+        expect(store.index[0].id).toBe('niubei')
         expect(store.meta).toEqual({ generated_at: '2026-02-18T12:00:00+08:00' })
         expect(store.selectedDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
         expect(store.loading).toBe(false)
@@ -58,44 +58,44 @@ describe('useViewpointStore', () => {
     it('selectViewpoint() sets selectedId and loads forecast', async () => {
         const store = useViewpointStore()
         await store.init()
-        await store.selectViewpoint('niubei_gongga')
+        await store.selectViewpoint('niubei')
 
-        expect(store.selectedId).toBe('niubei_gongga')
-        expect(store.forecasts['niubei_gongga']).toBeDefined()
-        expect(store.forecasts['niubei_gongga'].viewpoint_id).toBe('niubei_gongga')
+        expect(store.selectedId).toBe('niubei')
+        expect(store.forecasts['niubei']).toBeDefined()
+        expect(store.forecasts['niubei'].viewpoint_id).toBe('niubei')
     })
 
     it('selectViewpoint() does not reload already cached forecast', async () => {
         const store = useViewpointStore()
         await store.init()
-        await store.selectViewpoint('niubei_gongga')
-        await store.selectViewpoint('niubei_gongga')
+        await store.selectViewpoint('niubei')
+        await store.selectViewpoint('niubei')
 
         // forecasts should exist, no double loading
-        expect(store.forecasts['niubei_gongga']).toBeDefined()
+        expect(store.forecasts['niubei']).toBeDefined()
     })
 
     it('currentViewpoint returns correct item from index', async () => {
         const store = useViewpointStore()
         await store.init()
-        store.selectedId = 'zheduo_gongga'
+        store.selectedId = 'zheduo'
 
-        expect(store.currentViewpoint).toEqual({ id: 'zheduo_gongga', name: '折多山' })
+        expect(store.currentViewpoint).toEqual({ id: 'zheduo', name: '折多山' })
     })
 
     it('currentForecast returns forecast for selected viewpoint', async () => {
         const store = useViewpointStore()
         await store.init()
-        await store.selectViewpoint('niubei_gongga')
+        await store.selectViewpoint('niubei')
 
         expect(store.currentForecast).toBeDefined()
-        expect(store.currentForecast.viewpoint_id).toBe('niubei_gongga')
+        expect(store.currentForecast.viewpoint_id).toBe('niubei')
     })
 
     it('currentDayEvents returns events for selected date', async () => {
         const store = useViewpointStore()
         await store.init()
-        await store.selectViewpoint('niubei_gongga')
+        await store.selectViewpoint('niubei')
         store.selectedDate = '2026-02-18'
 
         expect(store.currentDayEvents).toHaveLength(2)
@@ -105,7 +105,7 @@ describe('useViewpointStore', () => {
     it('selectDate() sets date and loads timeline', async () => {
         const store = useViewpointStore()
         await store.init()
-        await store.selectViewpoint('niubei_gongga')
+        await store.selectViewpoint('niubei')
         await store.selectDate('2026-02-18')
 
         expect(store.selectedDate).toBe('2026-02-18')
@@ -119,11 +119,11 @@ describe('useViewpointStore', () => {
         // selectedId 初始为 null
         expect(store.selectedId).toBeNull()
 
-        await store.ensureForecast('niubei_gongga')
+        await store.ensureForecast('niubei')
 
         // forecast 已加载
-        expect(store.forecasts['niubei_gongga']).toBeDefined()
-        expect(store.forecasts['niubei_gongga'].viewpoint_id).toBe('niubei_gongga')
+        expect(store.forecasts['niubei']).toBeDefined()
+        expect(store.forecasts['niubei'].viewpoint_id).toBe('niubei')
         // selectedId 未被修改
         expect(store.selectedId).toBeNull()
     })
@@ -131,19 +131,19 @@ describe('useViewpointStore', () => {
     it('ensureForecast() skips if already cached', async () => {
         const store = useViewpointStore()
         await store.init()
-        await store.ensureForecast('niubei_gongga')
+        await store.ensureForecast('niubei')
 
         // 再次调用，不应触发额外操作
-        const before = store.forecasts['niubei_gongga']
-        await store.ensureForecast('niubei_gongga')
-        expect(store.forecasts['niubei_gongga']).toBe(before)
+        const before = store.forecasts['niubei']
+        await store.ensureForecast('niubei')
+        expect(store.forecasts['niubei']).toBe(before)
     })
 
     it('clearSelection() resets selectedId to null', async () => {
         const store = useViewpointStore()
         await store.init()
-        await store.selectViewpoint('niubei_gongga')
-        expect(store.selectedId).toBe('niubei_gongga')
+        await store.selectViewpoint('niubei')
+        expect(store.selectedId).toBe('niubei')
 
         store.clearSelection()
 
@@ -155,7 +155,7 @@ describe('useViewpointStore', () => {
     it('currentDay returns full day object for selected date', async () => {
         const store = useViewpointStore()
         await store.init()
-        await store.selectViewpoint('niubei_gongga')
+        await store.selectViewpoint('niubei')
         store.selectedDate = '2026-02-18'
 
         expect(store.currentDay).toBeDefined()
@@ -166,7 +166,7 @@ describe('useViewpointStore', () => {
     it('currentDay falls back to first day if selectedDate not found', async () => {
         const store = useViewpointStore()
         await store.init()
-        await store.selectViewpoint('niubei_gongga')
+        await store.selectViewpoint('niubei')
         store.selectedDate = '9999-12-31'  // 不存在的日期
 
         // fallback 到第一天

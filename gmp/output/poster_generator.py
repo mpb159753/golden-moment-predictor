@@ -19,13 +19,14 @@ _CST = timezone(timedelta(hours=8))
 # 山系分组元数据 (key → 中文名 + 排序序号)
 GROUP_META: dict[str, dict] = {
     "gongga": {"name": "贡嘎山系", "order": 1},
-    "siguniang": {"name": "四姑娘山", "order": 2},
-    "yala": {"name": "雅拉山系", "order": 3},
+    "siguniang": {"name": "四姑娘山方向", "order": 2},
+    "yala": {"name": "塔公·雅拉方向", "order": 3},
     "genie": {"name": "格聂山系", "order": 4},
     "yading": {"name": "亚丁景区", "order": 5},
-    "318": {"name": "318 沿途", "order": 6},
-    "lixiao": {"name": "理小路沿途", "order": 7},
-    "other": {"name": "其它景区", "order": 8},
+    "318": {"name": "318 理塘段", "order": 6},
+    "aba": {"name": "阿坝方向", "order": 7},       # 新增
+    "other": {"name": "其他景区", "order": 8},
+    # lixiao 已废弃，不再列出
 }
 
 # weather_icon → 中文映射 (对应 scheduler._extract_hourly_weather 生成的值)
@@ -81,9 +82,12 @@ class PosterGenerator:
             viewpoints_data = []
             for vp in vps:
                 daily = self._build_daily(vp.id, date_list)
+                display_name = (
+                    f"{vp.scenic_area}·{vp.name}" if vp.scenic_area else vp.name
+                )
                 viewpoints_data.append({
                     "id": vp.id,
-                    "name": vp.name,
+                    "name": display_name,
                     "daily": daily,
                 })
 

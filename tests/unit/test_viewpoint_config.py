@@ -16,9 +16,9 @@ from gmp.core.models import Location, Target, Viewpoint
 
 @pytest.fixture
 def viewpoint_yaml() -> dict:
-    """niubei_gongga 观景台配置。"""
+    """niubei 观景台配置。"""
     return {
-        "id": "niubei_gongga",
+        "id": "niubei",
         "name": "牛背山",
         "location": {"lat": 29.75, "lon": 102.35, "altitude": 3660},
         "capabilities": [
@@ -55,7 +55,7 @@ def viewpoint_yaml() -> dict:
 def second_viewpoint_yaml() -> dict:
     """第二个观景台配置，用于多文件加载测试。"""
     return {
-        "id": "zheduo_gongga",
+        "id": "zheduo",
         "name": "折多山",
         "location": {"lat": 30.05, "lon": 101.90, "altitude": 4298},
         "capabilities": ["sunrise", "sunset"],
@@ -77,10 +77,10 @@ def viewpoint_dir(viewpoint_yaml, second_viewpoint_yaml, tmp_path):
     """创建包含两个观景台 YAML 文件的临时目录。"""
     vp_dir = tmp_path / "viewpoints"
     vp_dir.mkdir()
-    (vp_dir / "niubei_gongga.yaml").write_text(
+    (vp_dir / "niubei.yaml").write_text(
         yaml.dump(viewpoint_yaml, allow_unicode=True)
     )
-    (vp_dir / "zheduo_gongga.yaml").write_text(
+    (vp_dir / "zheduo.yaml").write_text(
         yaml.dump(second_viewpoint_yaml, allow_unicode=True)
     )
     return str(vp_dir)
@@ -91,7 +91,7 @@ def single_viewpoint_dir(viewpoint_yaml, tmp_path):
     """只包含一个观景台的目录。"""
     vp_dir = tmp_path / "viewpoints"
     vp_dir.mkdir()
-    (vp_dir / "niubei_gongga.yaml").write_text(
+    (vp_dir / "niubei.yaml").write_text(
         yaml.dump(viewpoint_yaml, allow_unicode=True)
     )
     return str(vp_dir)
@@ -104,13 +104,13 @@ class TestViewpointConfigLoad:
     """ViewpointConfig 加载测试。"""
 
     def test_load_viewpoint_attributes(self, single_viewpoint_dir):
-        """加载 niubei_gongga.yaml → Viewpoint 属性完整。"""
+        """加载 niubei.yaml → Viewpoint 属性完整。"""
         vpc = ViewpointConfig()
         vpc.load(single_viewpoint_dir)
 
-        vp = vpc.get("niubei_gongga")
+        vp = vpc.get("niubei")
         assert isinstance(vp, Viewpoint)
-        assert vp.id == "niubei_gongga"
+        assert vp.id == "niubei"
         assert vp.name == "牛背山"
         assert isinstance(vp.location, Location)
         assert vp.location.lat == 29.75
@@ -121,7 +121,7 @@ class TestViewpointConfigLoad:
         """capabilities 正确加载。"""
         vpc = ViewpointConfig()
         vpc.load(single_viewpoint_dir)
-        vp = vpc.get("niubei_gongga")
+        vp = vpc.get("niubei")
         assert "sunrise" in vp.capabilities
         assert "cloud_sea" in vp.capabilities
         assert len(vp.capabilities) == 7
@@ -130,7 +130,7 @@ class TestViewpointConfigLoad:
         """targets 正确转换为 Target 对象。"""
         vpc = ViewpointConfig()
         vpc.load(single_viewpoint_dir)
-        vp = vpc.get("niubei_gongga")
+        vp = vpc.get("niubei")
 
         assert len(vp.targets) == 2
         gongga = vp.targets[0]
@@ -145,7 +145,7 @@ class TestViewpointConfigLoad:
         """Target 的 applicable_events=null → None。"""
         vpc = ViewpointConfig()
         vpc.load(single_viewpoint_dir)
-        vp = vpc.get("niubei_gongga")
+        vp = vpc.get("niubei")
 
         gongga = vp.targets[0]
         assert gongga.applicable_events is None
@@ -154,7 +154,7 @@ class TestViewpointConfigLoad:
         """Target 的 applicable_events=["sunset"] → ["sunset"]。"""
         vpc = ViewpointConfig()
         vpc.load(single_viewpoint_dir)
-        vp = vpc.get("niubei_gongga")
+        vp = vpc.get("niubei")
 
         yala = vp.targets[1]
         assert yala.applicable_events == ["sunset"]
@@ -167,11 +167,11 @@ class TestViewpointConfigQuery:
     """ViewpointConfig 查询测试。"""
 
     def test_get_existing(self, viewpoint_dir):
-        """get('niubei_gongga') 返回正确对象。"""
+        """get('niubei') 返回正确对象。"""
         vpc = ViewpointConfig()
         vpc.load(viewpoint_dir)
-        vp = vpc.get("niubei_gongga")
-        assert vp.id == "niubei_gongga"
+        vp = vpc.get("niubei")
+        assert vp.id == "niubei"
 
     def test_get_not_found(self, viewpoint_dir):
         """get('不存在') → ViewpointNotFoundError。"""
@@ -187,7 +187,7 @@ class TestViewpointConfigQuery:
         all_vps = vpc.list_all()
         assert len(all_vps) == 2
         ids = {vp.id for vp in all_vps}
-        assert ids == {"niubei_gongga", "zheduo_gongga"}
+        assert ids == {"niubei", "zheduo"}
 
 
 # ==================== 边界测试 ====================

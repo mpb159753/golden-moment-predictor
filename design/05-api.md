@@ -12,7 +12,7 @@ gmp predict <viewpoint_id> [options]
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 |------|------|------|------|------|
-| `viewpoint_id` | str | ✅ | — | 观景台 ID (如 `niubei_gongga`) |
+| `viewpoint_id` | str | ✅ | — | 观景台 ID (如 `niubei`) |
 | `--days` | int | | 7 | 预测天数 (1-16) |
 | `--events` | str | | 全部 | 逗号分隔事件类型过滤 |
 | `--output` | str | | `table` | 输出格式: `table` / `json` |
@@ -23,16 +23,16 @@ gmp predict <viewpoint_id> [options]
 
 ```bash
 # 预测牛背山 7 天全部景观
-gmp predict niubei_gongga --days 7
+gmp predict niubei --days 7
 
 # 只看日出金山和云海，输出 JSON
-gmp predict niubei_gongga --events sunrise_golden_mountain,cloud_sea --output json
+gmp predict niubei --events sunrise_golden_mountain,cloud_sea --output json
 
 # 输出到文件
-gmp predict niubei_gongga --output json --output-file result.json
+gmp predict niubei --output json --output-file result.json
 
 # 显示评分明细
-gmp predict niubei_gongga --detail
+gmp predict niubei --detail
 ```
 
 ---
@@ -135,10 +135,10 @@ gmp list-routes [options]
 public/data/                              ← 最新预测 (前端读取)
 ├── index.json                            ← 观景台 + 线路索引
 ├── viewpoints/
-│   ├── niubei_gongga/
+│   ├── niubei/
 │   │   ├── forecast.json                 ← 多日预测
 │   │   └── timeline.json                 ← 逐时数据
-│   ├── zheduo_gongga/
+│   ├── zheduo/
 │   │   ├── forecast.json
 │   │   └── timeline.json
 │   └── ...
@@ -164,11 +164,11 @@ archive/                                  ← 历史预测归档
 {
   "viewpoints": [
     {
-      "id": "niubei_gongga",
+      "id": "niubei",
       "name": "牛背山",
       "location": {"lat": 29.75, "lon": 102.35, "altitude": 3660},
       "capabilities": ["sunrise", "cloud_sea", "stargazing", "frost"],
-      "forecast_url": "viewpoints/niubei_gongga/forecast.json"
+      "forecast_url": "viewpoints/niubei/forecast.json"
     }
   ],
   "routes": [
@@ -176,8 +176,8 @@ archive/                                  ← 历史预测归档
       "id": "lixiao",
       "name": "理小路",
       "stops": [
-        {"viewpoint_id": "zheduo_gongga", "name": "折多山"},
-        {"viewpoint_id": "niubei_gongga", "name": "牛背山"}
+        {"viewpoint_id": "zheduo", "name": "折多山"},
+        {"viewpoint_id": "niubei", "name": "牛背山"}
       ],
       "forecast_url": "routes/lixiao/forecast.json"
     }
@@ -191,7 +191,7 @@ archive/                                  ← 历史预测归档
 
 ```json
 {
-  "viewpoint_id": "niubei_gongga",
+  "viewpoint_id": "niubei",
   "viewpoint_name": "牛背山",
   "generated_at": "2026-02-12T05:00:00+08:00",
   "forecast_days": 7,
@@ -247,7 +247,7 @@ archive/                                  ← 历史预测归档
 
 ```json
 {
-  "viewpoint_id": "niubei_gongga",
+  "viewpoint_id": "niubei",
   "generated_at": "2026-02-12T05:00:00+08:00",
   "date": "2026-02-12",
   "hourly": [
@@ -291,12 +291,12 @@ archive/                                  ← 历史预测归档
   "forecast_days": 7,
   "stops": [
     {
-      "viewpoint_id": "zheduo_gongga",
+      "viewpoint_id": "zheduo",
       "viewpoint_name": "折多山",
       "order": 1,
       "stay_note": "建议停留2小时观赏日出金山",
       "forecast": {
-        "viewpoint_id": "zheduo_gongga",
+        "viewpoint_id": "zheduo",
         "viewpoint_name": "折多山",
         "generated_at": "2026-02-12T05:00:00+08:00",
         "forecast_days": 7,
@@ -322,12 +322,12 @@ archive/                                  ← 历史预测归档
       }
     },
     {
-      "viewpoint_id": "niubei_gongga",
+      "viewpoint_id": "niubei",
       "viewpoint_name": "牛背山",
       "order": 2,
       "stay_note": "建议停留3小时，云海+金山绝佳组合",
       "forecast": {
-        "viewpoint_id": "niubei_gongga",
+        "viewpoint_id": "niubei",
         "viewpoint_name": "牛背山",
         "generated_at": "2026-02-12T05:00:00+08:00",
         "forecast_days": 7,

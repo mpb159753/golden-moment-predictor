@@ -91,7 +91,7 @@ logger = structlog.get_logger()
 
 # 请求级别
 logger.info("forecast_generated",
-    viewpoint="niubei_gongga",
+    viewpoint="niubei",
     date="2026-02-11",
     events_count=4,
     top_event="stargazing",
@@ -112,7 +112,7 @@ logger.debug("plugin_scored",
 
 # 降级告警
 logger.warning("degraded_response",
-    viewpoint="niubei_gongga",
+    viewpoint="niubei",
     reason="api_timeout",
     cache_age_hours=2.5
 )

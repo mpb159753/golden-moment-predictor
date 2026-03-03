@@ -1,15 +1,18 @@
-id: transit_jiagenba_view
-name: 甲根坝机位
+id: lenggacuo
+name: 冷嘎措
 groups:
-  - 318
+  - gongga
 location:
-  lat: 29.846973
-  lon: 101.55904
-  altitude: 3600
+  lat: 29.638151
+  lon: 101.69951
+  altitude: 4520
 
 capabilities:
+  - sunrise
   - sunset
+  - stargazing
   - cloud_sea
+  - frost
 
 targets:
   - name: 贡嘎主峰
@@ -18,4 +21,5 @@ targets:
     altitude: 7556
     weight: primary
     applicable_events:
+      - sunrise
       - sunset

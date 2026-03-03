@@ -350,8 +350,8 @@ sequenceDiagram
     participant AU as AstroUtils
     participant P as ScorerPlugin
 
-    C->>S: run("niubei_gongga", days=7, events=None)
-    S->>VC: get("niubei_gongga")
+    C->>S: run("niubei", days=7, events=None)
+    S->>VC: get("niubei")
     VC-->>S: Viewpoint(牛背山, capabilities=[...])
 
     Note over S,SE: 🔵 收集活跃 Plugin + 聚合需求
@@ -575,7 +575,7 @@ sequenceDiagram
     participant S as GMPScheduler
     participant R as CacheRepository
 
-    C->>B: run("niubei_gongga", date=2025-12-01)
+    C->>B: run("niubei", date=2025-12-01)
     B->>B: _validate_date(2025-12-01 < today ✅)
     
     Note over B,Cache: 📦 获取历史天气数据 (先查 DB)

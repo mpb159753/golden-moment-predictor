@@ -552,7 +552,7 @@
     "old_lon": 102.929
   },
   {
-    "file": "niubei_gongga.yaml",
+    "file": "niubei.yaml",
     "name": "牛背山",
     "poi_name": "牛背山",
     "poi_address": "石棉县",
@@ -576,7 +576,7 @@
     "old_lon": 102.872
   },
   {
-    "file": "zheduo_gongga.yaml",
+    "file": "zheduo.yaml",
     "name": "折多山",
     "poi_name": "折多山",
     "poi_address": "康定市",

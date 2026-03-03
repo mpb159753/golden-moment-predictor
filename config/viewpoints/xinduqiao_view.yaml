@@ -1,7 +1,8 @@
-id: transit_xinduqiao_view
+id: xinduqiao_view
 name: 新都桥镇外机位
+scenic_area: 新都桥
 groups:
-  - 318
+  - gongga
 location:
   lat: 30.048217
   lon: 101.491576

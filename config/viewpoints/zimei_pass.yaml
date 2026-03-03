@@ -1,21 +1,17 @@
-id: zheduo_gongga
-name: 折多山
+id: zimei_pass
+name: 子梅垭口
 groups:
   - gongga
 location:
-  lat: 30.07003
-  lon: 101.804206
-  altitude: 4298
+  lat: 29.518239
+  lon: 101.721355
+  altitude: 4550
 
-# 该观景台支持的景观类型
 capabilities:
   - sunrise
   - sunset
   - stargazing
   - cloud_sea
-  - frost
-  - snow_tree
-  - ice_icicle
 
 targets:
   - name: 贡嘎主峰
@@ -23,4 +19,6 @@ targets:
     lon: 101.88
     altitude: 7556
     weight: primary
-    applicable_events: null
+    applicable_events:
+      - sunrise
+      - sunset

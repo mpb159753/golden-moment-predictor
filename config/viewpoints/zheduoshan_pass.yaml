@@ -1,16 +1,16 @@
-id: gongga_yuzixi
-name: 鱼子西
+id: zheduoshan_pass
+name: 折多山垭口
+scenic_area: 折多山
 groups:
   - gongga
 location:
-  lat: 30.210279
-  lon: 101.581788
-  altitude: 4100
+  lat: 30.074318
+  lon: 101.803517
+  altitude: 4298
 
 capabilities:
   - sunrise
   - sunset
-  - stargazing
   - cloud_sea
 
 targets:

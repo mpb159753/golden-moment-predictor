@@ -1,7 +1,8 @@
 id: zhagushan_pass
 name: 鹧鸪山垭口机位
+scenic_area: 鹧鸪山
 groups:
-  - other
+  - aba
 location:
   lat: 31.853109
   lon: 102.672527

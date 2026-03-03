@@ -45,25 +45,25 @@ describe('useDataLoader', () => {
     })
 
     it('loadForecast() requests correct URL and returns JSON', async () => {
-        const forecastData = { viewpoint_id: 'niubei_gongga', daily: [] }
-        mockFetch({ 'viewpoints/niubei_gongga/forecast.json': forecastData })
+        const forecastData = { viewpoint_id: 'niubei', daily: [] }
+        mockFetch({ 'viewpoints/niubei/forecast.json': forecastData })
 
         const { loadForecast } = useDataLoader()
-        const result = await loadForecast('niubei_gongga')
+        const result = await loadForecast('niubei')
 
         expect(result).toEqual(forecastData)
-        expect(globalThis.fetch).toHaveBeenCalledWith('/data/viewpoints/niubei_gongga/forecast.json')
+        expect(globalThis.fetch).toHaveBeenCalledWith('/data/viewpoints/niubei/forecast.json')
     })
 
     it('loadTimeline() requests correct URL with date', async () => {
-        const timelineData = { viewpoint_id: 'niubei_gongga', date: '2026-02-18', hourly: [] }
-        mockFetch({ 'viewpoints/niubei_gongga/timeline_2026-02-18.json': timelineData })
+        const timelineData = { viewpoint_id: 'niubei', date: '2026-02-18', hourly: [] }
+        mockFetch({ 'viewpoints/niubei/timeline_2026-02-18.json': timelineData })
 
         const { loadTimeline } = useDataLoader()
-        const result = await loadTimeline('niubei_gongga', '2026-02-18')
+        const result = await loadTimeline('niubei', '2026-02-18')
 
         expect(result).toEqual(timelineData)
-        expect(globalThis.fetch).toHaveBeenCalledWith('/data/viewpoints/niubei_gongga/timeline_2026-02-18.json')
+        expect(globalThis.fetch).toHaveBeenCalledWith('/data/viewpoints/niubei/timeline_2026-02-18.json')
     })
 
     it('loadRouteForecast() requests correct URL and returns JSON', async () => {

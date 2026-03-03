@@ -1,7 +1,8 @@
 id: tagong_muya
 name: 木雅金塔机位
+scenic_area: 塔公草原
 groups:
-  - other
+  - yala
 location:
   lat: 30.323371
   lon: 101.526473

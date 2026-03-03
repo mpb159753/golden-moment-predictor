@@ -230,6 +230,7 @@ class ViewpointConfig:
                 capabilities=data.get("capabilities", []),
                 targets=targets,
                 groups=data.get("groups", []),
+                scenic_area=data.get("scenic_area", ""),
             )
             self._viewpoints[vp.id] = vp
 

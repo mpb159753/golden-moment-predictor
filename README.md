@@ -95,19 +95,19 @@ python -m gmp.main --help
 python -m gmp.main list-viewpoints
 
 # 预测牛背山未来 3 天的景观
-python -m gmp.main predict niubei_gongga --days 3
+python -m gmp.main predict niubei --days 3
 
 # JSON 格式输出
-python -m gmp.main predict niubei_gongga --days 3 --output json
+python -m gmp.main predict niubei --days 3 --output json
 
 # 仅预测特定事件 (如云海和雾凇)
-python -m gmp.main predict niubei_gongga --days 3 --events cloud_sea,frost --output json
+python -m gmp.main predict niubei --days 3 --events cloud_sea,frost --output json
 
 # 线路预测 (理小路: 折多山 → 牛背山)
 python -m gmp.main predict-route lixiao --days 1 --output json
 
 # 历史回测
-python -m gmp.main backtest niubei_gongga --date 2026-02-10
+python -m gmp.main backtest niubei --date 2026-02-10
 ```
 
 ## 📖 命令详解
@@ -132,7 +132,7 @@ python -m gmp.main predict <VIEWPOINT_ID> [OPTIONS]
 **Table 输出示例:**
 
 ```
-📍 牛背山 (niubei_gongga)
+📍 牛背山 (niubei)
 ============================================================
 
 📅 2026-02-17  不推荐 — 条件不佳
@@ -154,7 +154,7 @@ python -m gmp.main predict <VIEWPOINT_ID> [OPTIONS]
 
 ```json
 {
-  "viewpoint_id": "niubei_gongga",
+  "viewpoint_id": "niubei",
   "viewpoint_name": "牛背山",
   "generated_at": "2026-02-17T00:47:00+08:00",
   "forecast_days": 3,
@@ -229,10 +229,10 @@ public/data/
 ├── index.json              # 观景台和线路索引
 ├── meta.json               # 生成元数据
 ├── viewpoints/
-│   ├── niubei_gongga/
+│   ├── niubei/
 │   │   ├── forecast.json
 │   │   └── timeline_2026-02-17.json
-│   └── zheduo_gongga/
+│   └── zheduo/
 │       ├── forecast.json
 │       └── timeline_2026-02-17.json
 └── routes/
@@ -259,7 +259,7 @@ python -m gmp.main backtest <VIEWPOINT_ID> --date <YYYY-MM-DD> [OPTIONS]
 
 ```json
 {
-  "viewpoint_id": "niubei_gongga",
+  "viewpoint_id": "niubei",
   "target_date": "2026-02-10",
   "is_backtest": true,
   "data_source": "archive",
@@ -297,8 +297,8 @@ python -m gmp.main list-viewpoints --output json
 ```
 ID                        名称              海拔(m)      景观类型
 ----------------------------------------------------------------------
-niubei_gongga             牛背山             3660       sunrise, sunset, stargazing, cloud_sea, frost, snow_tree, ice_icicle
-zheduo_gongga             折多山             4298       sunrise, sunset, stargazing, cloud_sea, frost, snow_tree, ice_icicle
+niubei             牛背山             3660       sunrise, sunset, stargazing, cloud_sea, frost, snow_tree, ice_icicle
+zheduo             折多山             4298       sunrise, sunset, stargazing, cloud_sea, frost, snow_tree, ice_icicle
 ```
 
 ### `list-routes` — 列出线路
@@ -316,7 +316,7 @@ python -m gmp.main list-routes --output json
 ```
 ID                   名称              站数       站点
 ----------------------------------------------------------------------
-lixiao               理小路             2        zheduo_gongga → niubei_gongga
+lixiao               理小路             2        zheduo → niubei
 ```
 
 ## 🔌 评分 Plugin 系统
@@ -348,8 +348,8 @@ golden-moment-predictor/
 ├── config/
 │   ├── engine_config.yaml          # 引擎核心配置 (评分阈值/权重/缓存)
 │   ├── viewpoints/                 # 观景台配置
-│   │   ├── niubei_gongga.yaml      # 牛背山
-│   │   └── zheduo_gongga.yaml      # 折多山
+│   │   ├── niubei.yaml      # 牛背山
+│   │   └── zheduo.yaml      # 折多山
 │   └── routes/                     # 线路配置
 │       └── lixiao.yaml             # 理小路
 ├── gmp/

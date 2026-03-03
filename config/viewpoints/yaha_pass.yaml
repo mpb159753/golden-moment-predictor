@@ -1,16 +1,16 @@
-id: transit_gaoersi_pass
-name: 高尔寺山垭口
+id: yaha_pass
+name: 雅哈垭口
 groups:
-  - 318
+  - gongga
 location:
-  lat: 30.039849
-  lon: 101.345279
-  altitude: 4412
+  lat: 29.7425
+  lon: 101.723135
+  altitude: 4568
 
 capabilities:
   - sunrise
   - sunset
-  - cloud_sea
+  - stargazing
 
 targets:
   - name: 贡嘎主峰

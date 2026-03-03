@@ -38,7 +38,7 @@ def _make_event(
 
 
 def _make_viewpoint(
-    vid: str = "niubei_gongga", name: str = "牛背山"
+    vid: str = "niubei", name: str = "牛背山"
 ) -> Viewpoint:
     return Viewpoint(
         id=vid,
@@ -84,7 +84,7 @@ class TestForecastReporterGenerate:
     def test_contains_all_top_level_fields(self) -> None:
         reporter = ForecastReporter()
         result = reporter.generate(_make_pipeline_result())
-        assert result["viewpoint_id"] == "niubei_gongga"
+        assert result["viewpoint_id"] == "niubei"
         assert result["viewpoint_name"] == "牛背山"
         assert "generated_at" in result
         assert "forecast_days" in result
@@ -210,8 +210,8 @@ class TestForecastReporterGenerateRoute:
             name="理小路",
             description="理县到小金路线",
             stops=[
-                RouteStop(viewpoint_id="zheduo_gongga", order=1, stay_note="建议停留2小时"),
-                RouteStop(viewpoint_id="niubei_gongga", order=2, stay_note="建议停留3小时"),
+                RouteStop(viewpoint_id="zheduo", order=1, stay_note="建议停留2小时"),
+                RouteStop(viewpoint_id="niubei", order=2, stay_note="建议停留3小时"),
             ],
         )
 
@@ -219,10 +219,10 @@ class TestForecastReporterGenerateRoute:
         """2 站 PipelineResult → stops 数组长度 2"""
         route = self._make_route()
         p1 = _make_pipeline_result(
-            viewpoint=_make_viewpoint("zheduo_gongga", "折多山")
+            viewpoint=_make_viewpoint("zheduo", "折多山")
         )
         p2 = _make_pipeline_result(
-            viewpoint=_make_viewpoint("niubei_gongga", "牛背山")
+            viewpoint=_make_viewpoint("niubei", "牛背山")
         )
         result = ForecastReporter().generate_route([p1, p2], route)
         assert len(result["stops"]) == 2
@@ -232,10 +232,10 @@ class TestForecastReporterGenerateRoute:
         route = self._make_route()
         # 故意反序传入
         p1 = _make_pipeline_result(
-            viewpoint=_make_viewpoint("niubei_gongga", "牛背山")
+            viewpoint=_make_viewpoint("niubei", "牛背山")
         )
         p2 = _make_pipeline_result(
-            viewpoint=_make_viewpoint("zheduo_gongga", "折多山")
+            viewpoint=_make_viewpoint("zheduo", "折多山")
         )
         result = ForecastReporter().generate_route([p1, p2], route)
         orders = [s["order"] for s in result["stops"]]
@@ -245,10 +245,10 @@ class TestForecastReporterGenerateRoute:
         """route_id / route_name / forecast_days 正确填充"""
         route = self._make_route()
         p1 = _make_pipeline_result(
-            viewpoint=_make_viewpoint("zheduo_gongga", "折多山")
+            viewpoint=_make_viewpoint("zheduo", "折多山")
         )
         p2 = _make_pipeline_result(
-            viewpoint=_make_viewpoint("niubei_gongga", "牛背山")
+            viewpoint=_make_viewpoint("niubei", "牛背山")
         )
         result = ForecastReporter().generate_route([p1, p2], route)
         assert result["route_id"] == "lixiao"
@@ -260,7 +260,7 @@ class TestForecastReporterGenerateRoute:
         """每站 forecast 格式与单站一致"""
         route = self._make_route()
         p1 = _make_pipeline_result(
-            viewpoint=_make_viewpoint("zheduo_gongga", "折多山")
+            viewpoint=_make_viewpoint("zheduo", "折多山")
         )
         result = ForecastReporter().generate_route([p1], route)
         stop_forecast = result["stops"][0]["forecast"]

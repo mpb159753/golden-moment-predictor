@@ -18,7 +18,7 @@
 
 ### Task 1: 删除重复 viewpoint 配置
 
-删除重复的 `gongga_niubei.yaml`，保留更完整的 `niubei_gongga.yaml`（7 capabilities + 2 targets vs 5 capabilities + 1 target）。
+删除重复的 `gongga_niubei.yaml`，保留更完整的 `niubei.yaml`（7 capabilities + 2 targets vs 5 capabilities + 1 target）。
 
 ---
 
@@ -26,7 +26,7 @@
 
 当前两个牛背山配置对比：
 
-| | `niubei_gongga` (保留) | `gongga_niubei` (删除) |
+| | `niubei` (保留) | `gongga_niubei` (删除) |
 |--|--|--|
 | capabilities | sunrise, sunset, stargazing, cloud_sea, frost, snow_tree, ice_icicle (7) | sunrise, sunset, stargazing, cloud_sea, snow_tree (5) |
 | targets | 贡嘎主峰 (primary) + 雅拉神山 (secondary) | 贡嘎主峰 (primary) |
@@ -50,7 +50,7 @@ Expected: 无结果
 
 ```bash
 git add -u config/viewpoints/gongga_niubei.yaml
-git commit -m "chore: remove duplicate gongga_niubei viewpoint (keep niubei_gongga)"
+git commit -m "chore: remove duplicate gongga_niubei viewpoint (keep niubei)"
 ```
 
 ---
@@ -122,12 +122,12 @@ git commit -m "feat(config): add groups field to Viewpoint model"
 from pathlib import Path
 
 GROUP_MAP = {
-    "niubei_gongga": ["gongga"],
+    "niubei": ["gongga"],
     "gongga_lenggacuo": ["gongga"],
     "gongga_yaha_pass": ["gongga"],
     "gongga_yuzixi": ["gongga"],
     "gongga_zimei_pass": ["gongga"],
-    "zheduo_gongga": ["gongga"],
+    "zheduo": ["gongga"],
     "siguniang_changping": ["siguniang"],
     "siguniang_erguniang_view": ["siguniang"],
     "siguniang_haizi_chaoshanping": ["siguniang"],

@@ -1,7 +1,8 @@
 id: jiuzhai_wuhuahai
 name: 五花海
+scenic_area: 九寨沟
 groups:
-  - other
+  - aba
 location:
   lat: 33.161324
   lon: 103.878596

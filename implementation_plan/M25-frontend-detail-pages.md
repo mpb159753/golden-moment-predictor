@@ -263,7 +263,7 @@ section h2 {
   route_id: 'lixiao',
   stops: [
     {
-      viewpoint_id: 'zheduo_gongga',
+      viewpoint_id: 'zheduo',
       viewpoint_name: '折多山',
       order: 1,
       stay_note: '建议停留2小时观赏日出金山',
@@ -288,7 +288,7 @@ npm run dev
 ```
 
 手动验证:
-1. 访问 `/viewpoint/niubei_gongga` → 详情页正常渲染
+1. 访问 `/viewpoint/niubei` → 详情页正常渲染
 2. 日期选择器切换日期 → 数据联动更新
 3. 事件卡片展示评分明细
 4. 七日趋势图正确绘制

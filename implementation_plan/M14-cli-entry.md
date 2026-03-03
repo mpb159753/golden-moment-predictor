@@ -211,14 +211,14 @@ def predict(...):
 
 **E2E / CLI 测试 (使用 `click.testing.CliRunner`):**
 
-- `gmp predict niubei_gongga --days 1` → 正常输出
-- `gmp predict niubei_gongga --output json` → 有效 JSON
-- `gmp predict niubei_gongga --output json --output-file out.json` → 写入文件
+- `gmp predict niubei --days 1` → 正常输出
+- `gmp predict niubei --output json` → 有效 JSON
+- `gmp predict niubei --output json --output-file out.json` → 写入文件
 - `gmp predict 不存在的id` → 错误提示, exit code=1
 - `gmp predict-route lixiao --days 3` → 线路预测
 - `gmp list-viewpoints` → 显示所有观景台
 - `gmp list-routes` → 显示所有线路
-- `gmp backtest niubei_gongga --date 2025-12-01` → 回测输出
+- `gmp backtest niubei --date 2025-12-01` → 回测输出
 - `gmp generate-all --days 1` → 生成 JSON 文件
 - `gmp generate-all --no-archive` → 跳过归档
 - `gmp generate-all --output ./custom/data --archive ./custom/archive` → 自定义路径
@@ -233,6 +233,6 @@ def predict(...):
 python -m pytest tests/e2e/test_cli.py -v
 
 # 手动测试 (需真实 API 或完整 Mock)
-python -m gmp.main predict niubei_gongga --days 1
+python -m gmp.main predict niubei --days 1
 python -m gmp.main list-viewpoints
 ```

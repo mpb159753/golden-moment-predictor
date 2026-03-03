@@ -10,7 +10,7 @@ const mockPosterData = {
         {
             name: '贡嘎山系',
             key: 'gongga',
-            viewpoints: [{ id: 'niubei_gongga', name: '牛背山', daily: [] }],
+            viewpoints: [{ id: 'niubei', name: '牛背山', daily: [] }],
         },
         {
             name: '四姑娘山',

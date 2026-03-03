@@ -1,11 +1,12 @@
-id: transit_zheduoshan_pass
-name: 折多山垭口
+id: gaoersi_pass
+name: 高尔寺山垭口
+scenic_area: 高尔寺山
 groups:
   - 318
 location:
-  lat: 30.074318
-  lon: 101.803517
-  altitude: 4298
+  lat: 30.039849
+  lon: 101.345279
+  altitude: 4412
 
 capabilities:
   - sunrise

@@ -62,8 +62,8 @@ def _load_viewpoint_name(viewpoint_id: str) -> str:
 
 
 # 动态构建常量 (基于配置文件，不硬编码)
-NIUBEI_EXPECTED_EVENT_TYPES = _load_viewpoint_expected_event_types("niubei_gongga")
-NIUBEI_VIEWPOINT_NAME = _load_viewpoint_name("niubei_gongga")
+NIUBEI_EXPECTED_EVENT_TYPES = _load_viewpoint_expected_event_types("niubei")
+NIUBEI_VIEWPOINT_NAME = _load_viewpoint_name("niubei")
 LIXIAO_EXPECTED_STOPS = _load_route_expected_stops("lixiao")
 LIXIAO_ROUTE_NAME = _load_route_name("lixiao")
 
@@ -224,13 +224,13 @@ def _assert_forecast_structure(
 def test_predict_single_day_real_api():
     """使用真实 API 预测牛背山 1 天"""
     runner = CliRunner()
-    result = _invoke(runner, ["predict", "niubei_gongga", "--days", "1", "--output", "json"])
+    result = _invoke(runner, ["predict", "niubei", "--days", "1", "--output", "json"])
 
     assert result.exit_code == 0, f"CLI failed: {result.output}"
     data = _extract_json_object(result.output)
 
     # 结构验证
-    assert data["viewpoint_id"] == "niubei_gongga"
+    assert data["viewpoint_id"] == "niubei"
     assert data["viewpoint_name"] == NIUBEI_VIEWPOINT_NAME
     _assert_forecast_structure(data, NIUBEI_EXPECTED_EVENT_TYPES)
 
@@ -251,7 +251,7 @@ def test_predict_single_day_real_api():
 def test_predict_seven_days_real_api():
     """使用真实 API 预测牛背山 7 天"""
     runner = CliRunner()
-    result = _invoke(runner, ["predict", "niubei_gongga", "--days", "7", "--output", "json"])
+    result = _invoke(runner, ["predict", "niubei", "--days", "7", "--output", "json"])
 
     assert result.exit_code == 0, f"CLI failed: {result.output}"
     data = _extract_json_object(result.output)
@@ -294,7 +294,7 @@ def test_predict_events_filter_real_api():
     filter_events = {"clear_sky", "stargazing"}
     # 使用 7 天增加事件产出概率 (Plugin 有天气触发条件)
     result = _invoke(runner, [
-        "predict", "niubei_gongga", "--days", "7",
+        "predict", "niubei", "--days", "7",
         "--events", ",".join(filter_events), "--output", "json"
     ])
 
@@ -344,7 +344,7 @@ def test_cache_hit_on_second_call(tmp_path):
     # 第一次调用 (真实 API)
     t1_start = time.time()
     result1 = _invoke(runner, [
-        "predict", "niubei_gongga", "--days", "1",
+        "predict", "niubei", "--days", "1",
         "--output", "json", "--config", str(tmp_config),
     ])
     t1_duration = time.time() - t1_start
@@ -353,7 +353,7 @@ def test_cache_hit_on_second_call(tmp_path):
     # 第二次调用 (应命中缓存)
     t2_start = time.time()
     result2 = _invoke(runner, [
-        "predict", "niubei_gongga", "--days", "1",
+        "predict", "niubei", "--days", "1",
         "--output", "json", "--config", str(tmp_config),
     ])
     t2_duration = time.time() - t2_start
@@ -498,7 +498,7 @@ def test_backtest_real_api():
 
     runner = CliRunner()
     result = _invoke(runner, [
-        "backtest", "niubei_gongga", "--date", past_date
+        "backtest", "niubei", "--date", past_date
     ])
 
     assert result.exit_code == 0, f"CLI failed: {result.output}"
@@ -506,7 +506,7 @@ def test_backtest_real_api():
 
     assert data["is_backtest"] is True
     assert data["target_date"] == past_date
-    assert data["viewpoint_id"] == "niubei_gongga"
+    assert data["viewpoint_id"] == "niubei"
     assert data["data_source"] in ["cache", "archive"]
     assert "events" in data
     assert isinstance(data["events"], list)
@@ -550,7 +550,7 @@ def test_backtest_multi_date_plugin_coverage(backtest_date, expected_plugins, de
     """
     runner = CliRunner()
     result = _invoke(runner, [
-        "backtest", "niubei_gongga", "--date", backtest_date
+        "backtest", "niubei", "--date", backtest_date
     ])
 
     assert result.exit_code == 0, f"CLI failed: {result.output}"
@@ -591,7 +591,7 @@ def test_backtest_aggregate_plugin_diversity():
 
     for test_date in test_dates:
         result = _invoke(runner, [
-            "backtest", "niubei_gongga", "--date", test_date
+            "backtest", "niubei", "--date", test_date
         ])
         assert result.exit_code == 0, f"CLI failed for {test_date}: {result.output}"
         data = _extract_json_object(result.output)
@@ -640,7 +640,7 @@ def test_backtest_future_date_error():
     future_date = (date.today() + timedelta(days=7)).isoformat()
 
     runner = CliRunner()
-    result = _invoke(runner, ["backtest", "niubei_gongga", "--date", future_date])
+    result = _invoke(runner, ["backtest", "niubei", "--date", future_date])
     assert result.exit_code == 1, f"预期 exit_code=1，实际={result.exit_code}"
     assert "日期" in result.output or "错误" in result.output, (
         f"错误输出中缺少有意义的错误信息: {result.output[:200]}"
@@ -663,7 +663,7 @@ def test_list_viewpoints_real_api():
     assert len(data) >= 1
 
     vp_ids = {vp["id"] for vp in data}
-    assert "niubei_gongga" in vp_ids
+    assert "niubei" in vp_ids
 
     for vp in data:
         assert "id" in vp
@@ -676,7 +676,7 @@ def test_list_viewpoints_real_api():
     # Table 格式
     result_table = _invoke(runner, ["list-viewpoints", "--output", "table"])
     assert result_table.exit_code == 0, f"CLI table failed: {result_table.output}"
-    assert "niubei_gongga" in result_table.output
+    assert "niubei" in result_table.output
 
 
 @pytest.mark.e2e
@@ -711,7 +711,7 @@ def test_list_routes_real_api():
 def test_predict_table_output_real_api():
     """predict 的 table 格式输出应有内容"""
     runner = CliRunner()
-    result = _invoke(runner, ["predict", "niubei_gongga", "--days", "1"])
+    result = _invoke(runner, ["predict", "niubei", "--days", "1"])
 
     assert result.exit_code == 0, f"CLI failed: {result.output}"
     # table 格式应有非空输出 (至少包含观景台名称)
@@ -727,7 +727,7 @@ def test_predict_output_file_real_api(tmp_path):
     out_file = tmp_path / "result.json"
     runner = CliRunner()
     result = _invoke(runner, [
-        "predict", "niubei_gongga", "--days", "1",
+        "predict", "niubei", "--days", "1",
         "--output", "json", "--output-file", str(out_file),
     ])
 
@@ -735,7 +735,7 @@ def test_predict_output_file_real_api(tmp_path):
     assert out_file.exists(), f"输出文件 {out_file} 未创建"
 
     data = json.loads(out_file.read_text(encoding="utf-8"))
-    assert data["viewpoint_id"] == "niubei_gongga"
+    assert data["viewpoint_id"] == "niubei"
     assert "daily" in data
 
 
@@ -745,9 +745,9 @@ def test_days_boundary_values():
     runner = CliRunner()
 
     # --days 0 应报错 (IntRange(1, 16))
-    result_zero = _invoke(runner, ["predict", "niubei_gongga", "--days", "0", "--output", "json"])
+    result_zero = _invoke(runner, ["predict", "niubei", "--days", "0", "--output", "json"])
     assert result_zero.exit_code != 0, "days=0 应报错"
 
     # --days 17 应报错
-    result_over = _invoke(runner, ["predict", "niubei_gongga", "--days", "17", "--output", "json"])
+    result_over = _invoke(runner, ["predict", "niubei", "--days", "17", "--output", "json"])
     assert result_over.exit_code != 0, "days=17 应报错"

@@ -236,3 +236,57 @@ class TestConfigManagerDefaults:
         assert cfg.light_path_interval_km == 10.0
         assert cfg.summary_mode == "rule"
         assert cfg.backtest_max_history_days == 365
+
+
+# ==================== ViewpointConfig scenic_area ====================
+
+
+class TestViewpointScenicArea:
+    """ViewpointConfig 加载 scenic_area 字段的测试。"""
+
+    def test_viewpoint_load_scenic_area_when_present(self, tmp_path):
+        """YAML 含 scenic_area 时，加载后 Viewpoint.scenic_area 应等于该值。"""
+        from gmp.core.config_loader import ViewpointConfig
+
+        yaml_content = """
+id: test_vp
+name: 测试机位
+scenic_area: 神木垒
+groups:
+  - other
+location:
+  lat: 31.0
+  lon: 102.0
+  altitude: 3000
+capabilities:
+  - sunrise
+targets: []
+"""
+        (tmp_path / "test_vp.yaml").write_text(yaml_content)
+        vc = ViewpointConfig()
+        vc.load(str(tmp_path))
+        vp = vc.get("test_vp")
+        assert vp.scenic_area == "神木垒"
+
+    def test_viewpoint_load_scenic_area_defaults_to_empty_string(self, tmp_path):
+        """YAML 不含 scenic_area 时，Viewpoint.scenic_area 应为空字符串。"""
+        from gmp.core.config_loader import ViewpointConfig
+
+        yaml_content = """
+id: no_area_vp
+name: 无景区标识
+groups:
+  - gongga
+location:
+  lat: 30.0
+  lon: 101.0
+  altitude: 4000
+capabilities:
+  - sunset
+targets: []
+"""
+        (tmp_path / "no_area_vp.yaml").write_text(yaml_content)
+        vc = ViewpointConfig()
+        vc.load(str(tmp_path))
+        vp = vc.get("no_area_vp")
+        assert vp.scenic_area == ""

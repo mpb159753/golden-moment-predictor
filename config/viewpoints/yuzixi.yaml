@@ -1,11 +1,11 @@
-id: gongga_zimei_pass
-name: 子梅垭口
+id: yuzixi
+name: 鱼子西
 groups:
   - gongga
 location:
-  lat: 29.518239
-  lon: 101.721355
-  altitude: 4550
+  lat: 30.210279
+  lon: 101.581788
+  altitude: 4100
 
 capabilities:
   - sunrise

@@ -1,5 +1,6 @@
-id: transit_18bends_view
+id: haizishaner_18bends
 name: 天路十八弯观景台
+scenic_area: 海子山
 groups:
   - 318
 location:

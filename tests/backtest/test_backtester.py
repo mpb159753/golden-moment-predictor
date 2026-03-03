@@ -28,7 +28,7 @@ _CST = timezone(timedelta(hours=8))
 
 
 def _make_viewpoint(
-    vp_id: str = "niubei_gongga",
+    vp_id: str = "niubei",
     *,
     lat: float = 29.83,
     lon: float = 102.35,
@@ -194,7 +194,7 @@ class TestDateValidation:
             vp, target_date
         )
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         assert result is not None
         assert result["is_backtest"] is True
 
@@ -204,14 +204,14 @@ class TestDateValidation:
         future_date = date.today() + timedelta(days=1)
 
         with pytest.raises(InvalidDateError, match="FutureDate"):
-            bt.run("niubei_gongga", future_date)
+            bt.run("niubei", future_date)
 
     def test_today_raises_invalid_date_error(self):
         """今天的日期 → InvalidDateError("FutureDate") (必须 < today)"""
         bt, *_ = _build_backtester()
 
         with pytest.raises(InvalidDateError, match="FutureDate"):
-            bt.run("niubei_gongga", date.today())
+            bt.run("niubei", date.today())
 
     def test_too_old_date_raises_invalid_date_error(self):
         """超过 max_history_days → InvalidDateError("DateTooOld")"""
@@ -219,7 +219,7 @@ class TestDateValidation:
         old_date = date.today() - timedelta(days=400)
 
         with pytest.raises(InvalidDateError, match="DateTooOld"):
-            bt.run("niubei_gongga", old_date)
+            bt.run("niubei", old_date)
 
 
 # ══════════════════════════════════════════════════════
@@ -245,7 +245,7 @@ class TestCacheFirstStrategy:
             vp, target_date
         )
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         assert result["data_source"] == "cache"
         # 不应调用 fetch_historical
         fetcher.fetch_historical.assert_not_called()
@@ -265,7 +265,7 @@ class TestCacheFirstStrategy:
             vp, target_date
         )
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         assert result["data_source"] == "cache"
         assert result["data_fetched_at"] == "2025-11-30T10:00:00"
 
@@ -281,7 +281,7 @@ class TestCacheFirstStrategy:
             vp, target_date
         )
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         assert result["data_source"] == "archive"
         fetcher.fetch_historical.assert_called()
 
@@ -303,7 +303,7 @@ class TestCacheFirstStrategy:
             vp, target_date
         )
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         assert result["data_source"] == "archive"
 
 
@@ -327,7 +327,7 @@ class TestSaveFunction:
             vp, target_date
         )
 
-        bt.run("niubei_gongga", target_date, save=True)
+        bt.run("niubei", target_date, save=True)
         cache_repo.save_prediction.assert_called()
 
     def test_save_true_record_has_backtest_flag(self):
@@ -342,7 +342,7 @@ class TestSaveFunction:
             vp, target_date
         )
 
-        bt.run("niubei_gongga", target_date, save=True)
+        bt.run("niubei", target_date, save=True)
 
         # 检查 save_prediction 调用的参数
         call_args = cache_repo.save_prediction.call_args
@@ -361,7 +361,7 @@ class TestSaveFunction:
             vp, target_date
         )
 
-        bt.run("niubei_gongga", target_date, save=True)
+        bt.run("niubei", target_date, save=True)
 
         call_args = cache_repo.save_prediction.call_args
         record = call_args[0][0] if call_args[0] else call_args[1].get("record")
@@ -379,7 +379,7 @@ class TestSaveFunction:
             vp, target_date
         )
 
-        bt.run("niubei_gongga", target_date, save=False)
+        bt.run("niubei", target_date, save=False)
         cache_repo.save_prediction.assert_not_called()
 
 
@@ -403,7 +403,7 @@ class TestReportFormat:
             vp, target_date
         )
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         assert "viewpoint_id" in result
         assert "target_date" in result
         assert "is_backtest" in result
@@ -424,7 +424,7 @@ class TestReportFormat:
             vp, target_date
         )
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         assert result["data_source"] == "cache"
 
     def test_report_data_fetched_at_present_for_cache(self):
@@ -440,7 +440,7 @@ class TestReportFormat:
             vp, target_date
         )
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         assert result["data_fetched_at"] == "2025-12-01T10:00:00"
 
     def test_report_data_fetched_at_none_for_archive(self):
@@ -455,7 +455,7 @@ class TestReportFormat:
             vp, target_date
         )
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         assert result.get("data_fetched_at") is None
 
     def test_report_events_format_matches_forecast(self):
@@ -469,7 +469,7 @@ class TestReportFormat:
         pipeline_result = _make_pipeline_result(vp, target_date)
         scheduler.run_with_data.return_value = pipeline_result
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         # events 应该是列表
         assert isinstance(result["events"], list)
         # 至少包含一个事件
@@ -491,5 +491,5 @@ class TestReportFormat:
             vp, target_date
         )
 
-        result = bt.run("niubei_gongga", target_date)
+        result = bt.run("niubei", target_date)
         assert "backtest_run_at" in result["meta"]

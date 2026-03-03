@@ -219,10 +219,10 @@ flowchart LR
 public/data/                              ← 最新预测 (前端读取)
 ├── index.json                            ← 观景台 + 线路索引
 ├── viewpoints/
-│   ├── niubei_gongga/
+│   ├── niubei/
 │   │   ├── forecast.json                 ← 多日预测
 │   │   └── timeline.json                 ← 逐时数据
-│   ├── zheduo_gongga/
+│   ├── zheduo/
 │   │   ├── forecast.json
 │   │   └── timeline.json
 │   └── ...

@@ -95,11 +95,11 @@ it('ensureForecast() loads forecast without changing selectedId', async () => {
     // selectedId 初始为 null
     expect(store.selectedId).toBeNull()
 
-    await store.ensureForecast('niubei_gongga')
+    await store.ensureForecast('niubei')
 
     // forecast 已加载
-    expect(store.forecasts['niubei_gongga']).toBeDefined()
-    expect(store.forecasts['niubei_gongga'].viewpoint_id).toBe('niubei_gongga')
+    expect(store.forecasts['niubei']).toBeDefined()
+    expect(store.forecasts['niubei'].viewpoint_id).toBe('niubei')
     // selectedId 未被修改
     expect(store.selectedId).toBeNull()
 })
@@ -107,12 +107,12 @@ it('ensureForecast() loads forecast without changing selectedId', async () => {
 it('ensureForecast() skips if already cached', async () => {
     const store = useViewpointStore()
     await store.init()
-    await store.ensureForecast('niubei_gongga')
+    await store.ensureForecast('niubei')
 
     // 再次调用，不应触发额外操作
-    const before = store.forecasts['niubei_gongga']
-    await store.ensureForecast('niubei_gongga')
-    expect(store.forecasts['niubei_gongga']).toBe(before)
+    const before = store.forecasts['niubei']
+    await store.ensureForecast('niubei')
+    expect(store.forecasts['niubei']).toBe(before)
 })
 ```
 
@@ -172,8 +172,8 @@ function clearSelection() {
 it('clearSelection() resets selectedId to null', async () => {
     const store = useViewpointStore()
     await store.init()
-    await store.selectViewpoint('niubei_gongga')
-    expect(store.selectedId).toBe('niubei_gongga')
+    await store.selectViewpoint('niubei')
+    expect(store.selectedId).toBe('niubei')
 
     store.clearSelection()
 
@@ -254,7 +254,7 @@ const currentDay = computed(() => {
 it('currentDay returns full day object for selected date', async () => {
     const store = useViewpointStore()
     await store.init()
-    await store.selectViewpoint('niubei_gongga')
+    await store.selectViewpoint('niubei')
     store.selectedDate = '2026-02-18'
 
     expect(store.currentDay).toBeDefined()
@@ -265,7 +265,7 @@ it('currentDay returns full day object for selected date', async () => {
 it('currentDay falls back to first day if selectedDate not found', async () => {
     const store = useViewpointStore()
     await store.init()
-    await store.selectViewpoint('niubei_gongga')
+    await store.selectViewpoint('niubei')
     store.selectedDate = '9999-12-31'  // 不存在的日期
 
     // fallback 到第一天

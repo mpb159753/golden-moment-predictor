@@ -1,11 +1,12 @@
-id: transit_jianziwan_pass
-name: 剪子弯山垭口
+id: kazila_pass
+name: 卡子拉山垭口
+scenic_area: 卡子拉山
 groups:
   - 318
 location:
-  lat: 30.021268
-  lon: 100.796678
-  altitude: 4659
+  lat: 30.148019
+  lon: 100.647116
+  altitude: 4718
 
 capabilities:
   - sunrise

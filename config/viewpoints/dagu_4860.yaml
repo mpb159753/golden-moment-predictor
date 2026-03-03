@@ -1,7 +1,8 @@
 id: dagu_4860
 name: 4860观景台
+scenic_area: 达古冰川
 groups:
-  - other
+  - aba
 location:
   lat: 32.133504
   lon: 102.909396

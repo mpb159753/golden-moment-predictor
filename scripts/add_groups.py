@@ -2,12 +2,12 @@
 from pathlib import Path
 
 GROUP_MAP = {
-    "niubei_gongga": ["gongga"],
+    "niubei": ["gongga"],
     "gongga_lenggacuo": ["gongga"],
     "gongga_yaha_pass": ["gongga"],
     "gongga_yuzixi": ["gongga"],
     "gongga_zimei_pass": ["gongga"],
-    "zheduo_gongga": ["gongga"],
+    "zheduo": ["gongga"],
     "siguniang_changping": ["siguniang"],
     "siguniang_erguniang_view": ["siguniang"],
     "siguniang_haizi_chaoshanping": ["siguniang"],

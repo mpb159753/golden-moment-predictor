@@ -13,14 +13,14 @@
 ```python
 # 用户请求
 request = {
-    "viewpoint_id": "niubei_gongga",
+    "viewpoint_id": "niubei",
     "days": 7,
     "events": None  # None = 返回 capabilities 中所有景观评分
 }
 
 # 加载配置后的 Viewpoint 对象
 viewpoint = Viewpoint(
-    id="niubei_gongga",
+    id="niubei",
     name="牛背山",
     location=Location(lat=29.75, lon=102.35, altitude=3660),
     capabilities=["sunrise", "sunset", "stargazing", "cloud_sea", "frost", "snow_tree", "ice_icicle"],

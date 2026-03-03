@@ -11,9 +11,9 @@ const mockStoreState = {
     error: null,
     meta: { generated_at: '2026-02-18T05:00:00+08:00' },
     selectedDate: '2026-02-18',
-    currentViewpoint: { id: 'niubei_gongga', name: '牛背山' },
+    currentViewpoint: { id: 'niubei', name: '牛背山' },
     currentForecast: {
-        viewpoint_id: 'niubei_gongga',
+        viewpoint_id: 'niubei',
         daily: [
             {
                 date: '2026-02-18',
@@ -35,7 +35,7 @@ const mockStoreState = {
         ],
     },
     currentTimeline: {
-        viewpoint_id: 'niubei_gongga',
+        viewpoint_id: 'niubei',
         date: '2026-02-18',
         hourly: [{ hour: 6, time: '06:00', events_active: [{ event_type: 'sunrise_golden_mountain', score: 90 }] }],
     },
@@ -96,9 +96,9 @@ describe('ViewpointDetail', () => {
         // Reset mutable state
         mockStoreState.loading = false
         mockStoreState.error = null
-        mockStoreState.currentViewpoint = { id: 'niubei_gongga', name: '牛背山' }
+        mockStoreState.currentViewpoint = { id: 'niubei', name: '牛背山' }
         mockStoreState.currentForecast = {
-            viewpoint_id: 'niubei_gongga',
+            viewpoint_id: 'niubei',
             daily: [
                 {
                     date: '2026-02-18',
@@ -120,7 +120,7 @@ describe('ViewpointDetail', () => {
             ],
         }
         mockStoreState.currentTimeline = {
-            viewpoint_id: 'niubei_gongga',
+            viewpoint_id: 'niubei',
             date: '2026-02-18',
             hourly: [{ hour: 6, time: '06:00', events_active: [{ event_type: 'sunrise_golden_mountain', score: 90 }] }],
         }
@@ -128,7 +128,7 @@ describe('ViewpointDetail', () => {
 
     function mountDetail(props = {}) {
         return mount(ViewpointDetail, {
-            props: { id: 'niubei_gongga', ...props },
+            props: { id: 'niubei', ...props },
             global: {
                 ...globalConfig,
                 mocks: {
@@ -280,7 +280,7 @@ describe('ViewpointDetail', () => {
     it('calls selectViewpoint on mount', async () => {
         mountDetail()
         await flushPromises()
-        expect(mockSelectViewpoint).toHaveBeenCalledWith('niubei_gongga')
+        expect(mockSelectViewpoint).toHaveBeenCalledWith('niubei')
     })
 
     it('calls selectDate on mount when date prop is provided', async () => {

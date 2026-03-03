@@ -39,7 +39,7 @@ GMP 的差异化优势：除天气信息外，还能展示**景观事件评分**
 
 | 组名 | 景点 ID | 数量 |
 |------|---------|------|
-| **贡嘎山系** | niubei_gongga, gongga_lenggacuo, gongga_yaha_pass, gongga_yuzixi, gongga_zimei_pass, zheduo_gongga | 6 |
+| **贡嘎山系** | niubei, gongga_lenggacuo, gongga_yaha_pass, gongga_yuzixi, gongga_zimei_pass, zheduo | 6 |
 | **四姑娘山** | siguniang_changping, siguniang_erguniang_view, siguniang_haizi_chaoshanping, siguniang_maobiliang, siguniang_shuangqiao | 5 |
 | **雅拉山系** | yala_balangshengdu, yala_gedilamu, yala_gunong, yala_tagong_view, yala_yunrao_view, duoraogamu_yala_view | 6 |
 | **格聂山系** | genie_chachongxi, genie_eye, genie_laolenggusi, genie_nuda_camp, genie_xiazetong | 5 |
@@ -109,7 +109,7 @@ GMP 的差异化优势：除天气信息外，还能展示**景观事件评分**
       "key": "gongga",
       "viewpoints": [
         {
-          "id": "niubei_gongga",
+          "id": "niubei",
           "name": "牛背山",
           "daily": [
             {

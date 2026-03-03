@@ -24,7 +24,7 @@ def tmp_data_dir(tmp_path):
     """
     today = datetime.now(_CST).strftime("%Y-%m-%d")
 
-    vp_dir = tmp_path / "viewpoints" / "niubei_gongga"
+    vp_dir = tmp_path / "viewpoints" / "niubei"
     vp_dir.mkdir(parents=True)
 
     forecast = {
@@ -78,7 +78,7 @@ def tmp_data_dir(tmp_path):
 @pytest.fixture
 def mock_viewpoint_config():
     vp = MagicMock()
-    vp.id = "niubei_gongga"
+    vp.id = "niubei"
     vp.name = "牛背山"
     vp.groups = ["gongga"]
     config = MagicMock()
@@ -237,7 +237,7 @@ def test_missing_data_graceful(tmp_path):
 
 def test_multi_group_viewpoint(tmp_data_dir):
     vp = MagicMock()
-    vp.id = "niubei_gongga"
+    vp.id = "niubei"
     vp.name = "牛背山"
     vp.groups = ["gongga", "318"]
     config = MagicMock()
@@ -247,3 +247,71 @@ def test_multi_group_viewpoint(tmp_data_dir):
     group_keys = [g["key"] for g in result["groups"]]
     assert "gongga" in group_keys
     assert "318" in group_keys
+
+
+# ==================== GROUP_META 更新测试 ====================
+
+
+def test_group_meta_has_aba():
+    """GROUP_META 应包含 aba 分组（阿坝方向）。"""
+    assert "aba" in GROUP_META
+    assert GROUP_META["aba"]["name"] == "阿坝方向"
+
+
+def test_group_meta_has_no_lixiao():
+    """GROUP_META 不应再包含已废弃的 lixiao 分组。"""
+    assert "lixiao" not in GROUP_META
+
+
+def test_group_meta_siguniang_name():
+    """siguniang 中文名应为 '四姑娘山方向'（不含山字）。"""
+    assert GROUP_META["siguniang"]["name"] == "四姑娘山方向"
+
+
+def test_group_meta_yala_name():
+    """yala 中文名应为 '塔公·雅拉方向'。"""
+    assert GROUP_META["yala"]["name"] == "塔公·雅拉方向"
+
+
+def test_group_meta_318_name():
+    """318 中文名应为 '318 理塘段'。"""
+    assert GROUP_META["318"]["name"] == "318 理塘段"
+
+
+# ==================== scenic_area 展示名拼接测试 ====================
+
+
+def test_scenic_area_prefix_in_poster_name(tmp_path):
+    """scenic_area 非空时，poster 中 viewpoint 的 name 应为 '{scenic_area}·{name}'。"""
+    from gmp.output.poster_generator import PosterGenerator
+
+    vp = MagicMock()
+    vp.id = "shenmulei_redwood_view"
+    vp.name = "红杉林主机位"
+    vp.groups = ["other"]
+    vp.scenic_area = "神木垒"
+    config = MagicMock()
+    config.list_all.return_value = [vp]
+
+    gen = PosterGenerator(str(tmp_path))
+    result = gen.generate(config, days=1)
+    vp_name = result["groups"][0]["viewpoints"][0]["name"]
+    assert vp_name == "神木垒·红杉林主机位"
+
+
+def test_no_scenic_area_keeps_original_name(tmp_path):
+    """scenic_area 为空字符串时，poster 中 name 保持原始名称。"""
+    from gmp.output.poster_generator import PosterGenerator
+
+    vp = MagicMock()
+    vp.id = "niubei"
+    vp.name = "牛背山"
+    vp.groups = ["gongga"]
+    vp.scenic_area = ""
+    config = MagicMock()
+    config.list_all.return_value = [vp]
+
+    gen = PosterGenerator(str(tmp_path))
+    result = gen.generate(config, days=1)
+    vp_name = result["groups"][0]["viewpoints"][0]["name"]
+    assert vp_name == "牛背山"
