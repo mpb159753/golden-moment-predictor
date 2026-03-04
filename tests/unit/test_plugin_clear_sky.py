@@ -18,14 +18,14 @@ from gmp.scoring.plugins.clear_sky import ClearSkyPlugin
 def _default_config() -> dict:
     """返回实施计划中定义的 ClearSkyPlugin 默认配置"""
     return {
-        "trigger": {"max_cloud_cover": 80},
+        "trigger": {"max_cloud_cover": 50},
         "weights": {
             "cloud_cover": 50,
             "precipitation": 25,
             "visibility": 25,
         },
         "thresholds": {
-            "cloud_pct": [10, 30, 50, 70],
+            "cloud_pct": [10, 20, 30, 50],
             "cloud_scores": [50, 40, 25, 10, 0],
             "precip_pct": [10, 30, 50],
             "precip_scores": [25, 20, 10, 0],
@@ -101,26 +101,26 @@ class TestClearSkyPluginProperties:
 
 
 class TestClearSkyTrigger:
-    """测试触发条件: 平均总云量 ≥ 80% → 返回 None"""
+    """测试触发条件: 平均总云量 ≥ 50% → 返回 None"""
 
     def test_overcast_returns_none(self):
-        """云量 85% → 返回 None (未触发)"""
+        """云量 60% → 返回 None (未触发)"""
         plugin = ClearSkyPlugin(_default_config())
-        weather = _make_weather(cloud_cover=85)
+        weather = _make_weather(cloud_cover=60)
         ctx = _make_context(weather)
         assert plugin.score(ctx) is None
 
     def test_exactly_at_trigger_returns_none(self):
-        """云量 = 80% → 返回 None (边界)"""
+        """云量 = 50% → 返回 None (边界)"""
         plugin = ClearSkyPlugin(_default_config())
-        weather = _make_weather(cloud_cover=80)
+        weather = _make_weather(cloud_cover=50)
         ctx = _make_context(weather)
         assert plugin.score(ctx) is None
 
     def test_below_trigger_returns_result(self):
-        """云量 79% → 返回评分结果"""
+        """云量 49% → 返回评分结果"""
         plugin = ClearSkyPlugin(_default_config())
-        weather = _make_weather(cloud_cover=79)
+        weather = _make_weather(cloud_cover=49)
         ctx = _make_context(weather)
         result = plugin.score(ctx)
         assert result is not None
@@ -135,10 +135,9 @@ class TestClearSkyScoring:
     def test_clear_sky_high_score(self):
         """晴天（云量 10%）→ 高分 (~90+)"""
         plugin = ClearSkyPlugin(_default_config())
-        # 云量 10% → cloud_scores: 10 在阈值 [10,30,50,70] 中,
-        #   10 <= 10 → 第一档 cloud_scores[0]=50
+        # 云量 10% → cloud_pct [10,20,30,50]: 10 <= 10 → 第一档 50
         # 降水 0% → precip_scores: 0 < 10 → 第一档 25
-        # 能见度 30km → vis 30*1000=30000m, 30km >= 30 → 第一档 25
+        # 能见度 30km → 30 >= 30 → 第一档 25
         # total = 50+25+25 = 100
         weather = _make_weather(cloud_cover=10, precip_prob=0, visibility_km=30)
         ctx = _make_context(weather)
@@ -147,25 +146,25 @@ class TestClearSkyScoring:
         assert result.total_score >= 90
 
     def test_partly_cloudy_medium_score(self):
-        """多云（云量 50%）→ 中等分 (~40-60)"""
+        """多云（云量 40%）→ 中等分"""
         plugin = ClearSkyPlugin(_default_config())
-        # 云量 50% → 在 [10,30,50,70]: 50 <= 50 → 第三档 cloud_scores[2]=25
-        # 降水 20% → 在 [10,30,50]: 20 <= 30 → 第二档 precip_scores[1]=20
-        # 能见度 15km → 15 >= 15 → 第二档 visibility_scores[1]=20
-        # total = 25+20+20 = 65 (但我们要的范围 40-60, 需要调一下条件)
-        weather = _make_weather(cloud_cover=50, precip_prob=30, visibility_km=10)
+        # 云量 40% → cloud_pct [10,20,30,50]: 40 <= 50 → 第四档 10
+        # 降水 30% → precip_pct [10,30,50]: 30 <= 30 → 第二档 20
+        # 能见度 10km → 10 >= 5 → 第三档 10
+        # total = 10+20+10 = 40
+        weather = _make_weather(cloud_cover=40, precip_prob=30, visibility_km=10)
         ctx = _make_context(weather)
         result = plugin.score(ctx)
         assert result is not None
-        assert 30 <= result.total_score <= 60
+        assert 30 <= result.total_score <= 50
 
     def test_heavy_rain_low_score(self):
         """暴雨（降水概率 90%）→ 低分"""
         plugin = ClearSkyPlugin(_default_config())
-        # 云量 70% (刚触发)
-        # 降水 90% → 90 > 50 → 第四档 precip_scores[3]=0
-        # 能见度 3km → 3 < 5 → 第四档 visibility_scores[3]=5
-        weather = _make_weather(cloud_cover=70, precip_prob=90, visibility_km=3)
+        # 云量 45% (刚在触发阈值以下)
+        # 降水 90% → 90 > 50 → 兜底 0
+        # 能见度 3km → 3 < 5 → 兜底 5
+        weather = _make_weather(cloud_cover=45, precip_prob=90, visibility_km=3)
         ctx = _make_context(weather)
         result = plugin.score(ctx)
         assert result is not None
@@ -196,10 +195,9 @@ class TestCloudCoverDimension:
         [
             (5, 50),    # < 10 → 50
             (10, 50),   # <= 10 → 50
-            (20, 40),   # <= 30 → 40
-            (45, 25),   # <= 50 → 25
-            (60, 10),   # <= 70 → 10
-            (75, 0),    # > 70 → 0
+            (15, 40),   # <= 20 → 40
+            (25, 25),   # <= 30 → 25
+            (40, 10),   # <= 50 → 10
         ],
     )
     def test_cloud_cover_scores(self, cloud_pct: float, expected_score: int):
@@ -208,8 +206,8 @@ class TestCloudCoverDimension:
         ctx = _make_context(weather)
         result = plugin.score(ctx)
         if result is None:
-            # cloud_pct >= 80 triggers None
-            assert cloud_pct >= 80
+            # cloud_pct >= 50 triggers None
+            assert cloud_pct >= 50
             return
         assert result.breakdown["cloud_cover"]["score"] == expected_score
 

@@ -22,13 +22,13 @@ def _make_config(overrides: dict | None = None) -> dict:
     """构造标准测试配置（对应 engine_config.yaml → scoring.stargazing）"""
     cfg = {
         "trigger": {
-            "max_night_cloud_cover": 70,
+            "max_night_cloud_cover": 45,
         },
         "base_optimal": 100,
         "base_good": 90,
         "base_partial": 70,
-        "base_poor": 100,
-        "cloud_penalty_factor": 0.8,
+        "base_poor": 50,
+        "cloud_penalty_factor": 1.5,
         "wind_thresholds": {
             "severe": {"speed": 40, "penalty": 30},
             "moderate": {"speed": 20, "penalty": 10},
@@ -153,11 +153,11 @@ class TestStargazingTrigger:
     """触发判定"""
 
     def test_high_cloud_cover_returns_none(self):
-        """夜间总云量 ≥ 70% → None"""
+        """夜间总云量 ≥ 45% → None"""
         from gmp.scoring.plugins.stargazing import StargazingPlugin
 
         plugin = StargazingPlugin(_make_config())
-        df = _make_weather_df(cloud_cover=75.0)
+        df = _make_weather_df(cloud_cover=50.0)
         ctx = _make_context(df)
         result = plugin.score(ctx)
         assert result is None
@@ -179,7 +179,7 @@ class TestStargazingScoring:
     """评分计算"""
 
     def test_optimal_dark_night(self):
-        """optimal 暗夜, 云量 2%, 风 2.8km/h → base=100 - 1.6 - 0 ≈ 98"""
+        """optimal 暗夜, 云量 2%, 风 2.8km/h → base=100 - 3 - 0 = 97"""
         from gmp.scoring.plugins.stargazing import StargazingPlugin
 
         plugin = StargazingPlugin(_make_config())
@@ -190,11 +190,11 @@ class TestStargazingScoring:
 
         assert result is not None
         assert result.event_type == "stargazing"
-        assert result.total_score == 98
+        assert result.total_score == 97
         assert result.status == "Perfect"
 
     def test_good_window(self):
-        """good 窗口, 云量 10%, 风 25km/h → base=90 - 8 - 10 = 72"""
+        """good 窗口, 云量 10%, 风 25km/h → base=90 - 15 - 10 = 65"""
         from gmp.scoring.plugins.stargazing import StargazingPlugin
 
         plugin = StargazingPlugin(_make_config())
@@ -204,11 +204,11 @@ class TestStargazingScoring:
         result = plugin.score(ctx)
 
         assert result is not None
-        assert result.total_score == 72
+        assert result.total_score == 65
         assert result.status == "Possible"
 
     def test_partial_window(self):
-        """partial 窗口, 云量 30% → base=70 - 24 - 0 = 46"""
+        """partial 窗口, 云量 30% → base=70 - 45 - 0 = 25"""
         from gmp.scoring.plugins.stargazing import StargazingPlugin
 
         plugin = StargazingPlugin(_make_config())
@@ -218,24 +218,24 @@ class TestStargazingScoring:
         result = plugin.score(ctx)
 
         assert result is not None
-        assert result.total_score == 46
+        assert result.total_score == 25
         assert result.status == "Not Recommended"
 
     def test_poor_window_high_moon(self):
-        """poor 窗口, 月相 95%, 云量 50% → base=100-76 - 40 ≈ 极低, clamp 到 0"""
+        """poor 窗口, 月相 95%, 云量 40% → base=50-142.5 极低, clamp 到 0"""
         from gmp.scoring.plugins.stargazing import StargazingPlugin
 
         plugin = StargazingPlugin(_make_config())
-        df = _make_weather_df(cloud_cover=50.0, wind_speed=5.0)
+        df = _make_weather_df(cloud_cover=40.0, wind_speed=5.0)
         window = _make_stargazing_window(quality="poor")
         moon = _make_moon_status(phase=95)
         ctx = _make_context(df, window=window, moon=moon)
         result = plugin.score(ctx)
 
         assert result is not None
-        # base = 100 - 95 * 0.8 = 100 - 76 = 24
-        # cloud_deduction = 50 * 0.8 = 40
-        # score = 24 - 40 = -16 → clamp to 0
+        # base = 50 - 95 * 1.5 = 50 - 142.5 = -92.5
+        # cloud_deduction = 40 * 1.5 = 60
+        # score = -92.5 - 60 = -152.5 → clamp to 0
         assert result.total_score == 0
 
 
@@ -253,8 +253,8 @@ class TestStargazingWindDeduction:
         result = plugin.score(ctx)
 
         assert result is not None
-        # base=100 - cloud_ded=1.6 - wind_ded=30 ≈ 68
-        assert result.total_score == 68
+        # base=100 - cloud_ded=3 - wind_ded=30 = 67
+        assert result.total_score == 67
 
     def test_moderate_wind(self):
         """风速 > 20km/h → -10"""
@@ -267,8 +267,8 @@ class TestStargazingWindDeduction:
         result = plugin.score(ctx)
 
         assert result is not None
-        # base=100 - cloud_ded=1.6 - wind_ded=10 ≈ 88
-        assert result.total_score == 88
+        # base=100 - cloud_ded=3 - wind_ded=10 = 87
+        assert result.total_score == 87
 
     def test_calm_wind(self):
         """风速 ≤ 20km/h → 0"""
@@ -281,8 +281,8 @@ class TestStargazingWindDeduction:
         result = plugin.score(ctx)
 
         assert result is not None
-        # base=100 - cloud_ded=1.6 - wind_ded=0 ≈ 98
-        assert result.total_score == 98
+        # base=100 - cloud_ded=3 - wind_ded=0 = 97
+        assert result.total_score == 97
 
 
 class TestStargazingScoreClamping:
@@ -294,7 +294,7 @@ class TestStargazingScoreClamping:
 
         plugin = StargazingPlugin(_make_config())
         # poor window + high moon + high cloud + severe wind
-        df = _make_weather_df(cloud_cover=60.0, wind_speed=45.0)
+        df = _make_weather_df(cloud_cover=40.0, wind_speed=45.0)
         window = _make_stargazing_window(quality="poor")
         moon = _make_moon_status(phase=95)
         ctx = _make_context(df, window=window, moon=moon)

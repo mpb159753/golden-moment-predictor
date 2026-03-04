@@ -2,7 +2,7 @@ id: jianziwan_pass
 name: 剪子弯山垭口
 scenic_area: 剪子弯山
 groups:
-  - 318
+  - "318"
 location:
   lat: 30.021268
   lon: 100.796678

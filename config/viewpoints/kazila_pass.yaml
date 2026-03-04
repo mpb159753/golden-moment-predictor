@@ -2,7 +2,7 @@ id: kazila_pass
 name: 卡子拉山垭口
 scenic_area: 卡子拉山
 groups:
-  - 318
+  - "318"
 location:
   lat: 30.148019
   lon: 100.647116

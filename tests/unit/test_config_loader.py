@@ -48,7 +48,7 @@ def engine_config_yaml() -> dict:
         },
         "scoring": {
             "golden_mountain": {
-                "trigger": {"max_cloud_cover": 80},
+                "trigger": {"max_cloud_cover": 65},
                 "weights": {
                     "light_path": 35,
                     "target_visible": 40,

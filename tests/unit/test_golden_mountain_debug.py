@@ -13,7 +13,7 @@ from gmp.scoring.plugins.golden_mountain import GoldenMountainPlugin
 # ==================== helpers ====================
 
 DEFAULT_CONFIG: dict = {
-    "trigger": {"max_cloud_cover": 80},
+    "trigger": {"max_cloud_cover": 65},
     "weights": {
         "light_path": 35,
         "target_visible": 40,
@@ -133,14 +133,14 @@ class TestDebugScoreRejected:
         assert result["steps"][0]["passed"] is False
 
     def test_rejected_high_cloud(self):
-        """总云量 ≥ 80% → rejected"""
+        """总云量 ≥ 65% → rejected"""
         plugin = GoldenMountainPlugin("sunrise_golden_mountain", DEFAULT_CONFIG)
-        ctx = _ctx(local_weather=_local_weather(cloud_cover=85.0))
+        ctx = _ctx(local_weather=_local_weather(cloud_cover=70.0))
         result = plugin.debug_score(ctx)
 
         assert result["decision"] == "rejected"
-        assert "85" in result["reason"]
-        assert "80" in result["reason"]
+        assert "70" in result["reason"]
+        assert "65" in result["reason"]
         # 应有 astro_check(passed) + cloud_trigger(failed)
         assert len(result["steps"]) == 2
         assert result["steps"][0]["passed"] is True

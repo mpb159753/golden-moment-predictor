@@ -13,7 +13,7 @@ from gmp.scoring.models import DataContext, DataRequirement
 
 DEFAULT_CONFIG: dict = {
     "trigger": {
-        "max_cloud_cover": 80,
+        "max_cloud_cover": 65,
     },
     "weights": {
         "light_path": 35,
@@ -205,11 +205,11 @@ class TestGoldenMountainTrigger:
     """触发判定"""
 
     def test_high_cloud_cover_returns_none(self):
-        """总云量 ≥ 80% → None"""
+        """总云量 ≥ 65% → None"""
         from gmp.scoring.plugins.golden_mountain import GoldenMountainPlugin
 
         plugin = GoldenMountainPlugin("sunrise_golden_mountain", DEFAULT_CONFIG)
-        ctx = _context(local_weather=_local_weather(cloud_cover=80.0))
+        ctx = _context(local_weather=_local_weather(cloud_cover=65.0))
         result = plugin.score(ctx)
         assert result is None
 

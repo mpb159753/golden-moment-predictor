@@ -34,7 +34,7 @@ light_path:
 scoring:
   golden_mountain:
     trigger:
-      max_cloud_cover: 80          # 总云量 ≥ 此值时返回 None (未触发)
+      max_cloud_cover: 65          # 总云量 ≥ 此值时返回 None (未触发)
     weights:
       light_path: 35
       target_visible: 40
@@ -87,13 +87,13 @@ scoring:
 
   clear_sky:
     trigger:
-      max_cloud_cover: 80
+      max_cloud_cover: 50
     weights:
       cloud_cover: 50
       precipitation: 25
       visibility: 25
     thresholds:
-      cloud_pct: [10, 30, 50, 70]
+      cloud_pct: [10, 20, 30, 50]
       cloud_scores: [50, 40, 25, 10, 0]
       precip_pct: [10, 30, 50]
       precip_scores: [25, 20, 10, 0]
@@ -102,12 +102,12 @@ scoring:
 
   stargazing:
     trigger:
-      max_night_cloud_cover: 70
+      max_night_cloud_cover: 45
     base_optimal: 100
     base_good: 90
     base_partial: 70
-    base_poor: 100
-    cloud_penalty_factor: 0.8
+    base_poor: 50
+    cloud_penalty_factor: 1.5
     wind_thresholds:
       severe: {speed: 40, penalty: 30}
       moderate: {speed: 20, penalty: 10}
