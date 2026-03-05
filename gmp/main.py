@@ -37,7 +37,7 @@ from gmp.scoring.plugins.clear_sky import ClearSkyPlugin
 from gmp.scoring.plugins.cloud_sea import CloudSeaPlugin
 from gmp.scoring.plugins.frost import FrostPlugin
 from gmp.scoring.plugins.golden_mountain import GoldenMountainPlugin
-from gmp.scoring.plugins.ice_icicle import IceIciclePlugin
+# from gmp.scoring.plugins.ice_icicle import IceIciclePlugin  # 暂停
 from gmp.scoring.plugins.snow_tree import SnowTreePlugin
 from gmp.scoring.plugins.stargazing import StargazingPlugin
 
@@ -74,7 +74,7 @@ def _register_plugins(engine: ScoreEngine, config: ConfigManager) -> None:
     engine.register(FrostPlugin(config.get_plugin_config("frost")))
     engine.register(ClearSkyPlugin(config.get_plugin_config("clear_sky")))
     engine.register(SnowTreePlugin(config.get_plugin_config("snow_tree")))
-    engine.register(IceIciclePlugin(config.get_plugin_config("ice_icicle")))
+    # engine.register(IceIciclePlugin(config.get_plugin_config("ice_icicle")))  # 暂停
 
 
 def _create_core_components(

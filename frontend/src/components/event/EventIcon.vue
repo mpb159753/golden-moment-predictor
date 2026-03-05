@@ -39,7 +39,7 @@ const EVENT_CONFIG = {
   cloud_sea:               { color: '#87CEEB', name: '云海',     icon: CloudSea },
   stargazing:              { color: '#4A0E8F', name: '观星',     icon: Stargazing },
   frost:                   { color: '#B0E0E6', name: '雾凇',     icon: Frost },
-  snow_tree:               { color: '#E0E8EF', name: '树挂积雪', icon: SnowTree },
+  snow_tree:               { color: '#E0E8EF', name: '赏雪', icon: SnowTree },
   ice_icicle:              { color: '#ADD8E6', name: '冰挂',     icon: IceIcicle },
   clear_sky:               { color: '#FFB300', name: '晴天',     icon: ClearSky },
 }

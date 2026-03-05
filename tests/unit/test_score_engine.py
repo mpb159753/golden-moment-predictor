@@ -209,12 +209,7 @@ class TestUniversalCapabilityInjection:
                 requirement=DataRequirement(season_months=[10, 11, 12, 1, 2]),
             )
         )
-        self.engine.register(
-            StubPlugin(
-                "ice_icicle",
-                requirement=DataRequirement(season_months=[11, 12, 1, 2]),
-            )
-        )
+
 
     def test_sunset_only_viewpoint_gets_universal_plugins(self):
         """仅配置 sunset 的 viewpoint → 自动包含 clear_sky, stargazing, frost 等通用 Plugin"""
@@ -230,7 +225,7 @@ class TestUniversalCapabilityInjection:
         assert "stargazing" in types
         assert "frost" in types
         assert "snow_tree" in types
-        assert "ice_icicle" in types
+
         # 不应自动注入地形层
         assert "sunrise_golden_mountain" not in types
         assert "cloud_sea" not in types
@@ -250,7 +245,7 @@ class TestUniversalCapabilityInjection:
         active = self.engine.filter_active_plugins(
             capabilities=[
                 "sunrise", "sunset", "cloud_sea",
-                "clear_sky", "stargazing", "frost", "snow_tree", "ice_icicle",
+                "clear_sky", "stargazing", "frost", "snow_tree",
             ],
             target_date=date(2026, 1, 15),
         )
@@ -261,5 +256,5 @@ class TestUniversalCapabilityInjection:
         assert set(types) == {
             "sunrise_golden_mountain", "sunset_golden_mountain",
             "cloud_sea", "clear_sky", "stargazing",
-            "frost", "snow_tree", "ice_icicle",
+            "frost", "snow_tree",
         }

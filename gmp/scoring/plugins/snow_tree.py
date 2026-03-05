@@ -1,7 +1,7 @@
-"""gmp/scoring/plugins/snow_tree.py — SnowTreePlugin 树挂积雪评分
+"""gmp/scoring/plugins/snow_tree.py — SnowTreePlugin 赏雪评分
 
-基于过去 24h 本地天气数据，分析近期降雪量、降雪持续时长、冰冻时间等
-派生指标，评估树挂积雪的观赏条件。
+基于过去 48h 本地天气数据，分析近期降雪量、降雪持续时长、冰冻时间等
+派生指标，评估赏雪的观赏条件。
 
 评分模型包含双触发路径（常规/留存）和多项扣分机制。
 """
@@ -13,7 +13,7 @@ from gmp.scoring.models import DataContext, DataRequirement
 
 
 class SnowTreePlugin:
-    """树挂积雪评分器"""
+    """赏雪评分器"""
 
     def __init__(self, config: dict) -> None:
         self._config = config
@@ -24,11 +24,11 @@ class SnowTreePlugin:
 
     @property
     def display_name(self) -> str:
-        return "树挂积雪"
+        return "赏雪"
 
     @property
     def data_requirement(self) -> DataRequirement:
-        return DataRequirement(past_hours=self._config.get("past_hours", 24))
+        return DataRequirement(past_hours=self._config.get("past_hours", 48))
 
     def dimensions(self) -> list[str]:
         return ["snow_signal", "clear_weather", "stability"]
@@ -221,11 +221,9 @@ class SnowTreePlugin:
         """积雪信号得分"""
         thresholds = self._config["thresholds"]["snow_signal"]
         snowfall = metrics["recent_snowfall_24h_cm"]
-        duration = metrics["snowfall_duration_h_24h"]
         for t in thresholds:
             sf = t.get("snowfall", 0)
-            dur = t.get("duration", 0)
-            if snowfall >= sf and duration >= dur:
+            if snowfall >= sf:
                 return t["score"]
         return 0
 

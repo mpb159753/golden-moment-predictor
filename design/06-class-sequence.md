@@ -468,7 +468,7 @@ sequenceDiagram
 
 ---
 
-## 6.9 树挂积雪评分流程 (留存场景)
+## 6.9 赏雪评分流程 (留存场景)
 
 ```mermaid
 sequenceDiagram

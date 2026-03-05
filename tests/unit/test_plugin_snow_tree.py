@@ -18,9 +18,9 @@ def _make_config(overrides: dict | None = None) -> dict:
     """构造标准测试配置（对应 engine_config.yaml → scoring.snow_tree）"""
     cfg = {
         "trigger": {
-            "recent_path": {"min_snowfall_12h_cm": 0.2},
+            "recent_path": {"min_snowfall_12h_cm": 1.0},
             "retention_path": {
-                "min_snowfall_24h_cm": 1.5,
+                "min_snowfall_24h_cm": 2.0,
                 "min_duration_h": 3,
                 "min_subzero_hours": 8,
                 "max_temp": 1.5,
@@ -29,10 +29,11 @@ def _make_config(overrides: dict | None = None) -> dict:
         "weights": {"snow_signal": 60, "clear_weather": 20, "stability": 20},
         "thresholds": {
             "snow_signal": [
-                {"snowfall": 2.5, "duration": 4, "score": 60},
-                {"snowfall": 1.5, "duration": 3, "score": 52},
-                {"snowfall": 0.8, "duration": 2, "score": 44},
-                {"snowfall": 0.2, "duration": 0, "score": 32},
+                {"snowfall": 10.0, "score": 60},
+                {"snowfall": 6.0, "score": 52},
+                {"snowfall": 4.0, "score": 44},
+                {"snowfall": 2.0, "score": 34},
+                {"snowfall": 1.0, "score": 24},
             ],
             "clear_weather": [
                 {"weather_code": [0], "max_cloud": 20, "score": 20},
@@ -68,7 +69,7 @@ def _make_config(overrides: dict | None = None) -> dict:
             "wind_severe_deduction": 50,
             "wind_moderate_deduction": 20,
         },
-        "past_hours": 24,
+        "past_hours": 48,
         "sunshine": {
             "cloud_thresholds": [10, 30],
             "weights": [2.0, 1.0],
@@ -156,13 +157,13 @@ class TestSnowTreePluginProperties:
         from gmp.scoring.plugins.snow_tree import SnowTreePlugin
 
         plugin = SnowTreePlugin(_make_config())
-        assert plugin.display_name == "树挂积雪"
+        assert plugin.display_name == "赏雪"
 
     def test_data_requirement_past_hours(self):
         from gmp.scoring.plugins.snow_tree import SnowTreePlugin
 
         plugin = SnowTreePlugin(_make_config())
-        assert plugin.data_requirement.past_hours == 24
+        assert plugin.data_requirement.past_hours == 48
 
     def test_dimensions(self):
         from gmp.scoring.plugins.snow_tree import SnowTreePlugin
@@ -193,7 +194,7 @@ class TestSnowTreeRecentPath:
     """常规路径：近 12h 降雪 + 当前晴朗"""
 
     def test_recent_snow_clear_sky_high_score(self):
-        """近 12h 雪 0.5cm, 距今 6h, 晴 → 触发常规路径, score≥70"""
+        """近 12h 雪 2.0cm, 距今 6h, 晴 → 触发常规路径, score≥50"""
         from gmp.scoring.plugins.snow_tree import SnowTreePlugin
 
         plugin = SnowTreePlugin(_make_config())
@@ -201,10 +202,10 @@ class TestSnowTreeRecentPath:
         # 构造 48h 数据：最后 12h 中有降雪
         df = _make_weather_df(hours=48, snowfall=0.0, base_temp=-5.0)
 
-        # 在 hour 36-41 (距当前 12h-7h 前) 设置降雪 ~0.5cm
-        # 总共 6h，每小时 0.1cm → 0.6cm (>0.2 触发)
+        # 在 hour 36-41 (距当前 12h-7h 前) 设置降雪 ~2.0cm
+        # 总共 6h，每小时 ~0.34cm → 2.04cm (>=1.0 触发)
         for i in range(36, 42):
-            df.loc[i, "snowfall"] = 0.1
+            df.loc[i, "snowfall"] = 0.34
 
         # hour 42-46: 阴天（避免日照扣分）
         for i in range(42, 47):
@@ -222,15 +223,15 @@ class TestSnowTreeRecentPath:
 
         assert result is not None
         assert result.event_type == "snow_tree"
-        # snow_signal=32(0.6cm) + clear=20 + stable=20 - age=2 = 70
-        assert result.total_score >= 70
+        # snow_signal=34(2.04cm>=2.0) + clear=20 + stable=20 - age=2 = 72
+        assert result.total_score >= 50
 
 
 class TestSnowTreeRetentionPath:
     """留存路径：大雪 + 持续低温 + 暴晒"""
 
     def test_heavy_snow_with_sun_exposure(self):
-        """大雪 3cm, 距今 19h, 暴晒 8h → 触发留存路径, score≈46"""
+        """大雪 3cm, 距今 19h, 暴晒 8h → 触发留存路径, score 在合理范围"""
         from gmp.scoring.plugins.snow_tree import SnowTreePlugin
 
         plugin = SnowTreePlugin(_make_config())
@@ -268,20 +269,20 @@ class TestSnowTreeRetentionPath:
 
         assert result is not None
         assert result.event_type == "snow_tree"
-        # 积雪信号 60 + 晴朗 20 + 稳定 20 - age_ded - temp_ded - sun_ded
-        # score should be around 46 (允许一定误差由具体实现)
-        assert 30 <= result.total_score <= 60
+        # 新阈值下 3cm→snow_signal=34 + clear=20 + stable=20 - age_ded(12) - temp_ded(2) - sun_ded(30)
+        # = 34+20+20-12-2-30 = 30
+        assert 10 <= result.total_score <= 50
 
 
 class TestSnowTreeDeductions:
     """各扣分项独立验证"""
 
     def _base_recent_snow_df(self) -> pd.DataFrame:
-        """基础数据：近 12h 有 2.5cm 降雪，4h duration，晴，微风，极冷"""
+        """基础数据：近 12h 有 10cm 降雪，4h duration，晴，微风，极冷"""
         df = _make_weather_df(hours=48, snowfall=0.0, base_temp=-10.0)
-        # hour 42-45: 2.5cm 降雪 (每小时0.625cm, 4h duration)
+        # hour 42-45: 10cm 降雪 (每小时2.5cm, 4h duration)
         for i in range(42, 46):
-            df.loc[i, "snowfall"] = 0.625
+            df.loc[i, "snowfall"] = 2.5
         # hour 46-47: 晴朗
         for i in range(46, 48):
             df.loc[i, "weather_code"] = 0

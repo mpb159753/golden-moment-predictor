@@ -26,6 +26,6 @@ export const EVENT_NAMES = {
     cloud_sea: '云海',
     stargazing: '观星',
     frost: '雾凇',
-    snow_tree: '树挂积雪',
+    snow_tree: '赏雪',
     ice_icicle: '冰挂',
 }

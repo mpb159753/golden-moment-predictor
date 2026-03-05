@@ -16,7 +16,7 @@ _DISPLAY_NAMES: dict[str, str] = {
     "stargazing": "观星",
     "frost": "雾凇",
     "clear_sky": "晴天",
-    "snow_tree": "树挂积雪",
+    "snow_tree": "赏雪",
     "ice_icicle": "冰挂",
 }
 

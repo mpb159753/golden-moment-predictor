@@ -24,7 +24,7 @@ _CAPABILITY_EVENT_MAP: dict[str, list[str]] = {
     "cloud_sea": ["cloud_sea"],
     "frost": ["frost"],
     "snow_tree": ["snow_tree"],
-    "ice_icicle": ["ice_icicle"],
+    # "ice_icicle": ["ice_icicle"],  # 暂停：评分模型待重新设计
 }
 
 # 通用能力 — 所有观景台自动注入，无需手动配置
@@ -33,7 +33,7 @@ _UNIVERSAL_CAPABILITIES: list[str] = [
     "stargazing",   # 观星（基底）
     "frost",        # 雾凇（通用）
     "snow_tree",    # 雪挂树（通用）
-    "ice_icicle",   # 冰挂（通用）
+    # "ice_icicle",   # 冰挂（通用）— 暂停
 ]
 
 

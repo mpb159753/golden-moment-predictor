@@ -393,7 +393,7 @@ archive/                                  ← 历史预测归档
 | `cloud_sea` | 云海 | 低云海景观 |
 | `stargazing` | 观星 | 夜间观星窗口 |
 | `frost` | 雾凇 | 低温高湿凝华 |
-| `snow_tree` | 树挂积雪 | 降雪后树冠覆雪 |
+| `snow_tree` | 赏雪 | 降雪后树冠覆雪 |
 | `ice_icicle` | 冰挂 | 水源冻结成冰帘 |
 
 ### `status`

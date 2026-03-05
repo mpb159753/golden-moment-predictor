@@ -115,9 +115,9 @@ scoring:
   snow_tree:
     trigger:
       recent_path:
-        min_snowfall_12h_cm: 0.2
+        min_snowfall_12h_cm: 1.0
       retention_path:
-        min_snowfall_24h_cm: 1.5
+        min_snowfall_24h_cm: 2.0
         min_duration_h: 3
         min_subzero_hours: 8
         max_temp: 1.5
@@ -127,10 +127,11 @@ scoring:
       stability: 20
     thresholds:
       snow_signal:
-        - {snowfall: 2.5, duration: 4, score: 60}
-        - {snowfall: 1.5, duration: 3, score: 52}
-        - {snowfall: 0.8, duration: 2, score: 44}
-        - {snowfall: 0.2, duration: 0, score: 32}
+        - {snowfall: 10.0, score: 60}
+        - {snowfall: 6.0, score: 52}
+        - {snowfall: 4.0, score: 44}
+        - {snowfall: 2.0, score: 34}
+        - {snowfall: 1.0, score: 24}
       clear_weather:
         - {weather_code: [0], max_cloud: 20, score: 20}
         - {weather_code: [1, 2], max_cloud: 45, score: 16}
@@ -160,7 +161,7 @@ scoring:
       wind_severe_deduction: 20
       wind_moderate_threshold: 30
       wind_moderate_deduction: 10
-    past_hours: 24
+    past_hours: 48
 
   ice_icicle:
     trigger:

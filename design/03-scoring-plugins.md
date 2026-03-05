@@ -195,7 +195,7 @@ def run_day(self, viewpoint: Viewpoint, date: date,
 | StargazingPlugin | `stargazing` | ❌ | ❌ | ✅ | 0 | `None` (全年) | 夜间总云量 < 70% |
 | CloudSeaPlugin | `cloud_sea` | ❌ | ❌ | ❌ | 0 | `None` (全年) | 云底高度 < 站点海拔 |
 | FrostPlugin | `frost` | ❌ | ❌ | ❌ | 0 | `None` (全年) | 温度 < 2°C |
-| SnowTreePlugin | `snow_tree` | ❌ | ❌ | ❌ | **24** | `None` (全年, 预留) | 近12小时有降雪，或近24小时大雪+持续低温留存，且当前晴朗 |
+| SnowTreePlugin | `snow_tree` | ❌ | ❌ | ❌ | **48** | `None` (全年, 预留) | 近12小时降雪>=1.0cm，或近24小时大雪>=2.0cm+持续低温留存 |
 | IceIciclePlugin | `ice_icicle` | ❌ | ❌ | ❌ | **24** | `None` (全年, 预留) | 近12小时有有效水源并已冻结，或近24小时强水源+持续低温留存 |
 
 ---
@@ -463,61 +463,53 @@ frost_score = {
 
 ---
 
-## 3.9 SnowTreePlugin — 树挂积雪
+## 3.9 SnowTreePlugin — 赏雪
 
 ### 基本信息
 
 ```python
 class SnowTreePlugin:
     event_type = "snow_tree"
-    display_name = "树挂积雪"
-    data_requirement = DataRequirement(past_hours=24)  # 需要过去24h本地天气
+    display_name = "赏雪"
+    data_requirement = DataRequirement(past_hours=48)  # 需要过去48h本地天气
 ```
 
 ### 数据来源约束（Open-Meteo）
 
-`SnowTreePlugin` 不依赖不存在的 `tree_snow_present` 字段，而是基于可用天气字段推断“树上仍有可见积雪”：
+`SnowTreePlugin` 不依赖不存在的 `tree_snow_present` 字段，而是基于可用天气字段推断"树上仍有可见积雪"：
 
-- `hourly.snowfall`：过去每小时降雪量（cm）
+- `hourly.snowfall`：前一个小时的降雪量（cm），逐小时独立计量，代码内求和得到累计值
 - `hourly.temperature_2m`：降雪期与降雪后的低温保持能力
 - `hourly.weather_code` + `hourly.cloud_cover` + `hourly.precipitation_probability`：当前是否晴朗
 - `hourly.wind_speed_10m`：树冠积雪稳定性
-- `past_hours`：建议至少拉取过去 24 小时序列，用于计算"距今时间 + 留存条件"
+- `past_hours`：拉取过去 48 小时序列，确保可捕获 1-2 天前的降雪事件用于留存判定
 
 > [!IMPORTANT]
 > **past_hours 数据获取策略**:
-> - **D+2 ~ D+N**: Open-Meteo Forecast API 返回逐小时数据 (D+1 00:00 ~ D+N 00:00)，D+2 的 past_24h = D+1 的 00:00-23:00 数据，已在 API 响应中
-> - **D+1**: past_24h = 今天 00:00 之前的数据：
+> - **D+2 ~ D+N**: Open-Meteo Forecast API 返回逐小时数据 (D+1 00:00 ~ D+N 00:00)，D+2 的 past 数据 = D+1 的 00:00-23:00 数据，已在 API 响应中
+> - **D+1**: past_48h 需要今天及昨天的数据：
 >   1. 优先从 SQLite `weather_cache` 查询（之前运行可能已缓存）
->   2. 若无缓存，通过 Forecast API `past_days=1` 参数获取”
+>   2. 若无缓存，通过 Forecast API `past_days=2` 参数获取
 
 派生指标（Plugin 内部计算）：
 
 - `recent_snowfall_12h_cm`
 - `recent_snowfall_24h_cm`
 - `hours_since_last_snow`
-- `snowfall_duration_h_24h`（24h 内降雪小时数）
 - `subzero_hours_since_last_snow`
 - `max_temp_since_last_snow`
-- `max_wind_since_last_snow` (新增)：降雪后出现过的最大阵风
-- `sunshine_hours_since_snow` (新增)：降雪后经历的日照时数（按云量加权）
+- `max_wind_since_last_snow`：降雪后出现过的最大阵风
+- `sunshine_score_since_snow`：降雪后经历的日照积分（按云量加权）
 
 ### 触发条件 (内置于 score())
 
-`score()` 内部首先从 `DataContext.local_weather` 计算以下派生指标，再判定触发条件。
+`score()` 内部首先从 `DataContext.local_weather` 计算以上派生指标，再判定触发条件。
 不满足时返回 `None`。
 
-**派生指标计算** (Plugin 内部):
-- `recent_snowfall_12h_cm` / `recent_snowfall_24h_cm`
-- `hours_since_last_snow`
-- `snowfall_duration_h_24h`
-- `subzero_hours_since_last_snow` / `max_temp_since_last_snow`
-- `max_wind_since_last_snow` / `sunshine_hours_since_snow`
-
-**触发路径** (降雪门槛适度放松):
-- **常规路径**: 近 12 小时有雪 (≥0.2cm) 且当前晴朗
-- **留存路径**: 近 24 小时大雪 (≥1.5cm) + 降雪时段≥3h + 持续低温≥8h + 最高温≤1.5°C
-- 未满足任一路径 → 返回 `None`
+**触发路径**:
+- **常规路径**: 近 12 小时累计降雪 >= 1.0cm
+- **留存路径**: 近 24 小时累计降雪 >= 2.0cm + 降雪时段 >= 3h + 持续低温 >= 8h + 最高温 <= 1.5 C
+- 未满足任一路径 -> 返回 `None`
 
 ### 评分模型
 
@@ -525,47 +517,70 @@ $$ Score = Score_{snow} + Score_{clear} + Score_{stable} - Deduction_{age} - Ded
 
 | 维度 | 满分 | 评分阶梯 |
 |------|------|---------|
-| **积雪信号** ($Score_{snow}$) | 60 | `recent_snowfall_24h_cm ≥2.5` 且 `snowfall_duration_h_24h≥4`: 60 · ≥1.5且≥3: 52 · ≥0.8且≥2: 44 · ≥0.2: 32 |
-| **晴朗程度** ($Score_{clear}$) | 20 | `weather_code=0`且云量≤20%: 20 · `weather_code∈{1,2}`且云量≤45%: 16 · 其他: 8 |
-| **稳定保持** ($Score_{stable}$) | 20 | **Current Wind** <12km/h: 20 · <20km/h: 14 · ≥20km/h: 8 (拍摄时刻风速) |
+| **积雪信号** ($Score_{snow}$) | 60 | `recent_snowfall_24h_cm >=10.0`: 60 / >=6.0: 52 / >=4.0: 44 / >=2.0: 34 / >=1.0: 24 |
+| **晴朗程度** ($Score_{clear}$) | 20 | `weather_code=0` 且云量<=20%: 20 / `weather_code in {1,2}` 且云量<=45%: 16 / 其他: 8 |
+| **稳定保持** ($Score_{stable}$) | 20 | **Current Wind** <12km/h: 20 / <20km/h: 14 / >=20km/h: 8 (拍摄时刻风速) |
+
+> [!NOTE]
+> **积雪信号不再使用 `duration` 条件**。Open-Meteo 的 `snowfall` 是逐小时独立采样值，代码内对 24h 求和得到累计降雪量。降雪量与持续时长高度相关（累计量越大，持续时间必然越长），单独设置 `duration` 条件属于冗余约束。
 
 | 扣分项 | 扣分规则 |
 |--------|---------|
-| **降雪距今扣分** ($Deduction_{age}$) | `hours_since_last_snow` ≤3h: 0 · ≤8h: 2 · ≤12h: 5 · ≤16h: 8 · ≤20h: 12 · >20h: 20 |
-| **升温融化扣分** ($Deduction_{temp}$) | `max_temp_since_last_snow` ≤-2°C: 0 · ≤-0.5°C: 2 · ≤1°C: 6 · ≤2.5°C: 12 · >2.5°C: 22 |
-| **累积日照扣分** ($Deduction_{sun}$) | **Accumulated Sun Energy**: 每小时晴朗(Clouds<30%)+1分, 强晒(Clouds<10%)+2分。累计 >2: -5分, >5: -15分, >8: -30分 (烈日杀手) |
-| **历史大风扣分** ($Deduction_{wind}$) | **Max Wind Since Snow**: >30km/h (劲风): -20分 · >50km/h (狂风): -50分 (直接吹秃) |
+| **降雪距今扣分** ($Deduction_{age}$) | `hours_since_last_snow` <=3h: 0 / <=8h: 2 / <=12h: 5 / <=16h: 8 / <=20h: 12 / >20h: 20 |
+| **升温融化扣分** ($Deduction_{temp}$) | `max_temp_since_last_snow` <=-2 C: 0 / <=-0.5 C: 2 / <=1 C: 6 / <=2.5 C: 12 / >2.5 C: 22 |
+| **累积日照扣分** ($Deduction_{sun}$) | 每小时晴朗(Clouds<30%)+1分, 强晒(Clouds<10%)+2分。累计 >2: -5分 / >5: -15分 / >8: -30分 |
+| **历史大风扣分** ($Deduction_{wind}$) | **Max Wind Since Snow**: >30km/h (劲风): -20分 / >50km/h (狂风): -50分 |
 
 > [!TIP]
-> **树挂积雪留存逻辑**:
-> 1. **日照杀伤**: 即使气温 < 0°C，高原强烈的紫外线直射也会迅速融化树梢积雪。晴朗对于“拍照”是加分，但对“积雪留存”是重大减分。
+> **赏雪留存逻辑**:
+> 1. **日照杀伤**: 即使气温 < 0 C，高原强烈的紫外线直射也会迅速融化树梢积雪。晴朗对于"拍照"是加分，但对"积雪留存"是重大减分。
 > 2. **风力摧毁**: 30km/h (5级风) 是分界线，新雪很松，一阵大风即可吹散。此处采用 `max_wind_since_last_snow` 而非当前风速。
 
 ### 评分示例
 
-**场景：昨晚20:00停雪，今日15:00（距停雪19h），全天暴晒，气温回升至2°C**
+**场景 1：昨晚大雪 10cm，今晨出发（距停雪 8h），阴天、极寒、微风**
+
+```python
+snow_tree_score = {
+    "event_type": "snow_tree",
+    "time_window": "06:00 - 16:00",
+    "score_breakdown": {
+        "snow_signal":   {"score": 60, "max": 60, "detail": "24h累计降雪10cm"},
+        "clear_weather": {"score":  8, "max": 20, "detail": "阴天"},
+        "stability":     {"score": 20, "max": 20, "detail": "当前微风 5km/h"},
+        "age_deduction": {"score": -2, "max": 0, "detail": "距停雪8h"},
+        "temp_deduction":{"score":  0, "max": 0, "detail": "最高温-3 C，完美保持"},
+        "sun_deduction": {"score":  0, "max": 0, "detail": "阴天无日照"},
+        "wind_deduction":{"score":  0, "max": 0, "detail": "历史最大风速 8km/h"},
+    },
+    "total_score": 86, # 60+8+20 -2 = 86
+    "status": "Recommended",
+    "confidence": "High",
+    "note": "大雪刚停不久，极寒+阴天+无风，积雪完美保持，银装素裹必冲",
+}
+```
+
+**场景 2：前天大雪 10cm，今日下午（距停雪 30h），全天暴晒，气温回升至 2 C**
 
 ```python
 snow_tree_score = {
     "event_type": "snow_tree",
     "time_window": "15:00 - 16:00",
     "score_breakdown": {
-        "snow_signal":   {"score": 60, "max": 60, "detail": "昨晚大雪累计3.0cm"},
+        "snow_signal":   {"score": 60, "max": 60, "detail": "48h内大雪累计10cm"},
         "clear_weather": {"score": 20, "max": 20, "detail": "当前万里无云"},
         "stability":     {"score": 20, "max": 20, "detail": "当前微风 5km/h"},
-        "age_deduction": {"score":-12, "max": 0, "detail": "距停雪19h"},
-        "temp_deduction":{"score":-12, "max": 0, "detail": "最高温曾达 2.1°C"},
+        "age_deduction": {"score":-20, "max": 0, "detail": "距停雪30h"},
+        "temp_deduction":{"score":-12, "max": 0, "detail": "最高温曾达 2.1 C"},
         "sun_deduction": {"score":-30, "max": 0, "detail": "累积暴晒8小时，严重融化"},
         "wind_deduction":{"score":  0, "max": 0, "detail": "历史最大风速 15km/h"},
     },
-    "total_score": 46, # 60+20+20 -12-12-30 = 46
-    "status": "Not Recommended", 
+    "total_score": 38, # 60+20+20 -20-12-30 = 38
+    "status": "Not Recommended",
     "confidence": "High",
-    "note": "虽然从不下雪到现在一直晴朗，但长时间暴晒加微热，树挂大概率已无存",
+    "note": "虽是大雪级别，但长时间暴晒加微热，积雪大概率已严重退化",
 }
-```
 
----
 
 ## 3.10 IceIciclePlugin — 冰挂
 
@@ -603,7 +618,7 @@ class IceIciclePlugin:
 
 ### 触发条件
 
-冰挂触发采用“常规 + 留存”双路径，与树挂积雪一致地放宽到 12 小时以上可留存场景。
+冰挂触发采用“常规 + 留存”双路径，与赏雪一致地放宽到 12 小时以上可留存场景。
 
 
 ### 评分模型
