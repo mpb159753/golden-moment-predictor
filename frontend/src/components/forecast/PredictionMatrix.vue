@@ -61,6 +61,21 @@
                 </tr>
             </tfoot>
         </table>
+        <!-- 颜色图例 -->
+        <div class="score-legend">
+            <span class="legend-item">
+                <span class="legend-swatch swatch-star"></span>强烈推荐
+            </span>
+            <span class="legend-item">
+                <span class="legend-swatch swatch-good"></span>值得关注
+            </span>
+            <span class="legend-item">
+                <span class="legend-swatch swatch-mild"></span>一般
+            </span>
+            <span class="legend-item">
+                <span class="legend-swatch swatch-poor"></span>不推荐
+            </span>
+        </div>
         <!-- 品牌水印 -->
         <div class="watermark">数据来源：专业气象预报模型 · 川西观景雷达</div>
     </div>
@@ -109,14 +124,14 @@ function formatGeneratedAt(iso) {
 
 /**
  * 分数色阶（暖橙日落主题）
- * score >= 80  → score-star   (金橙/琥珀，强烈推荐)
- * score >= 50  → score-good   (温杏/暖黄，推荐)
+ * score >= 85  → score-star   (金橙/琥珀，强烈推荐)
+ * score >= 65  → score-good   (温杏/暖黄，值得关注)
  * score >= 25  → score-mild   (浅米色，一般)
  * score < 25   → score-poor   (纯白/发灰，不推荐)
  */
 function getScoreClass(score) {
-    if (score >= 80) return 'score-star'
-    if (score >= 50) return 'score-good'
+    if (score >= 85) return 'score-star'
+    if (score >= 65) return 'score-good'
     if (score >= 25) return 'score-mild'
     return 'score-poor'
 }
@@ -262,9 +277,9 @@ table {
 }
 
 /* ══ 评分色阶（暖橙日落主题）══
-   ★ ≥80: 饱和金橙，字白，强烈推荐
-   ✦ 50-79: 温杏色/淡橙黄，深褐字，值得关注
-   - 25-49: 极淡米色，灰字，存在但不突出
+   ★ ≥85: 饱和金橙，字白，强烈推荐
+   ✦ 65-84: 温杏色/淡橙黄，深褐字，值得关注
+   - 25-64: 极淡米色，灰字，存在但不突出
    · <25: 纯白/接近纯白，浅灰字，视觉静音
 */
 .score-star {
@@ -329,6 +344,39 @@ table {
     border-top: 1px solid #F3F4F6;
     background: #FFFFFF;
 }
+
+/* ── 颜色图例 ── */
+.score-legend {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 12px;
+    background: #FFFFFF;
+    border-top: 1px solid #F3F4F6;
+    font-size: 11px;
+    color: #6B7280;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.legend-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.swatch-star { background: #FF8C00; }
+.swatch-good { background: #FFD580; }
+.swatch-mild { background: #FFF3E0; }
+.swatch-poor { background: #FAFAFA; }
 
 /* ── 行间色 ── */
 .row-even .viewpoint-name {

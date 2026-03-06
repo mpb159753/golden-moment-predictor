@@ -63,4 +63,28 @@ describe('PredictionMatrix', () => {
         })
         expect(wrapper.text()).toContain('2/21')
     })
+
+    it('renders score legend with all four levels', () => {
+        const wrapper = mount(PredictionMatrix, {
+            props: { group: mockGroup, days: ['2026-02-21'], showHeader: true, showFooter: false },
+        })
+        const legend = wrapper.find('.score-legend')
+        expect(legend.exists()).toBe(true)
+        expect(legend.text()).toContain('强烈推荐')
+        expect(legend.text()).toContain('值得关注')
+        expect(legend.text()).toContain('一般')
+        expect(legend.text()).toContain('不推荐')
+    })
+
+    it('renders four legend swatches', () => {
+        const wrapper = mount(PredictionMatrix, {
+            props: { group: mockGroup, days: ['2026-02-21'], showHeader: true, showFooter: false },
+        })
+        const swatches = wrapper.findAll('.legend-swatch')
+        expect(swatches).toHaveLength(4)
+        expect(swatches[0].classes()).toContain('swatch-star')
+        expect(swatches[1].classes()).toContain('swatch-good')
+        expect(swatches[2].classes()).toContain('swatch-mild')
+        expect(swatches[3].classes()).toContain('swatch-poor')
+    })
 })
