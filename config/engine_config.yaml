@@ -66,7 +66,9 @@ scoring:
 
   frost:
     trigger:
-      max_temperature: 2.0         # 温度 ≥ 此值时返回 None (未触发)
+      max_temperature: -2.0            # 从 2.0 降至 -2.0
+      min_humidity: 90                  # 新增：相对湿度 ≥ 90% 才触发
+    season_months: [11, 12, 1, 2, 3]   # 新增：仅冬季和早春
     weights:
       temperature: 40
       moisture: 30
@@ -74,10 +76,9 @@ scoring:
       cloud: 10
     thresholds:
       temp_ranges:
-        optimal: {range: [-5, 0], score: 40}
-        good: {range: [-10, -5], score: 30}
-        acceptable: {range: [0, 2], score: 25}
-        bad: {range: [-999, -10], score: 15}
+        optimal: {range: [-8, -2], score: 40}      # 粒状雾凇最佳区间
+        good: {range: [-15, -8], score: 35}         # 晶状雾凇区间
+        extreme: {range: [-999, -15], score: 25}    # 极冷
       visibility_km: [5, 10, 20]
       wind_speed: [3, 5, 10]
       cloud_pct:

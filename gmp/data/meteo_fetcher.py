@@ -25,6 +25,7 @@ _CST = timezone(timedelta(hours=8))
 # Open-Meteo API 需要请求的 hourly 字段
 _HOURLY_FIELDS = (
     "temperature_2m,"
+    "relative_humidity_2m,"
     "cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,"
     "cloud_base,"
     "precipitation_probability,"
@@ -46,6 +47,7 @@ _COLUMNS = [
     "forecast_date",
     "forecast_hour",
     "temperature_2m",
+    "relative_humidity_2m",
     "cloud_cover_total",
     "cloud_cover_low",
     "cloud_cover_medium",
@@ -301,6 +303,7 @@ class MeteoFetcher:
         # 映射和拷贝字段
         for api_field in [
             "temperature_2m",
+            "relative_humidity_2m",
             "cloud_cover",
             "cloud_cover_low",
             "cloud_cover_mid",
@@ -351,5 +354,9 @@ class MeteoFetcher:
                 DataDegradedWarning,
                 stacklevel=2,
             )
+
+        # relative_humidity_2m: clip 0-100, None → 50 (保守中间值)
+        if "relative_humidity_2m" in df.columns:
+            df["relative_humidity_2m"] = df["relative_humidity_2m"].fillna(50).clip(0, 100)
 
         return df

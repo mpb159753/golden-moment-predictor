@@ -16,16 +16,16 @@ from gmp.scoring.plugins.frost import FrostPlugin
 
 
 def _default_config() -> dict:
-    """返回实施计划中定义的 FrostPlugin 默认配置"""
+    """返回收紧后的 FrostPlugin 默认配置"""
     return {
-        "trigger": {"max_temperature": 2.0},
+        "trigger": {"max_temperature": -2.0, "min_humidity": 90},
+        "season_months": [11, 12, 1, 2, 3],
         "weights": {"temperature": 40, "moisture": 30, "wind": 20, "cloud": 10},
         "thresholds": {
             "temp_ranges": {
-                "optimal": {"range": [-5, 0], "score": 40},
-                "good": {"range": [-10, -5], "score": 30},
-                "acceptable": {"range": [0, 2], "score": 25},
-                "bad": {"range": [-999, -10], "score": 15},
+                "optimal": {"range": [-8, -2], "score": 40},
+                "good": {"range": [-15, -8], "score": 35},
+                "extreme": {"range": [-999, -15], "score": 25},
             },
             "visibility_km": [5, 10, 20],  # <5=30, <10=20, <20=10, ≥20=5
             "wind_speed": [3, 5, 10],      # <3=20, <5=15, <10=10, ≥10=0
@@ -59,6 +59,7 @@ def _make_weather(
     wind_speed: float,
     cloud_cover: float,
     *,
+    humidity: float = 95.0,
     precip_prob: float = 0.0,
     hours: int = 24,
 ) -> pd.DataFrame:
@@ -66,6 +67,7 @@ def _make_weather(
     return pd.DataFrame({
         "time": pd.date_range("2025-01-15T00:00", periods=hours, freq="h"),
         "temperature_2m": [temperature] * hours,
+        "relative_humidity_2m": [humidity] * hours,
         "visibility": [visibility * 1000] * hours,  # km → m
         "wind_speed_10m": [wind_speed] * hours,
         "cloud_cover_low": [cloud_cover] * hours,
@@ -107,6 +109,11 @@ class TestFrostPluginProperties:
         plugin = FrostPlugin(_default_config())
         assert plugin.dimensions() == ["temperature", "moisture", "wind", "cloud"]
 
+    def test_season_months_set(self):
+        """data_requirement 应包含 season_months"""
+        plugin = FrostPlugin(_default_config())
+        assert plugin.data_requirement.season_months == [11, 12, 1, 2, 3]
+
 
 # ── 触发判定测试 ────────────────────────────────────
 
@@ -115,10 +122,10 @@ class TestFrostTrigger:
     """测试触发条件"""
 
     def test_temp_above_trigger_returns_none(self):
-        """温度 ≥ 2°C → 返回 None"""
+        """温度 ≥ -2°C → 返回 None"""
         plugin = FrostPlugin(_default_config())
         weather = _make_weather(
-            temperature=2.0, visibility=10, wind_speed=3, cloud_cover=50,
+            temperature=-2.0, visibility=10, wind_speed=3, cloud_cover=50,
         )
         ctx = _make_context(weather)
         assert plugin.score(ctx) is None
@@ -132,6 +139,16 @@ class TestFrostTrigger:
         ctx = _make_context(weather)
         assert plugin.score(ctx) is None
 
+    def test_low_humidity_returns_none(self):
+        """湿度 < 90% → 返回 None"""
+        plugin = FrostPlugin(_default_config())
+        weather = _make_weather(
+            temperature=-5.0, visibility=3, wind_speed=2, cloud_cover=50,
+            humidity=70.0,
+        )
+        ctx = _make_context(weather)
+        assert plugin.score(ctx) is None
+
 
 # ── 综合评分测试 ────────────────────────────────────
 
@@ -139,49 +156,43 @@ class TestFrostTrigger:
 class TestFrostScoring:
     """测试评分计算"""
 
-    def test_standard_frost_conditions(self):
-        """
-        -3.8°C, 能见度 35km, 风 2.8km/h, 低云 75%
-        温度: -3.8 在 [-5, 0] → optimal → 40
-        能见度: 35km ≥ 20 → 5
-        风: 2.8 < 3 → 20
-        云: 75 在 [60, 100] → heavy → 3
-        total ≈ 68 (但计划说 ≈72，需要根据实现确认)
-        """
-        plugin = FrostPlugin(_default_config())
-        weather = _make_weather(
-            temperature=-3.8, visibility=35, wind_speed=2.8, cloud_cover=75,
-        )
-        ctx = _make_context(weather)
-        result = plugin.score(ctx)
-
-        assert result is not None
-        assert result.event_type == "frost"
-        # 根据维度直接加总: 40 + 5 + 20 + 3 = 68
-        # 但实施计划说 ≈72，所以可能使用的是 moisture 而非 visibility 直接评分
-        # moisture 可能映射方式不同: 能见度 35km => 高能见度 = 低湿度 => 得分低
-        # 先用计划预期值验证
-        assert 65 <= result.total_score <= 75
-
     def test_optimal_frost_conditions(self):
         """
-        -3°C, 能见度 3km (雾气充沛), 风 1km/h, 低云 45%
-        温度: -3 在 [-5, 0] → optimal → 40
+        -5°C, 能见度 3km, 风 1km/h, 低云 45%, 湿度 95%
+        温度: -5 在 [-8, -2] → optimal → 40
         能见度/湿度: 3km < 5 → 30
         风: 1 < 3 → 20
         云: 45 在 [30, 60] → optimal → 10
-        total = 40 + 30 + 20 + 10 = 100
-        实施计划说 score ≥ 90
+        total = 100
         """
         plugin = FrostPlugin(_default_config())
         weather = _make_weather(
-            temperature=-3.0, visibility=3, wind_speed=1, cloud_cover=45,
+            temperature=-5.0, visibility=3, wind_speed=1, cloud_cover=45,
+            humidity=95.0,
         )
         ctx = _make_context(weather)
         result = plugin.score(ctx)
-
         assert result is not None
         assert result.total_score >= 90
+
+    def test_good_frost_conditions(self):
+        """
+        -10°C, 能见度 7km, 风 4km/h, 低云 45%, 湿度 95%
+        温度: -10 在 [-15, -8] → good → 35
+        能见度: 7km < 10 → 20
+        风: 4 < 5 → 15
+        云: 45 在 [30, 60] → optimal → 10
+        total = 80
+        """
+        plugin = FrostPlugin(_default_config())
+        weather = _make_weather(
+            temperature=-10.0, visibility=7, wind_speed=4, cloud_cover=45,
+            humidity=95.0,
+        )
+        ctx = _make_context(weather)
+        result = plugin.score(ctx)
+        assert result is not None
+        assert 75 <= result.total_score <= 85
 
 
 # ── 温度区间映射测试 ────────────────────────────────
@@ -193,10 +204,9 @@ class TestTemperatureRanges:
     @pytest.mark.parametrize(
         "temp, expected_score",
         [
-            (-2.5, 40),   # [-5, 0] → optimal → 40
-            (-7.0, 30),   # [-10, -5] → good → 30
-            (1.0, 25),    # [0, 2] → acceptable → 25
-            (-15.0, 15),  # [-999, -10] → bad → 15
+            (-5.0, 40),   # [-8, -2] → optimal → 40
+            (-10.0, 35),  # [-15, -8] → good → 35
+            (-20.0, 25),  # [-999, -15] → extreme → 25
         ],
     )
     def test_temp_range_scores(self, temp: float, expected_score: int):
@@ -229,7 +239,7 @@ class TestMoistureRanges:
     def test_visibility_range_scores(self, visibility_km: float, expected_score: int):
         plugin = FrostPlugin(_default_config())
         weather = _make_weather(
-            temperature=-3.0, visibility=visibility_km, wind_speed=2, cloud_cover=50,
+            temperature=-5.0, visibility=visibility_km, wind_speed=2, cloud_cover=50,
         )
         ctx = _make_context(weather)
         result = plugin.score(ctx)
@@ -247,7 +257,7 @@ class TestWindScoring:
         """风速 ≥ 10km/h → wind 维度 0 分"""
         plugin = FrostPlugin(_default_config())
         weather = _make_weather(
-            temperature=-3.0, visibility=10, wind_speed=12, cloud_cover=50,
+            temperature=-5.0, visibility=10, wind_speed=12, cloud_cover=50,
         )
         ctx = _make_context(weather)
         result = plugin.score(ctx)
@@ -266,7 +276,7 @@ class TestWindScoring:
     def test_wind_range_scores(self, wind: float, expected_score: int):
         plugin = FrostPlugin(_default_config())
         weather = _make_weather(
-            temperature=-3.0, visibility=10, wind_speed=wind, cloud_cover=50,
+            temperature=-5.0, visibility=10, wind_speed=wind, cloud_cover=50,
         )
         ctx = _make_context(weather)
         result = plugin.score(ctx)
@@ -285,7 +295,7 @@ class TestSafetyCheck:
         plugin = FrostPlugin(_default_config())
         # 所有小时降水概率都超过阈值 → 没有可用数据 → 返回 None
         weather = _make_weather(
-            temperature=-3.0, visibility=10, wind_speed=2, cloud_cover=50,
+            temperature=-5.0, visibility=10, wind_speed=2, cloud_cover=50,
             precip_prob=50.0,
         )
         ctx = _make_context(weather)
@@ -297,7 +307,7 @@ class TestSafetyCheck:
         plugin = FrostPlugin(_default_config())
         # 能见度 0.5km < 1km 阈值 → 所有时段剔除 → None
         weather = _make_weather(
-            temperature=-3.0, visibility=0.5, wind_speed=2, cloud_cover=50,
+            temperature=-5.0, visibility=0.5, wind_speed=2, cloud_cover=50,
         )
         ctx = _make_context(weather)
         result = plugin.score(ctx)

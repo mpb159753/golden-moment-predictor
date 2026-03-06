@@ -39,6 +39,7 @@ class FrostPlugin:
             needs_l2_target=False,
             needs_l2_light_path=False,
             needs_astro=False,
+            season_months=self._config.get("season_months", [11, 12, 1, 2, 3]),
         )
 
     def dimensions(self) -> list[str]:
@@ -76,11 +77,18 @@ class FrostPlugin:
 
         # ── 触发判定 ──
         trigger = self._config.get("trigger", {})
-        max_temp = trigger.get("max_temperature", 2.0)
+        max_temp = trigger.get("max_temperature", -2.0)
         avg_temp = weather["temperature_2m"].mean()
 
         if avg_temp >= max_temp:
             return None
+
+        # 湿度触发检查
+        min_humidity = trigger.get("min_humidity", 90)
+        if "relative_humidity_2m" in weather.columns:
+            avg_humidity = weather["relative_humidity_2m"].mean()
+            if avg_humidity < min_humidity:
+                return None
 
         # ── 各维度评分 ──
         temp_score = self._score_temperature(avg_temp)

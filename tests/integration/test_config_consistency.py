@@ -187,16 +187,21 @@ class TestPluginConfigConsistency:
         assert "freeze_strength" in result.breakdown
 
     def test_frost_with_real_config(self, config):
-        """FrostPlugin: 合成低温天气 → 应走完评分全链路"""
+        """FrostPlugin: 合成低温高湿天气 → 应走完评分全链路"""
         plugin_cfg = config.get_plugin_config("frost")
         plugin = FrostPlugin(plugin_cfg)
 
-        df = _make_weather_df(hours=25, temperature_2m=-2.0, visibility=15000)
+        df = _make_weather_df(
+            hours=25,
+            temperature_2m=-5.0,        # 低于 -2°C 触发
+            visibility=5000,
+            relative_humidity_2m=95.0,   # 高于 90% 湿度触发
+        )
         ctx = _make_context(df)
         result = plugin.score(ctx)
 
         assert result is not None, (
-            "FrostPlugin 应在低温条件下被触发"
+            "FrostPlugin 应在低温高湿条件下被触发"
         )
         assert result.event_type == "frost"
         assert 0 <= result.total_score <= 100

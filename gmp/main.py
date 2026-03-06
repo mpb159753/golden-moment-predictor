@@ -315,7 +315,7 @@ def predict_route(
 
 
 @cli.command("generate-all")
-@click.option("--days", default=7, type=click.IntRange(1, 16), help="预测天数 (1-16)")
+@click.option("--days", default=10, type=click.IntRange(1, 16), help="预测天数 (1-16)")
 @click.option("--events", default=None, help="逗号分隔的事件过滤")
 @click.option("--fail-fast", is_flag=True, help="单站失败时立即中止")
 @click.option("--no-archive", is_flag=True, help="跳过历史归档")
